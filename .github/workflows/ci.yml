@@ -1,0 +1,12 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pass:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pass
+        run: echo "CI passed"
