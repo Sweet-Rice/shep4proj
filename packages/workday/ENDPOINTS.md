@@ -103,6 +103,35 @@ change.
 | `GET /lsu/app-root` | Possibly needed to obtain `sessionSecureToken` for the academic-record call; not yet allowlisted pending confirmation in T-312/T-315 of how the session token is actually sourced. |
 | `GET /wday/sirg/protectedapi/asorInternal/v1/lsu/registration` | Registration-related; stays on the deny side per `SECURITY.md` — never allowlist. |
 
+## Pending capture
+
+### Current registrations (T-320)
+
+The academic record grid above lists only graded enrollments — completed,
+failed, or withdrawn coursework. It does not include the student's
+**current-term registrations** (courses registered for but not yet
+graded). The most likely source is the Workday task "View My Courses", but
+**its endpoint is unknown and must not be guessed** — per SECURITY.md, a
+human with an LSU login has to capture it first.
+
+Steps to capture and inspect it once available:
+
+1. Run `pnpm --filter @jevschedule/workday capture --pii "..."`. After the
+   academic record loads, the script now prompts: open View My Courses by
+   typing it into the Workday search bar, pick the task, and wait for
+   current courses to show, then press Enter.
+2. Run `pnpm --filter @jevschedule/workday inspect:grids` against the
+   resulting HAR (defaults to the newest file in `fixtures/workday/raw/`)
+   to see the response's structure — grid labels, row counts, and
+   `columnId=label` pairs, with no cell values, instance text, or names
+   printed.
+3. Once the endpoint is confirmed, add it as a new entry here (see "Entry
+   format" above) and a parser can be built against it. Until then, no code
+   may call it.
+4. If the URL is already known on a later run, pass it via `--task-url
+   <url>` to `capture` so the script navigates there automatically instead
+   of relying on manual search.
+
 ## How this was captured
 
 Endpoints in this document come from a redacted DevTools capture performed

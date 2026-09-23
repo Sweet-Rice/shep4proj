@@ -25,7 +25,8 @@
     "smoke:login": "tsc -b && node scripts/smoke-login.ts",
     "redact:har": "node scripts/redact-har.ts",
     "capture": "tsc -b && node scripts/capture-workday.ts",
-    "verify:record": "node scripts/verify-record.ts"
+    "verify:record": "node scripts/verify-record.ts",
+    "inspect:grids": "node scripts/inspect-grids.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",

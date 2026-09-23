@@ -22,58 +22,17 @@ import {
   type TransferCredit,
   type UnrecognizedRow,
 } from "./types.ts";
+import {
+  findGrids,
+  isPlainObject,
+  type GridCandidate,
+  type PanelContext,
+} from "../workday-json/find-grids.ts";
 
 type JsonObject = Record<string, unknown>;
 
 function isObject(value: unknown): value is JsonObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-interface PanelContext {
-  label?: string;
-  title?: string;
-}
-
-interface GridCandidate {
-  node: JsonObject;
-  path: string;
-  panelStack: PanelContext[];
-}
-
-/** Grid-level scratch keys that duplicate a row; never read them. */
-const IGNORED_GRID_SCRATCH_KEYS = new Set(["maxLengthValueRow", "maxWordLengthValueRow"]);
-
-function collectGridCandidates(
-  node: unknown,
-  path: string,
-  panelStack: PanelContext[],
-  out: GridCandidate[],
-): void {
-  if (Array.isArray(node)) {
-    node.forEach((item, index) =>
-      collectGridCandidates(item, `${path}[${index}]`, panelStack, out),
-    );
-    return;
-  }
-  if (!isObject(node)) return;
-
-  if (node.widget === "grid") {
-    out.push({ node, path, panelStack: [...panelStack] });
-    return;
-  }
-
-  let nextStack = panelStack;
-  if (node.widget === "panel") {
-    const ctx: PanelContext = {};
-    if (typeof node.label === "string") ctx.label = node.label;
-    if (typeof node.title === "string") ctx.title = node.title;
-    nextStack = [...panelStack, ctx];
-  }
-
-  for (const [key, value] of Object.entries(node)) {
-    if (IGNORED_GRID_SCRATCH_KEYS.has(key)) continue;
-    collectGridCandidates(value, `${path}.${key}`, nextStack, out);
-  }
+  return isPlainObject(value);
 }
 
 type GridFamily = "coursework" | "transfer";
@@ -380,8 +339,7 @@ export function parseAcademicRecord(json: unknown): AcademicRecordResult {
   }
   const body = rootResult.data.body;
 
-  const candidates: GridCandidate[] = [];
-  collectGridCandidates(body, "body", [], candidates);
+  const candidates: GridCandidate[] = findGrids(body, "body");
   if (candidates.length === 0) {
     throw new WorkdayShapeError('No "grid" widgets found under body', "body");
   }
