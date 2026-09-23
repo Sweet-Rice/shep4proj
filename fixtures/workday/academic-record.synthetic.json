@@ -1,0 +1,1928 @@
+{
+  "title": "View My Academic Record",
+  "widget": "page",
+  "sessionConfig": {
+    "locale": "en-US",
+    "timezone": "America/Chicago"
+  },
+  "uiTheme": {
+    "brand": "lsu",
+    "mode": "light"
+  },
+  "body": {
+    "widget": "container",
+    "title": "Academic Record",
+    "children": [
+      {
+        "widget": "panelList",
+        "panels": [
+          {
+            "widget": "panel",
+            "label": "Coursework",
+            "title": "Coursework",
+            "children": [
+              {
+                "widget": "panelList",
+                "panels": [
+                  {
+                    "widget": "panel",
+                    "label": "Fall Semester 2021",
+                    "title": "Fall Semester 2021",
+                    "children": [
+                      {
+                        "widget": "section",
+                        "children": [
+                          {
+                            "widget": "grid",
+                            "label": "Enrollments",
+                            "gridId": "grid-Fall-Semester-2021",
+                            "rowCount": 2,
+                            "columns": [
+                              {
+                                "columnId": "90.1",
+                                "widget": "gridColumn",
+                                "propertyName": "descriptor"
+                              },
+                              {
+                                "columnId": "90.2",
+                                "widget": "gridColumn",
+                                "propertyName": "course",
+                                "label": "Course"
+                              },
+                              {
+                                "columnId": "90.5",
+                                "widget": "gridColumn",
+                                "propertyName": "grade",
+                                "label": "Grade"
+                              },
+                              {
+                                "columnId": "90.6",
+                                "widget": "gridColumn",
+                                "propertyName": "gradePoints",
+                                "label": "Grade Points"
+                              },
+                              {
+                                "columnId": "90.7",
+                                "widget": "gridColumn",
+                                "propertyName": "creditHours",
+                                "label": "Credit Hours"
+                              },
+                              {
+                                "columnId": "90.8",
+                                "widget": "gridColumn",
+                                "propertyName": "earnedGradePoints",
+                                "label": "Earned Grade Points"
+                              }
+                            ],
+                            "rows": [
+                              {
+                                "id": "row-0",
+                                "rowIndex": 0,
+                                "cellsMap": {
+                                  "90.1": {
+                                    "widget": "gridCell",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-6domy6",
+                                        "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - MATH 1550 - Analytic Geometry and Calculus I - Fall Semester 2021 (08/23/2021-12/10/2021)",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.2": {
+                                    "widget": "gridCell",
+                                    "label": "Course",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-3mbyda",
+                                        "text": "MATH 1550 - Analytic Geometry and Calculus I",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.5": {
+                                    "widget": "gridCell",
+                                    "label": "Grade",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-nmw23d",
+                                        "text": "A",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.6": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Grade Points",
+                                    "text": "16.00",
+                                    "value": 16,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.7": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Credit Hours",
+                                    "text": "4.00",
+                                    "value": 4,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.8": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Earned Grade Points",
+                                    "text": "16.00",
+                                    "value": 16,
+                                    "format": "n2",
+                                    "precision": 2
+                                  }
+                                }
+                              },
+                              {
+                                "id": "row-1",
+                                "rowIndex": 1,
+                                "cellsMap": {
+                                  "90.1": {
+                                    "widget": "gridCell",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-ghsqxc",
+                                        "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 4999G - Special Topics in Computer Science - Fall Semester 2021 (08/23/2021-12/10/2021)",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.2": {
+                                    "widget": "gridCell",
+                                    "label": "Course",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-7l8yli",
+                                        "text": "CSC 4999G - Special Topics in Computer Science",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.5": {
+                                    "widget": "gridCell",
+                                    "label": "Grade",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-ohzg7i",
+                                        "text": "F",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.6": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Grade Points",
+                                    "text": "0.00",
+                                    "value": 0,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.7": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Credit Hours",
+                                    "text": "3.00",
+                                    "value": 3,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.8": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Earned Grade Points",
+                                    "text": "0.00",
+                                    "value": 0,
+                                    "format": "n2",
+                                    "precision": 2
+                                  }
+                                }
+                              }
+                            ],
+                            "maxLengthValueRow": {
+                              "id": "row-0",
+                              "rowIndex": 0,
+                              "cellsMap": {
+                                "90.1": {
+                                  "widget": "gridCell",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-6domy6",
+                                      "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - MATH 1550 - Analytic Geometry and Calculus I - Fall Semester 2021 (08/23/2021-12/10/2021)",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.2": {
+                                  "widget": "gridCell",
+                                  "label": "Course",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-3mbyda",
+                                      "text": "MATH 1550 - Analytic Geometry and Calculus I",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.5": {
+                                  "widget": "gridCell",
+                                  "label": "Grade",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-nmw23d",
+                                      "text": "A",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.6": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Grade Points",
+                                  "text": "16.00",
+                                  "value": 16,
+                                  "format": "n2",
+                                  "precision": 2
+                                },
+                                "90.7": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Credit Hours",
+                                  "text": "4.00",
+                                  "value": 4,
+                                  "format": "n2",
+                                  "precision": 2
+                                },
+                                "90.8": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Earned Grade Points",
+                                  "text": "16.00",
+                                  "value": 16,
+                                  "format": "n2",
+                                  "precision": 2
+                                }
+                              }
+                            },
+                            "maxWordLengthValueRow": {
+                              "id": "row-0",
+                              "rowIndex": 0,
+                              "cellsMap": {
+                                "90.1": {
+                                  "widget": "gridCell",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-6domy6",
+                                      "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - MATH 1550 - Analytic Geometry and Calculus I - Fall Semester 2021 (08/23/2021-12/10/2021)",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.2": {
+                                  "widget": "gridCell",
+                                  "label": "Course",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-3mbyda",
+                                      "text": "MATH 1550 - Analytic Geometry and Calculus I",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.5": {
+                                  "widget": "gridCell",
+                                  "label": "Grade",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-nmw23d",
+                                      "text": "A",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.6": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Grade Points",
+                                  "text": "16.00",
+                                  "value": 16,
+                                  "format": "n2",
+                                  "precision": 2
+                                },
+                                "90.7": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Credit Hours",
+                                  "text": "4.00",
+                                  "value": 4,
+                                  "format": "n2",
+                                  "precision": 2
+                                },
+                                "90.8": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Earned Grade Points",
+                                  "text": "16.00",
+                                  "value": 16,
+                                  "format": "n2",
+                                  "precision": 2
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "widget": "panel",
+                    "label": "Fall Semester 2024",
+                    "title": "Fall Semester 2024",
+                    "children": [
+                      {
+                        "widget": "section",
+                        "children": [
+                          {
+                            "widget": "grid",
+                            "label": "Enrollments",
+                            "gridId": "grid-Fall-Semester-2024",
+                            "rowCount": 2,
+                            "columns": [
+                              {
+                                "columnId": "90.1",
+                                "widget": "gridColumn",
+                                "propertyName": "descriptor"
+                              },
+                              {
+                                "columnId": "90.2",
+                                "widget": "gridColumn",
+                                "propertyName": "course",
+                                "label": "Course"
+                              },
+                              {
+                                "columnId": "90.5",
+                                "widget": "gridColumn",
+                                "propertyName": "grade",
+                                "label": "Grade"
+                              },
+                              {
+                                "columnId": "90.6",
+                                "widget": "gridColumn",
+                                "propertyName": "gradePoints",
+                                "label": "Grade Points"
+                              },
+                              {
+                                "columnId": "90.7",
+                                "widget": "gridColumn",
+                                "propertyName": "creditHours",
+                                "label": "Credit Hours"
+                              },
+                              {
+                                "columnId": "90.8",
+                                "widget": "gridColumn",
+                                "propertyName": "earnedGradePoints",
+                                "label": "Earned Grade Points"
+                              }
+                            ],
+                            "rows": [
+                              {
+                                "id": "row-0",
+                                "rowIndex": 0,
+                                "cellsMap": {
+                                  "90.1": {
+                                    "widget": "gridCell",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-9vakfl",
+                                        "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 1350 - Data Structures - Fall Semester 2024 (08/21/2024-12/13/2024)",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.2": {
+                                    "widget": "gridCell",
+                                    "label": "Course",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-ufmypa",
+                                        "text": "CSC 1350 - Data Structures",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.5": {
+                                    "widget": "gridCell",
+                                    "label": "Grade",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-59y1sn",
+                                        "text": "A",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.6": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Grade Points",
+                                    "text": "12.00",
+                                    "value": 12,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.7": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Credit Hours",
+                                    "text": "3.00",
+                                    "value": 3,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.8": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Earned Grade Points",
+                                    "text": "12.00",
+                                    "value": 12,
+                                    "format": "n2",
+                                    "precision": 2
+                                  }
+                                }
+                              },
+                              {
+                                "id": "row-1",
+                                "rowIndex": 1,
+                                "cellsMap": {
+                                  "90.1": {
+                                    "widget": "gridCell",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-rk7lzp",
+                                        "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - ENGL 1000 - English Composition I - Fall Semester 2024 (08/21/2024-12/13/2024)",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.2": {
+                                    "widget": "gridCell",
+                                    "label": "Course",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-9ost6f",
+                                        "text": "ENGL 1000 - English Composition I",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.5": {
+                                    "widget": "gridCell",
+                                    "label": "Grade",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-h03uc0",
+                                        "text": "B",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.6": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Grade Points",
+                                    "text": "9.00",
+                                    "value": 9,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.7": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Credit Hours",
+                                    "text": "3.00",
+                                    "value": 3,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.8": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Earned Grade Points",
+                                    "text": "9.00",
+                                    "value": 9,
+                                    "format": "n2",
+                                    "precision": 2
+                                  }
+                                }
+                              }
+                            ],
+                            "maxLengthValueRow": {
+                              "id": "row-0",
+                              "rowIndex": 0,
+                              "cellsMap": {
+                                "90.1": {
+                                  "widget": "gridCell",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-9vakfl",
+                                      "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 1350 - Data Structures - Fall Semester 2024 (08/21/2024-12/13/2024)",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.2": {
+                                  "widget": "gridCell",
+                                  "label": "Course",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-ufmypa",
+                                      "text": "CSC 1350 - Data Structures",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.5": {
+                                  "widget": "gridCell",
+                                  "label": "Grade",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-59y1sn",
+                                      "text": "A",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.6": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Grade Points",
+                                  "text": "12.00",
+                                  "value": 12,
+                                  "format": "n2",
+                                  "precision": 2
+                                },
+                                "90.7": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Credit Hours",
+                                  "text": "3.00",
+                                  "value": 3,
+                                  "format": "n2",
+                                  "precision": 2
+                                },
+                                "90.8": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Earned Grade Points",
+                                  "text": "12.00",
+                                  "value": 12,
+                                  "format": "n2",
+                                  "precision": 2
+                                }
+                              }
+                            },
+                            "maxWordLengthValueRow": {
+                              "id": "row-0",
+                              "rowIndex": 0,
+                              "cellsMap": {
+                                "90.1": {
+                                  "widget": "gridCell",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-9vakfl",
+                                      "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 1350 - Data Structures - Fall Semester 2024 (08/21/2024-12/13/2024)",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.2": {
+                                  "widget": "gridCell",
+                                  "label": "Course",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-ufmypa",
+                                      "text": "CSC 1350 - Data Structures",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.5": {
+                                  "widget": "gridCell",
+                                  "label": "Grade",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-59y1sn",
+                                      "text": "A",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.6": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Grade Points",
+                                  "text": "12.00",
+                                  "value": 12,
+                                  "format": "n2",
+                                  "precision": 2
+                                },
+                                "90.7": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Credit Hours",
+                                  "text": "3.00",
+                                  "value": 3,
+                                  "format": "n2",
+                                  "precision": 2
+                                },
+                                "90.8": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Earned Grade Points",
+                                  "text": "12.00",
+                                  "value": 12,
+                                  "format": "n2",
+                                  "precision": 2
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "widget": "panel",
+                    "label": "Spring Semester 2025",
+                    "title": "Spring Semester 2025",
+                    "children": [
+                      {
+                        "widget": "section",
+                        "children": [
+                          {
+                            "widget": "grid",
+                            "label": "Enrollments",
+                            "gridId": "grid-Spring-Semester-2025",
+                            "rowCount": 3,
+                            "columns": [
+                              {
+                                "columnId": "90.1",
+                                "widget": "gridColumn",
+                                "propertyName": "descriptor"
+                              },
+                              {
+                                "columnId": "90.2",
+                                "widget": "gridColumn",
+                                "propertyName": "course",
+                                "label": "Course"
+                              },
+                              {
+                                "columnId": "90.5",
+                                "widget": "gridColumn",
+                                "propertyName": "grade",
+                                "label": "Grade"
+                              },
+                              {
+                                "columnId": "90.6",
+                                "widget": "gridColumn",
+                                "propertyName": "gradePoints",
+                                "label": "Grade Points"
+                              },
+                              {
+                                "columnId": "90.7",
+                                "widget": "gridColumn",
+                                "propertyName": "creditHours",
+                                "label": "Credit Hours"
+                              },
+                              {
+                                "columnId": "90.8",
+                                "widget": "gridColumn",
+                                "propertyName": "earnedGradePoints",
+                                "label": "Earned Grade Points"
+                              }
+                            ],
+                            "rows": [
+                              {
+                                "id": "row-0",
+                                "rowIndex": 0,
+                                "cellsMap": {
+                                  "90.1": {
+                                    "widget": "gridCell",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-9dux87",
+                                        "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 1351 - Computer Science II for Majors - Spring Semester 2025 (01/13/2025-05/10/2025)",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.2": {
+                                    "widget": "gridCell",
+                                    "label": "Course",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-lgzszy",
+                                        "text": "CSC 1351 - Computer Science II for Majors",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.5": {
+                                    "widget": "gridCell",
+                                    "label": "Grade",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-k3hf7b",
+                                        "text": "A+",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.6": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Grade Points",
+                                    "text": "12.00",
+                                    "value": 12,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.7": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Credit Hours",
+                                    "text": "3.00",
+                                    "value": 3,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.8": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Earned Grade Points",
+                                    "text": "12.00",
+                                    "value": 12,
+                                    "format": "n2",
+                                    "precision": 2
+                                  }
+                                }
+                              },
+                              {
+                                "id": "row-1",
+                                "rowIndex": 1,
+                                "cellsMap": {
+                                  "90.1": {
+                                    "widget": "gridCell",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-dpgs08",
+                                        "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - ENGL 1001 - English Composition II - Spring Semester 2025 (01/13/2025-05/10/2025)",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.2": {
+                                    "widget": "gridCell",
+                                    "label": "Course",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-rzfrfk",
+                                        "text": "ENGL 1001 - English Composition II",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.5": {
+                                    "widget": "gridCell",
+                                    "label": "Grade",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-937i9q",
+                                        "text": "Withdrawal",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.7": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Credit Hours",
+                                    "text": "3.00",
+                                    "value": 3,
+                                    "format": "n2",
+                                    "precision": 2
+                                  }
+                                }
+                              },
+                              {
+                                "id": "row-2",
+                                "rowIndex": 2,
+                                "cellsMap": {
+                                  "90.1": {
+                                    "widget": "gridCell",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-827m5q",
+                                        "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - MATH 1552 - Analytic Geometry and Calculus II - Spring Semester 2025 (01/13/2025-05/10/2025)",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.2": {
+                                    "widget": "gridCell",
+                                    "label": "Course",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-2wb9rg",
+                                        "text": "MATH 1552 - Analytic Geometry and Calculus II",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.5": {
+                                    "widget": "gridCell",
+                                    "label": "Grade",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-rwk6dm",
+                                        "text": "C",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.6": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Grade Points",
+                                    "text": "8.00",
+                                    "value": 8,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.7": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Credit Hours",
+                                    "text": "4.00",
+                                    "value": 4,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.8": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Earned Grade Points",
+                                    "text": "8.00",
+                                    "value": 8,
+                                    "format": "n2",
+                                    "precision": 2
+                                  }
+                                }
+                              }
+                            ],
+                            "maxLengthValueRow": {
+                              "id": "row-0",
+                              "rowIndex": 0,
+                              "cellsMap": {
+                                "90.1": {
+                                  "widget": "gridCell",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-9dux87",
+                                      "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 1351 - Computer Science II for Majors - Spring Semester 2025 (01/13/2025-05/10/2025)",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.2": {
+                                  "widget": "gridCell",
+                                  "label": "Course",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-lgzszy",
+                                      "text": "CSC 1351 - Computer Science II for Majors",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.5": {
+                                  "widget": "gridCell",
+                                  "label": "Grade",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-k3hf7b",
+                                      "text": "A+",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.6": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Grade Points",
+                                  "text": "12.00",
+                                  "value": 12,
+                                  "format": "n2",
+                                  "precision": 2
+                                },
+                                "90.7": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Credit Hours",
+                                  "text": "3.00",
+                                  "value": 3,
+                                  "format": "n2",
+                                  "precision": 2
+                                },
+                                "90.8": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Earned Grade Points",
+                                  "text": "12.00",
+                                  "value": 12,
+                                  "format": "n2",
+                                  "precision": 2
+                                }
+                              }
+                            },
+                            "maxWordLengthValueRow": {
+                              "id": "row-0",
+                              "rowIndex": 0,
+                              "cellsMap": {
+                                "90.1": {
+                                  "widget": "gridCell",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-9dux87",
+                                      "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 1351 - Computer Science II for Majors - Spring Semester 2025 (01/13/2025-05/10/2025)",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.2": {
+                                  "widget": "gridCell",
+                                  "label": "Course",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-lgzszy",
+                                      "text": "CSC 1351 - Computer Science II for Majors",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.5": {
+                                  "widget": "gridCell",
+                                  "label": "Grade",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-k3hf7b",
+                                      "text": "A+",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.6": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Grade Points",
+                                  "text": "12.00",
+                                  "value": 12,
+                                  "format": "n2",
+                                  "precision": 2
+                                },
+                                "90.7": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Credit Hours",
+                                  "text": "3.00",
+                                  "value": 3,
+                                  "format": "n2",
+                                  "precision": 2
+                                },
+                                "90.8": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Earned Grade Points",
+                                  "text": "12.00",
+                                  "value": 12,
+                                  "format": "n2",
+                                  "precision": 2
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "widget": "panel",
+                    "label": "Wintersession 2025",
+                    "title": "Wintersession 2025",
+                    "children": [
+                      {
+                        "widget": "section",
+                        "children": [
+                          {
+                            "widget": "grid",
+                            "label": "Enrollments",
+                            "gridId": "grid-Wintersession-2025",
+                            "rowCount": 1,
+                            "columns": [
+                              {
+                                "columnId": "90.1",
+                                "widget": "gridColumn",
+                                "propertyName": "descriptor"
+                              },
+                              {
+                                "columnId": "90.2",
+                                "widget": "gridColumn",
+                                "propertyName": "course",
+                                "label": "Course"
+                              },
+                              {
+                                "columnId": "90.5",
+                                "widget": "gridColumn",
+                                "propertyName": "grade",
+                                "label": "Grade"
+                              },
+                              {
+                                "columnId": "90.6",
+                                "widget": "gridColumn",
+                                "propertyName": "gradePoints",
+                                "label": "Grade Points"
+                              },
+                              {
+                                "columnId": "90.7",
+                                "widget": "gridColumn",
+                                "propertyName": "creditHours",
+                                "label": "Credit Hours"
+                              },
+                              {
+                                "columnId": "90.8",
+                                "widget": "gridColumn",
+                                "propertyName": "earnedGradePoints",
+                                "label": "Earned Grade Points"
+                              }
+                            ],
+                            "rows": [
+                              {
+                                "id": "row-0",
+                                "rowIndex": 0,
+                                "cellsMap": {
+                                  "90.1": {
+                                    "widget": "gridCell",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-1ipej7",
+                                        "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 2259 - Introduction to Data Structures, Algorithms, and Discrete Mathematics I - Wintersession 2025 (12/16/2025-01/06/2026)",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.2": {
+                                    "widget": "gridCell",
+                                    "label": "Course",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-9m4g8u",
+                                        "text": "CSC 2259 - Introduction to Data Structures, Algorithms, and Discrete Mathematics I",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.5": {
+                                    "widget": "gridCell",
+                                    "label": "Grade",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-7gzzat",
+                                        "text": "P",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.7": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Credit Hours",
+                                    "text": "1.00",
+                                    "value": 1,
+                                    "format": "n2",
+                                    "precision": 2
+                                  }
+                                }
+                              }
+                            ],
+                            "maxLengthValueRow": {
+                              "id": "row-0",
+                              "rowIndex": 0,
+                              "cellsMap": {
+                                "90.1": {
+                                  "widget": "gridCell",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-1ipej7",
+                                      "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 2259 - Introduction to Data Structures, Algorithms, and Discrete Mathematics I - Wintersession 2025 (12/16/2025-01/06/2026)",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.2": {
+                                  "widget": "gridCell",
+                                  "label": "Course",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-9m4g8u",
+                                      "text": "CSC 2259 - Introduction to Data Structures, Algorithms, and Discrete Mathematics I",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.5": {
+                                  "widget": "gridCell",
+                                  "label": "Grade",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-7gzzat",
+                                      "text": "P",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.7": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Credit Hours",
+                                  "text": "1.00",
+                                  "value": 1,
+                                  "format": "n2",
+                                  "precision": 2
+                                }
+                              }
+                            },
+                            "maxWordLengthValueRow": {
+                              "id": "row-0",
+                              "rowIndex": 0,
+                              "cellsMap": {
+                                "90.1": {
+                                  "widget": "gridCell",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-1ipej7",
+                                      "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 2259 - Introduction to Data Structures, Algorithms, and Discrete Mathematics I - Wintersession 2025 (12/16/2025-01/06/2026)",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.2": {
+                                  "widget": "gridCell",
+                                  "label": "Course",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-9m4g8u",
+                                      "text": "CSC 2259 - Introduction to Data Structures, Algorithms, and Discrete Mathematics I",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.5": {
+                                  "widget": "gridCell",
+                                  "label": "Grade",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-7gzzat",
+                                      "text": "P",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.7": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Credit Hours",
+                                  "text": "1.00",
+                                  "value": 1,
+                                  "format": "n2",
+                                  "precision": 2
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "widget": "panel",
+                    "label": "Fall Semester 2026",
+                    "title": "Fall Semester 2026",
+                    "children": [
+                      {
+                        "widget": "section",
+                        "children": [
+                          {
+                            "widget": "grid",
+                            "label": "Enrollments",
+                            "gridId": "grid-Fall-Semester-2026",
+                            "rowCount": 2,
+                            "columns": [
+                              {
+                                "columnId": "90.1",
+                                "widget": "gridColumn",
+                                "propertyName": "descriptor"
+                              },
+                              {
+                                "columnId": "90.2",
+                                "widget": "gridColumn",
+                                "propertyName": "course",
+                                "label": "Course"
+                              },
+                              {
+                                "columnId": "90.5",
+                                "widget": "gridColumn",
+                                "propertyName": "grade",
+                                "label": "Grade"
+                              },
+                              {
+                                "columnId": "90.6",
+                                "widget": "gridColumn",
+                                "propertyName": "gradePoints",
+                                "label": "Grade Points"
+                              },
+                              {
+                                "columnId": "90.7",
+                                "widget": "gridColumn",
+                                "propertyName": "creditHours",
+                                "label": "Credit Hours"
+                              },
+                              {
+                                "columnId": "90.8",
+                                "widget": "gridColumn",
+                                "propertyName": "earnedGradePoints",
+                                "label": "Earned Grade Points"
+                              }
+                            ],
+                            "rows": [
+                              {
+                                "id": "row-0",
+                                "rowIndex": 0,
+                                "cellsMap": {
+                                  "90.1": {
+                                    "widget": "gridCell",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-py9bzo",
+                                        "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 3102 - Advanced Data Structures, Algorithms, and Discrete Mathematics for Cybersecurity - Fall Semester 2026 (08/24/2026-12/12/2026)",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.2": {
+                                    "widget": "gridCell",
+                                    "label": "Course",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-46e85d",
+                                        "text": "CSC 3102 - Advanced Data Structures, Algorithms, and Discrete Mathematics for Cybersecurity",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.5": {
+                                    "widget": "gridCell",
+                                    "label": "Grade",
+                                    "instances": []
+                                  },
+                                  "90.7": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Credit Hours",
+                                    "text": "3.00",
+                                    "value": 3,
+                                    "format": "n2",
+                                    "precision": 2
+                                  }
+                                }
+                              },
+                              {
+                                "id": "row-1",
+                                "rowIndex": 1,
+                                "cellsMap": {
+                                  "90.1": {
+                                    "widget": "gridCell",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-9wfpe2",
+                                        "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - MATH 2065 - Elementary Differential Equations - Fall Semester 2026 (08/24/2026-12/12/2026)",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.2": {
+                                    "widget": "gridCell",
+                                    "label": "Course",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-xvlan8",
+                                        "text": "MATH 2065 - Elementary Differential Equations",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.5": {
+                                    "widget": "gridCell",
+                                    "label": "Grade",
+                                    "instances": [
+                                      {
+                                        "instanceId": "inst-zxmuss",
+                                        "text": "A",
+                                        "v": 1,
+                                        "pv": 1,
+                                        "rt": "single",
+                                        "widget": "instance"
+                                      }
+                                    ]
+                                  },
+                                  "90.6": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Grade Points",
+                                    "text": "12.00",
+                                    "value": 12,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.7": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Credit Hours",
+                                    "text": "3.00",
+                                    "value": 3,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.8": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Earned Grade Points",
+                                    "text": "12.00",
+                                    "value": 12,
+                                    "format": "n2",
+                                    "precision": 2
+                                  }
+                                }
+                              }
+                            ],
+                            "maxLengthValueRow": {
+                              "id": "row-0",
+                              "rowIndex": 0,
+                              "cellsMap": {
+                                "90.1": {
+                                  "widget": "gridCell",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-py9bzo",
+                                      "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 3102 - Advanced Data Structures, Algorithms, and Discrete Mathematics for Cybersecurity - Fall Semester 2026 (08/24/2026-12/12/2026)",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.2": {
+                                  "widget": "gridCell",
+                                  "label": "Course",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-46e85d",
+                                      "text": "CSC 3102 - Advanced Data Structures, Algorithms, and Discrete Mathematics for Cybersecurity",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.5": {
+                                  "widget": "gridCell",
+                                  "label": "Grade",
+                                  "instances": []
+                                },
+                                "90.7": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Credit Hours",
+                                  "text": "3.00",
+                                  "value": 3,
+                                  "format": "n2",
+                                  "precision": 2
+                                }
+                              }
+                            },
+                            "maxWordLengthValueRow": {
+                              "id": "row-0",
+                              "rowIndex": 0,
+                              "cellsMap": {
+                                "90.1": {
+                                  "widget": "gridCell",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-py9bzo",
+                                      "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 3102 - Advanced Data Structures, Algorithms, and Discrete Mathematics for Cybersecurity - Fall Semester 2026 (08/24/2026-12/12/2026)",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.2": {
+                                  "widget": "gridCell",
+                                  "label": "Course",
+                                  "instances": [
+                                    {
+                                      "instanceId": "inst-46e85d",
+                                      "text": "CSC 3102 - Advanced Data Structures, Algorithms, and Discrete Mathematics for Cybersecurity",
+                                      "v": 1,
+                                      "pv": 1,
+                                      "rt": "single",
+                                      "widget": "instance"
+                                    }
+                                  ]
+                                },
+                                "90.5": {
+                                  "widget": "gridCell",
+                                  "label": "Grade",
+                                  "instances": []
+                                },
+                                "90.7": {
+                                  "widget": "gridCellNumeric",
+                                  "label": "Credit Hours",
+                                  "text": "3.00",
+                                  "value": 3,
+                                  "format": "n2",
+                                  "precision": 2
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "widget": "panel",
+            "label": "Transfer Credit from Exams",
+            "title": "Transfer Credit from Exams",
+            "children": [
+              {
+                "widget": "section",
+                "children": [
+                  {
+                    "widget": "grid",
+                    "label": "Transfer Credit",
+                    "gridId": "grid-transfer-exams",
+                    "rowCount": 2,
+                    "columns": [
+                      {
+                        "columnId": "601.1",
+                        "widget": "gridColumn",
+                        "propertyName": "descriptor"
+                      },
+                      {
+                        "columnId": "601.2",
+                        "widget": "gridColumn",
+                        "propertyName": "transferCredit",
+                        "label": "Transfer Credit"
+                      },
+                      {
+                        "columnId": "601.4",
+                        "widget": "gridColumn",
+                        "propertyName": "creditHours",
+                        "label": "Credit Hours"
+                      },
+                      {
+                        "columnId": "601.5",
+                        "widget": "gridColumn",
+                        "propertyName": "grade",
+                        "label": "Grade"
+                      },
+                      {
+                        "columnId": "601.6",
+                        "widget": "gridColumn",
+                        "propertyName": "originatingExam",
+                        "label": "Originating Exam"
+                      }
+                    ],
+                    "rows": [
+                      {
+                        "id": "trow-0",
+                        "rowIndex": 0,
+                        "cellsMap": {
+                          "601.1": {
+                            "widget": "gridCell",
+                            "instances": [
+                              {
+                                "instanceId": "inst-obhg1q",
+                                "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - ENGL 1001 (Converted Advanced Standing Credit: Evaluated)",
+                                "v": 1,
+                                "pv": 1,
+                                "rt": "single",
+                                "widget": "instance"
+                              }
+                            ]
+                          },
+                          "601.2": {
+                            "widget": "gridCell",
+                            "label": "Transfer Credit",
+                            "instances": [
+                              {
+                                "instanceId": "inst-aozlrv",
+                                "text": "ENGL 1001 - ENGL COMPOSITION",
+                                "v": 1,
+                                "pv": 1,
+                                "rt": "single",
+                                "widget": "instance"
+                              }
+                            ]
+                          },
+                          "601.4": {
+                            "widget": "gridCellNumeric",
+                            "label": "Credit Hours",
+                            "text": "3.00",
+                            "value": 3,
+                            "format": "n2",
+                            "precision": 2
+                          },
+                          "601.5": {
+                            "widget": "gridCell",
+                            "label": "Grade",
+                            "instances": [
+                              {
+                                "instanceId": "inst-uibsi0",
+                                "text": "Pass",
+                                "v": 1,
+                                "pv": 1,
+                                "rt": "single",
+                                "widget": "instance"
+                              }
+                            ]
+                          },
+                          "601.6": {
+                            "widget": "gridCell",
+                            "label": "Originating Exam",
+                            "instances": [
+                              {
+                                "instanceId": "inst-dn8xgo",
+                                "text": "Converted Advanced Standing Credit : Evaluated : 1",
+                                "v": 1,
+                                "pv": 1,
+                                "rt": "single",
+                                "widget": "instance"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "id": "trow-1",
+                        "rowIndex": 1,
+                        "cellsMap": {
+                          "601.1": {
+                            "widget": "gridCell",
+                            "instances": [
+                              {
+                                "instanceId": "inst-yvsla4",
+                                "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - MATH 1431 (Converted Advanced Standing Credit: Evaluated)",
+                                "v": 1,
+                                "pv": 1,
+                                "rt": "single",
+                                "widget": "instance"
+                              }
+                            ]
+                          },
+                          "601.2": {
+                            "widget": "gridCell",
+                            "label": "Transfer Credit",
+                            "instances": [
+                              {
+                                "instanceId": "inst-t4nqx8",
+                                "text": "MATH 1431 - CALCULUS I",
+                                "v": 1,
+                                "pv": 1,
+                                "rt": "single",
+                                "widget": "instance"
+                              }
+                            ]
+                          },
+                          "601.4": {
+                            "widget": "gridCellNumeric",
+                            "label": "Credit Hours",
+                            "text": "3.00",
+                            "value": 3,
+                            "format": "n2",
+                            "precision": 2
+                          },
+                          "601.5": {
+                            "widget": "gridCell",
+                            "label": "Grade",
+                            "instances": [
+                              {
+                                "instanceId": "inst-t9eskx",
+                                "text": "Pass",
+                                "v": 1,
+                                "pv": 1,
+                                "rt": "single",
+                                "widget": "instance"
+                              }
+                            ]
+                          },
+                          "601.6": {
+                            "widget": "gridCell",
+                            "label": "Originating Exam",
+                            "instances": [
+                              {
+                                "instanceId": "inst-cg90oc",
+                                "text": "Converted Advanced Standing Credit : Evaluated : 1",
+                                "v": 1,
+                                "pv": 1,
+                                "rt": "single",
+                                "widget": "instance"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ],
+                    "maxLengthValueRow": {
+                      "id": "trow-0",
+                      "rowIndex": 0,
+                      "cellsMap": {
+                        "601.1": {
+                          "widget": "gridCell",
+                          "instances": [
+                            {
+                              "instanceId": "inst-obhg1q",
+                              "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - ENGL 1001 (Converted Advanced Standing Credit: Evaluated)",
+                              "v": 1,
+                              "pv": 1,
+                              "rt": "single",
+                              "widget": "instance"
+                            }
+                          ]
+                        },
+                        "601.2": {
+                          "widget": "gridCell",
+                          "label": "Transfer Credit",
+                          "instances": [
+                            {
+                              "instanceId": "inst-aozlrv",
+                              "text": "ENGL 1001 - ENGL COMPOSITION",
+                              "v": 1,
+                              "pv": 1,
+                              "rt": "single",
+                              "widget": "instance"
+                            }
+                          ]
+                        },
+                        "601.4": {
+                          "widget": "gridCellNumeric",
+                          "label": "Credit Hours",
+                          "text": "3.00",
+                          "value": 3,
+                          "format": "n2",
+                          "precision": 2
+                        },
+                        "601.5": {
+                          "widget": "gridCell",
+                          "label": "Grade",
+                          "instances": [
+                            {
+                              "instanceId": "inst-uibsi0",
+                              "text": "Pass",
+                              "v": 1,
+                              "pv": 1,
+                              "rt": "single",
+                              "widget": "instance"
+                            }
+                          ]
+                        },
+                        "601.6": {
+                          "widget": "gridCell",
+                          "label": "Originating Exam",
+                          "instances": [
+                            {
+                              "instanceId": "inst-dn8xgo",
+                              "text": "Converted Advanced Standing Credit : Evaluated : 1",
+                              "v": 1,
+                              "pv": 1,
+                              "rt": "single",
+                              "widget": "instance"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "maxWordLengthValueRow": {
+                      "id": "trow-0",
+                      "rowIndex": 0,
+                      "cellsMap": {
+                        "601.1": {
+                          "widget": "gridCell",
+                          "instances": [
+                            {
+                              "instanceId": "inst-obhg1q",
+                              "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - ENGL 1001 (Converted Advanced Standing Credit: Evaluated)",
+                              "v": 1,
+                              "pv": 1,
+                              "rt": "single",
+                              "widget": "instance"
+                            }
+                          ]
+                        },
+                        "601.2": {
+                          "widget": "gridCell",
+                          "label": "Transfer Credit",
+                          "instances": [
+                            {
+                              "instanceId": "inst-aozlrv",
+                              "text": "ENGL 1001 - ENGL COMPOSITION",
+                              "v": 1,
+                              "pv": 1,
+                              "rt": "single",
+                              "widget": "instance"
+                            }
+                          ]
+                        },
+                        "601.4": {
+                          "widget": "gridCellNumeric",
+                          "label": "Credit Hours",
+                          "text": "3.00",
+                          "value": 3,
+                          "format": "n2",
+                          "precision": 2
+                        },
+                        "601.5": {
+                          "widget": "gridCell",
+                          "label": "Grade",
+                          "instances": [
+                            {
+                              "instanceId": "inst-uibsi0",
+                              "text": "Pass",
+                              "v": 1,
+                              "pv": 1,
+                              "rt": "single",
+                              "widget": "instance"
+                            }
+                          ]
+                        },
+                        "601.6": {
+                          "widget": "gridCell",
+                          "label": "Originating Exam",
+                          "instances": [
+                            {
+                              "instanceId": "inst-dn8xgo",
+                              "text": "Converted Advanced Standing Credit : Evaluated : 1",
+                              "v": 1,
+                              "pv": 1,
+                              "rt": "single",
+                              "widget": "instance"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
