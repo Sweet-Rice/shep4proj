@@ -27,6 +27,12 @@ async function main(): Promise<void> {
   if (result.status === "cancelled") {
     console.log(`cancelled reason: ${result.reason}`);
   }
+  if (result.status === "success") {
+    console.log(`pages open at login: ${session.context.pages().length}`);
+    console.log(
+      `logged-in page is ${result.page === session.page ? "the initial" : "a different"} page`,
+    );
+  }
 
   // Idempotent and safe even if the window/context was already closed by
   // the user (the "cancelled" paths above).

@@ -7,8 +7,10 @@ let page: FakePage;
 let context: FakeContext;
 
 beforeEach(() => {
-  page = new FakePage();
   context = new FakeContext();
+  // Mirrors real usage: `launchWorkdayBrowser` sets `session.page` to
+  // `context.pages()[0]` (see launch.ts).
+  page = context.pages()[0] as FakePage;
 });
 
 afterEach(() => {
@@ -19,6 +21,7 @@ function expectNoListeners(): void {
   expect(page.listenerCount("framenavigated")).toBe(0);
   expect(page.listenerCount("close")).toBe(0);
   expect(context.listenerCount("close")).toBe(0);
+  expect(context.listenerCount("page")).toBe(0);
 }
 
 describe("waitForWorkdayLogin", () => {
@@ -27,7 +30,7 @@ describe("waitForWorkdayLogin", () => {
 
     const result = await waitForWorkdayLogin({ context, page });
 
-    expect(result).toEqual({ status: "success" });
+    expect(result).toEqual({ status: "success", page });
     expectNoListeners();
   });
 
@@ -39,7 +42,7 @@ describe("waitForWorkdayLogin", () => {
 
     const result = await promise;
 
-    expect(result).toEqual({ status: "success" });
+    expect(result).toEqual({ status: "success", page });
     expectNoListeners();
   });
 
@@ -50,7 +53,7 @@ describe("waitForWorkdayLogin", () => {
 
     const result = await promise;
 
-    expect(result).toEqual({ status: "success" });
+    expect(result).toEqual({ status: "success", page });
   });
 
   it("resolves cancelled with page-closed when the page closes before login", async () => {
@@ -141,7 +144,91 @@ describe("waitForWorkdayLogin", () => {
 
     const result = await promise;
 
-    expect(result).toEqual({ status: "success" });
+    expect(result).toEqual({ status: "success", page });
+  });
+
+  it("keeps waiting when the original page closes but another page is still open, then succeeds on it", async () => {
+    const promise = waitForWorkdayLogin({ context, page });
+
+    const popup = context.addPage();
+    page.emitClose();
+
+    // Still pending: the popup is still open.
+    popup.emitNavigation("https://www.myworkday.com/lsu/d/home.htmld");
+
+    const result = await promise;
+
+    expect(result).toEqual({ status: "success", page: popup });
+    expectNoListeners();
+    expect(popup.listenerCount("framenavigated")).toBe(0);
+    expect(popup.listenerCount("close")).toBe(0);
+  });
+
+  it("succeeds when a popup opens and logs in, even after the original page closes", async () => {
+    const promise = waitForWorkdayLogin({ context, page });
+
+    const popup = context.addPage();
+    popup.emitNavigation("https://www.myworkday.com/lsu/d/home.htmld");
+    page.emitClose();
+
+    const result = await promise;
+
+    expect(result).toEqual({ status: "success", page: popup });
+    expectNoListeners();
+  });
+
+  it("resolves cancelled with page-closed only once every page, including popups, has closed", async () => {
+    const promise = waitForWorkdayLogin({ context, page });
+
+    const popup = context.addPage();
+    page.emitClose();
+    popup.emitClose();
+
+    const result = await promise;
+
+    expect(result).toEqual({ status: "cancelled", reason: "page-closed" });
+    expectNoListeners();
+  });
+
+  it("resolves success immediately if a different already-open page is already logged in", async () => {
+    const popup = context.addPage();
+    popup.emitNavigation("https://www.myworkday.com/lsu/d/home.htmld");
+
+    const result = await waitForWorkdayLogin({ context, page });
+
+    expect(result).toEqual({ status: "success", page: popup });
+    expectNoListeners();
+  });
+
+  it("checks a newly opened page immediately, without waiting for a navigation event", async () => {
+    const promise = waitForWorkdayLogin({ context, page });
+
+    const popup = context.addPage("https://www.myworkday.com/lsu/d/home.htmld");
+
+    const result = await promise;
+
+    expect(result).toEqual({ status: "success", page: popup });
+    expectNoListeners();
+  });
+
+  it("cleans up listeners on pages opened after the wait started, even when they never resolve it", async () => {
+    vi.useFakeTimers();
+    try {
+      const promise = waitForWorkdayLogin({ context, page }, { timeoutMs: 1000 });
+
+      const popup = context.addPage();
+
+      await vi.advanceTimersByTimeAsync(1000);
+
+      const result = await promise;
+
+      expect(result).toEqual({ status: "timeout" });
+      expect(popup.listenerCount("framenavigated")).toBe(0);
+      expect(popup.listenerCount("close")).toBe(0);
+      expectNoListeners();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("exports the expected default logged-in pattern", () => {

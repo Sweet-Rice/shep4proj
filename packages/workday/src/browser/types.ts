@@ -9,7 +9,7 @@ export type WorkdayBrowserChannel = "msedge" | "chrome";
 export type PageLikeEvent = "framenavigated" | "close";
 
 /** Events this module listens for on a `BrowserContextLike` (T-314 login detection). */
-export type BrowserContextLikeEvent = "close";
+export type BrowserContextLikeEvent = "close" | "page";
 
 export interface PageLike {
   goto(url: string): Promise<unknown>;
@@ -23,8 +23,11 @@ export interface BrowserContextLike {
   pages(): PageLike[];
   newPage(): Promise<PageLike>;
   close(): Promise<void>;
-  on(event: BrowserContextLikeEvent, listener: () => void): unknown;
-  off(event: BrowserContextLikeEvent, listener: () => void): unknown;
+  on(event: "close", listener: () => void): unknown;
+  /** Fires when the SSO/MFA flow opens a new tab or popup (T-314). */
+  on(event: "page", listener: (page: PageLike) => void): unknown;
+  off(event: "close", listener: () => void): unknown;
+  off(event: "page", listener: (page: PageLike) => void): unknown;
 }
 
 export interface BrowserTypeLike {
