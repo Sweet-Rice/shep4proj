@@ -68,4 +68,44 @@ change.
 
 ## Entries
 
-_(populated by T-311 — no endpoints are allowlisted yet)_
+### academic-record-get
+- Purpose: Reads the student's academic record — completed/in-progress term
+  coursework and transfer credit — the source of truth for completed
+  courses. Returned as JSON with a top-level `title`, `widget`, `body`, and
+  roughly 70 config keys; courses live in `widget:"grid"` objects labelled
+  "Enrollments" (column ids `90.x`: `90.2` Course, `90.5` Grade, `90.6`
+  Grade Points, `90.7` Credit Hours, `90.8` Earned Grade Points, `90.1` a row
+  descriptor that contains the student's name and ID) plus a Transfer
+  Credit grid (`601.x`). Parsed by `parseAcademicRecord` (T-312).
+- Method: GET
+- URL pattern: `https://www.myworkday.com/lsu/generic-hub/task/2998$30300.htmld?clientRequestID=<uuid>`
+- Required headers: `session-secure-token`, `x-workday-client`, `accept`,
+  `content-type`, `referer` (plus the session cookie, which
+  `page.evaluate(fetch)` sends automatically).
+- Fixture: `fixtures/workday/academic-record.synthetic.json` (added by T-312)
+- Notes:
+  - An equivalent body is also served at
+    `GET /lsu/generic-hub/page-context-id/<contextId>.htmld` — same shape,
+    different addressing. Both variants are allowlisted.
+  - Called by the Workday UI from `https://www.myworkday.com/lsu/d/task/2998$30300.htmld`,
+    which is only an HTML shell (~33 KB) — the actual data comes from the
+    `generic-hub` call above (~200 KB JSON).
+  - `session-secure-token` is session-bound and must never be recorded in a
+    fixture or log. The plan is for the app to read it from the page's own
+    session context — e.g. from the response of `GET /lsu/app-root`, which
+    carries `sessionSecureToken` — **to confirm in implementation** (T-312/T-315).
+
+### Observed but not allowlisted
+
+| Endpoint | Why not |
+| --- | --- |
+| `GET /lsu/task/2998$30300.htmld` (HUB_NAV) | Navigation-panel metadata for the Academics hub only; carries no course data, so there's nothing here worth the allowlist surface area. |
+| `GET /lsu/app-root` | Possibly needed to obtain `sessionSecureToken` for the academic-record call; not yet allowlisted pending confirmation in T-312/T-315 of how the session token is actually sourced. |
+| `GET /wday/sirg/protectedapi/asorInternal/v1/lsu/registration` | Registration-related; stays on the deny side per `SECURITY.md` — never allowlist. |
+
+## How this was captured
+
+Endpoints in this document come from a redacted DevTools capture performed
+by a human with an LSU login, run via `pnpm --filter @jevschedule/workday
+capture`. See the wiki's Workday-Capture-Guide for the full capture
+procedure.
