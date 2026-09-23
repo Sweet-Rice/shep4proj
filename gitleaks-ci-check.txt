@@ -1,0 +1,6 @@
+This file exists only to verify that the gitleaks CI step correctly
+fails when a committed file contains a token-shaped secret (T-018).
+This is NOT a real credential; it will never be used and this branch
+will be closed and deleted immediately after CI runs.
+
+FAKE_GITHUB_TOKEN=ghp_izQp2T6jvT6gOTGLDCtTfLx7PN0Ikv28woiF
