@@ -6,55 +6,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { NoSupportedBrowserError } from "./errors.js";
 import { launchWorkdayBrowser } from "./launch.js";
-import type { BrowserContextLike, BrowserTypeLike, PageLike } from "./types.js";
-
-function notInstalledError(channel: string): Error {
-  return new Error(`Chromium distribution '${channel}' is not found at /opt/${channel}`);
-}
-
-class FakePage implements PageLike {
-  readonly urls: string[] = [];
-
-  async goto(url: string): Promise<void> {
-    this.urls.push(url);
-  }
-}
-
-class FakeContext implements BrowserContextLike {
-  closed = false;
-  private readonly page = new FakePage();
-
-  pages(): PageLike[] {
-    return [this.page];
-  }
-
-  async newPage(): Promise<PageLike> {
-    return this.page;
-  }
-
-  async close(): Promise<void> {
-    this.closed = true;
-  }
-}
-
-/** Fake chromium that succeeds only for channels in `installed`. */
-function makeFakeChromium(installed: readonly string[]): {
-  chromium: BrowserTypeLike;
-  contexts: FakeContext[];
-} {
-  const contexts: FakeContext[] = [];
-  const chromium: BrowserTypeLike = {
-    async launchPersistentContext(_userDataDir, options) {
-      if (!installed.includes(options.channel)) {
-        throw notInstalledError(options.channel);
-      }
-      const context = new FakeContext();
-      contexts.push(context);
-      return context;
-    },
-  };
-  return { chromium, contexts };
-}
+import { FakePage, makeFakeChromium, pathExists } from "./test-support.js";
+import type { BrowserTypeLike } from "./types.js";
 
 let profileRoot: string;
 
@@ -129,12 +82,3 @@ describe("launchWorkdayBrowser", () => {
     expect(entries).toEqual([]);
   });
 });
-
-async function pathExists(target: string): Promise<boolean> {
-  try {
-    await fs.access(target);
-    return true;
-  } catch {
-    return false;
-  }
-}

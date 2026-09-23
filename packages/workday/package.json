@@ -13,10 +13,11 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "lint": "eslint src && prettier --check src",
+    "lint": "eslint src scripts && prettier --check src scripts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "format": "prettier --write src"
+    "format": "prettier --write src scripts",
+    "smoke:launch": "tsc -b && node scripts/smoke-launch.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",

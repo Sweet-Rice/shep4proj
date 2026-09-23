@@ -32,3 +32,15 @@ export function isBrowserNotInstalledError(error: unknown): boolean {
   }
   return /is not found|is not supported on|executable doesn't exist/i.test(error.message);
 }
+
+/**
+ * Playwright's BrowserContext.close() error shape when the context (or its
+ * underlying browser process) is already closed. Teardown tolerates this
+ * so it stays idempotent.
+ */
+export function isContextAlreadyClosedError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  return /closed/i.test(error.message);
+}
