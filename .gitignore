@@ -1,0 +1,11 @@
+node_modules
+dist
+out
+coverage
+*.tsbuildinfo
+*.har
+.env*
+!.env.example
+fixtures/**/raw/
+*.log
+.DS_Store
