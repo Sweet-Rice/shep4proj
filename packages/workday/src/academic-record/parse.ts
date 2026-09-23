@@ -141,6 +141,34 @@ function getNumericValue(cell: Cell | undefined): number | null {
   return typeof cell.value === "number" ? cell.value : null;
 }
 
+/**
+ * Workday appends a grid-total row to grids that have `hasSubtotal`/
+ * `subtotalRowCount` set (e.g. a "Total Credit Hours" row at the end of an
+ * Enrollments grid). It has no Course/Grade text, only numeric totals, and
+ * is not a course the student took — it must be skipped silently, not
+ * reported as an unrecognized row.
+ */
+function isSubtotalRow(
+  row: Row,
+  grid: { hasSubtotal?: boolean; subtotalRowCount?: number },
+  primaryColId: string | undefined,
+  numericColIds: (string | undefined)[],
+): boolean {
+  if (Array.isArray(row.subtotalColumnIds) && row.subtotalColumnIds.length > 0) {
+    return true;
+  }
+
+  const hasSubtotalFlag =
+    grid.hasSubtotal === true ||
+    (typeof grid.subtotalRowCount === "number" && grid.subtotalRowCount > 0);
+  if (!hasSubtotalFlag) return false;
+
+  const primaryText = primaryColId ? getInstanceText(row.cellsMap[primaryColId]) : undefined;
+  if (primaryText) return false;
+
+  return numericColIds.some((id) => id !== undefined && getNumericValue(row.cellsMap[id]) !== null);
+}
+
 interface ParsedCourseText {
   subject: string;
   number: string;
@@ -238,6 +266,10 @@ function processCourseworkGrid(
   const termFromPanel = termFromPanelStack(panelStack);
 
   for (const row of grid.rows) {
+    if (isSubtotalRow(row, grid, courseColId, [gradePointsColId, creditHoursColId])) {
+      continue;
+    }
+
     const courseCell = row.cellsMap[courseColId];
     const courseText = getInstanceText(courseCell);
     if (!courseText) {
@@ -299,6 +331,10 @@ function processTransferGrid(
   }
 
   for (const row of grid.rows) {
+    if (isSubtotalRow(row, grid, transferColId, [creditHoursColId])) {
+      continue;
+    }
+
     const transferCell = row.cellsMap[transferColId];
     const transferText = getInstanceText(transferCell);
     if (!transferText) {

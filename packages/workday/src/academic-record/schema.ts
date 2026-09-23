@@ -38,6 +38,12 @@ export const RowSchema = z
     id: z.unknown().optional(),
     rowIndex: z.number(),
     cellsMap: z.record(z.string(), CellSchema),
+    /**
+     * Present (non-empty) on Workday's own grid-total row, e.g. the last
+     * row of an Enrollments grid summing credit hours. Lists the numeric
+     * column ids the subtotal applies to; it has no Course/Grade text.
+     */
+    subtotalColumnIds: z.array(z.union([z.string(), z.number()])).optional(),
   })
   .passthrough();
 
@@ -58,6 +64,8 @@ export const GridSchema = z
     columns: z.array(ColumnSchema),
     rows: z.array(RowSchema),
     rowCount: z.number().optional(),
+    hasSubtotal: z.boolean().optional(),
+    subtotalRowCount: z.number().optional(),
   })
   .passthrough();
 
