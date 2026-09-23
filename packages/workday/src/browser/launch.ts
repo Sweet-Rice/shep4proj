@@ -17,6 +17,13 @@ export interface LaunchWorkdayBrowserOptions {
   chromium?: BrowserTypeLike;
   /** Parent directory for the temp profile dir; defaults to the OS temp dir. */
   profileRoot?: string;
+  /**
+   * Extra `launchPersistentContext` options passed through verbatim (e.g.
+   * `recordHar`). `headless` and `channel` are applied after these and
+   * always win, so this can't be used to change either. Used by T-311's
+   * capture script; not otherwise consumed here.
+   */
+  extraLaunchOptions?: Record<string, unknown>;
 }
 
 /**
@@ -44,6 +51,7 @@ export async function launchWorkdayBrowser(
   for (const channel of channels) {
     try {
       const context = await chromium.launchPersistentContext(profileDir, {
+        ...opts.extraLaunchOptions,
         headless: false,
         channel,
       });

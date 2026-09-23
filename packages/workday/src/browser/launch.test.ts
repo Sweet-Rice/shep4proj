@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { NoSupportedBrowserError } from "./errors.js";
 import { launchWorkdayBrowser } from "./launch.js";
 import { FakePage, makeFakeChromium, pathExists } from "./test-support.js";
-import type { BrowserTypeLike } from "./types.js";
+import type { BrowserContextLike, BrowserTypeLike } from "./types.js";
 
 let profileRoot: string;
 
@@ -80,5 +80,63 @@ describe("launchWorkdayBrowser", () => {
 
     const entries = await fs.readdir(profileRoot);
     expect(entries).toEqual([]);
+  });
+
+  it("passes extraLaunchOptions through to launchPersistentContext", async () => {
+    const seenOptions: unknown[] = [];
+    const fakeContext: BrowserContextLike = {
+      pages: () => [new FakePage()],
+      newPage: async () => new FakePage(),
+      close: async () => {},
+      on: () => {},
+      off: () => {},
+    };
+    const chromium: BrowserTypeLike = {
+      async launchPersistentContext(_userDataDir, options) {
+        seenOptions.push(options);
+        return fakeContext;
+      },
+    };
+
+    await launchWorkdayBrowser({
+      startUrl: "https://example.com/workday",
+      chromium,
+      profileRoot,
+      extraLaunchOptions: { recordHar: { path: "/tmp/x.har", content: "embed" } },
+    });
+
+    expect(seenOptions).toEqual([
+      {
+        recordHar: { path: "/tmp/x.har", content: "embed" },
+        headless: false,
+        channel: "msedge",
+      },
+    ]);
+  });
+
+  it("never lets extraLaunchOptions override headless or channel", async () => {
+    const seenOptions: unknown[] = [];
+    const fakeContext: BrowserContextLike = {
+      pages: () => [new FakePage()],
+      newPage: async () => new FakePage(),
+      close: async () => {},
+      on: () => {},
+      off: () => {},
+    };
+    const chromium: BrowserTypeLike = {
+      async launchPersistentContext(_userDataDir, options) {
+        seenOptions.push(options);
+        return fakeContext;
+      },
+    };
+
+    await launchWorkdayBrowser({
+      startUrl: "https://example.com/workday",
+      chromium,
+      profileRoot,
+      extraLaunchOptions: { headless: true, channel: "chrome" },
+    });
+
+    expect(seenOptions).toEqual([{ headless: false, channel: "msedge" }]);
   });
 });
