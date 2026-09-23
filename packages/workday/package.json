@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./academic-record": {
+      "types": "./dist/academic-record/index.d.ts",
+      "default": "./dist/academic-record/index.js"
     }
   },
   "scripts": {
@@ -20,7 +24,8 @@
     "smoke:launch": "tsc -b && node scripts/smoke-launch.ts",
     "smoke:login": "tsc -b && node scripts/smoke-login.ts",
     "redact:har": "node scripts/redact-har.ts",
-    "capture": "tsc -b && node scripts/capture-workday.ts"
+    "capture": "tsc -b && node scripts/capture-workday.ts",
+    "verify:record": "node scripts/verify-record.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
@@ -28,6 +33,7 @@
     "vitest": "^2.1.8"
   },
   "dependencies": {
-    "playwright-core": "^1.63.0"
+    "playwright-core": "^1.63.0",
+    "zod": "^3.24.1"
   }
 }
