@@ -2,11 +2,53 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 jobs:
-  pass:
+  ci:
     runs-on: ubuntu-latest
     steps:
-      - name: Pass
-        run: echo "CI passed"
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Needed so gitleaks can scan full history / the diff.
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm -r lint
+
+      # Build before typecheck: consumers (apps/server, apps/desktop) import
+      # @jevschedule/shared, and `tsc --noEmit` needs its built declaration
+      # files to resolve the workspace dependency.
+      - name: Build
+        run: pnpm -r build
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Test
+        run: pnpm -r test
+
+      # TODO(T-016): add a Postgres service container here for server
+      # integration tests (migrations + seed from fixtures + API routes).
+
+      - name: Scan for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build desktop app
+        run: pnpm --filter @jevschedule/desktop build
