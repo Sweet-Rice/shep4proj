@@ -29,7 +29,7 @@ const SUFFIX_LEN = 9;
  *    upper+lower+digit characters, 12+ characters long - the shape of an
  *    embedded auth/attachment token, not a dictionary-ish path word
  */
-function isIdOrTokenSegment(seg: string): boolean {
+export function isIdOrTokenSegment(seg: string): boolean {
   if (seg.length > 24) return true;
   if (/^[0-9a-f]{16,}$/i.test(seg)) return true;
   if (/^\d+$/.test(seg)) return true;
