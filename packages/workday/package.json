@@ -18,6 +18,7 @@
     "test": "vitest run",
     "format": "prettier --write src scripts",
     "smoke:launch": "tsc -b && node scripts/smoke-launch.ts",
+    "smoke:login": "tsc -b && node scripts/smoke-login.ts",
     "redact:har": "node scripts/redact-har.ts"
   },
   "devDependencies": {
