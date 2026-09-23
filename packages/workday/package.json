@@ -17,7 +17,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "format": "prettier --write src scripts",
-    "smoke:launch": "tsc -b && node scripts/smoke-launch.ts"
+    "smoke:launch": "tsc -b && node scripts/smoke-launch.ts",
+    "redact:har": "node scripts/redact-har.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
