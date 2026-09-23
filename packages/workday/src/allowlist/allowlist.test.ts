@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { ALLOWED_ENDPOINTS } from "./allowed-endpoints.js";
 import { assertAllowed } from "./assert-allowed.js";
 import { EndpointNotAllowedError } from "./errors.js";
 import { guardedFetch } from "./guarded-fetch.js";
@@ -69,6 +70,58 @@ describe("assertAllowed", () => {
       expect(message).not.toContain("super-secret-123");
       expect(message).not.toContain("studentId");
     }
+  });
+});
+
+describe("ALLOWED_ENDPOINTS: academic-record-get", () => {
+  it("allows the task/2998$30300.htmld variant with a clientRequestID query", () => {
+    expect(() =>
+      assertAllowed(
+        "GET",
+        "https://www.myworkday.com/lsu/generic-hub/task/2998$30300.htmld?clientRequestID=11111111-1111-4111-8111-111111111111",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).not.toThrow();
+  });
+
+  it("allows the page-context-id/<contextId>.htmld variant", () => {
+    expect(() =>
+      assertAllowed(
+        "GET",
+        "https://www.myworkday.com/lsu/generic-hub/page-context-id/abc123XYZ.htmld",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).not.toThrow();
+  });
+
+  it("rejects the hub-nav URL (/lsu/task/2998$30300.htmld) — no course data", () => {
+    expect(() =>
+      assertAllowed(
+        "GET",
+        "https://www.myworkday.com/lsu/task/2998$30300.htmld",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).toThrow(EndpointNotAllowedError);
+  });
+
+  it("rejects the registration API", () => {
+    expect(() =>
+      assertAllowed(
+        "GET",
+        "https://www.myworkday.com/wday/sirg/protectedapi/asorInternal/v1/lsu/registration",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).toThrow(EndpointNotAllowedError);
+  });
+
+  it("rejects POST to the academic-record URL", () => {
+    expect(() =>
+      assertAllowed(
+        "POST",
+        "https://www.myworkday.com/lsu/generic-hub/task/2998$30300.htmld",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).toThrow(EndpointNotAllowedError);
   });
 });
 
