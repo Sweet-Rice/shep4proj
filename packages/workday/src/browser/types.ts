@@ -33,7 +33,7 @@ export interface BrowserContextLike {
 export interface BrowserTypeLike {
   launchPersistentContext(
     userDataDir: string,
-    options: { headless: boolean; channel: string },
+    options: { headless: boolean; channel: string } & Record<string, unknown>,
   ): Promise<BrowserContextLike>;
 }
 

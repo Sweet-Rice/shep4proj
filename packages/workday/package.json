@@ -19,7 +19,8 @@
     "format": "prettier --write src scripts",
     "smoke:launch": "tsc -b && node scripts/smoke-launch.ts",
     "smoke:login": "tsc -b && node scripts/smoke-login.ts",
-    "redact:har": "node scripts/redact-har.ts"
+    "redact:har": "node scripts/redact-har.ts",
+    "capture": "tsc -b && node scripts/capture-workday.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
