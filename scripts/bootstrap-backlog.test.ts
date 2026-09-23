@@ -5,7 +5,7 @@ import { execSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { parsePlan, expandDepends } from "./bootstrap-backlog.ts";
+import { parsePlan, expandDepends, stripWikiLinksForTitle } from "./bootstrap-backlog.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
@@ -150,6 +150,33 @@ test(
     for (const t of m7Tasks) {
       assert.equal(t.stretch, true, `${t.id} should be stretch`);
     }
+  }
+);
+
+test("stripWikiLinksForTitle: strips [[Page]] syntax to plain text", () => {
+  assert.equal(
+    stripWikiLinksForTitle("Write the decision section of wiki [[Data-Sources]] and update M4/M5 issues"),
+    "Write the decision section of wiki Data-Sources and update M4/M5 issues"
+  );
+  assert.equal(stripWikiLinksForTitle("no links here"), "no links here");
+  assert.equal(
+    stripWikiLinksForTitle("[[Page One]] and [[Page Two]]"),
+    "Page One and Page Two"
+  );
+});
+
+test(
+  "T-005's parsed title has plain text, not [[wiki]] syntax (body still gets a link)",
+  { skip: !planExists },
+  () => {
+    const plan = parsePlan(readFileSync(PLAN_PATH, "utf8"));
+    const t005 = plan.tasks.find((t) => t.id === "T-005");
+    assert.ok(t005, "T-005 not found");
+    assert.ok(!t005!.title.includes("[["), `title should not contain [[ : ${t005!.title}`);
+    assert.equal(
+      t005!.title,
+      "T-005 Write the decision section of wiki Data-Sources and update M4/M5 issues accordingly"
+    );
   }
 );
 

@@ -101,6 +101,16 @@ export function convertWikiLinks(text: string, repo: string): string {
 }
 
 /**
+ * Strip [[Wiki Page]] syntax down to plain "Wiki Page" text. Issue titles
+ * carry no markdown links (GitHub renders titles as plain text), so wiki
+ * references there are just the page name -- unlike issue bodies, which get
+ * a real link via convertWikiLinks.
+ */
+export function stripWikiLinksForTitle(text: string): string {
+  return text.replace(/\[\[([^\]]+)\]\]/g, (_match, pageRaw: string) => pageRaw.trim());
+}
+
+/**
  * Parse the "User stories and tasks" section of the plan markdown.
  * Only milestones M0-M7 under that section are considered.
  */
@@ -169,7 +179,7 @@ export function parsePlan(markdown: string): ParsedPlan {
         key,
         number: Number(key.slice(1)),
         name,
-        title: `${key} ${name}`,
+        title: `${key} ${stripWikiLinksForTitle(name)}`,
         body: "",
       };
       milestones.push(currentMilestone);
@@ -187,7 +197,7 @@ export function parsePlan(markdown: string): ParsedPlan {
       currentStory = {
         id,
         rawTitle,
-        title: `${id} ${rawTitle}`,
+        title: `${id} ${stripWikiLinksForTitle(rawTitle)}`,
         milestoneKey: currentMilestone ? currentMilestone.key : "",
         stretch: Boolean(stretch),
         cardSection: "",
@@ -209,7 +219,7 @@ export function parsePlan(markdown: string): ParsedPlan {
       tasks.push({
         id,
         taskText,
-        title: `${id} ${taskText}`,
+        title: `${id} ${stripWikiLinksForTitle(taskText)}`,
         ownerRaw,
         est,
         dependsRaw,
@@ -380,7 +390,7 @@ function renderDependsText(
     return num ? `#${num}` : `${id} (not yet created)`;
   });
   if (dep.mode === "or") {
-    return numbered.map((n) => `Blocked by ${n}`).join(" **or** ");
+    return `Blocked by ${numbered.join(" **or** ")}`;
   }
   return numbered.map((n) => `Blocked by ${n}`).join(", ");
 }
@@ -697,8 +707,7 @@ async function main() {
         dep.ids.length === 0
           ? "None"
           : dep.mode === "or"
-          ? dep.ids.map((i) => `Blocked by ${i}`).join(" **or** ") +
-            " (issue numbers not resolved in dry-run)"
+          ? `Blocked by ${dep.ids.join(" **or** ")} (issue numbers not resolved in dry-run)`
           : dep.ids.map((i) => `Blocked by ${i}`).join(", ") +
             " (issue numbers not resolved in dry-run)";
       console.log(`\n--- ${t.title} ---`);
