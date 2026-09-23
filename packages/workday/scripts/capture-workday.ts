@@ -11,11 +11,16 @@
  *   1. Launches Edge/Chrome via `launchWorkdayBrowser`, recording a HAR of
  *      only `*.myworkday.com` traffic using Playwright's own `recordHar`
  *      (no manual response listeners needed — see `extraLaunchOptions` on
- *      `launchWorkdayBrowser`).
+ *      `launchWorkdayBrowser`). `recordHar` is attached at the *context*
+ *      level (not a specific page), so it keeps recording even if Duo MFA
+ *      closes or swaps the tab mid-login.
  *   2. Waits for the human to complete myLSU + Microsoft SSO + Duo
  *      (`waitForWorkdayLogin`), then automatically navigates to "View My
  *      Academic Record" (the source of truth — see wiki Data-Sources.md)
- *      and waits for the network to go idle.
+ *      and waits for the network to go idle. Uses whichever page the login
+ *      result reports (or, failing that, whatever's currently open in the
+ *      context) rather than assuming the original tab is still around —
+ *      see `resolveActivePage`.
  *   3. Lets the human click around further (e.g. expand a term) and press
  *      Enter when done, capped at 5 minutes.
  *   4. Tears down the browser (which flushes the HAR to
@@ -44,11 +49,10 @@ import {
   waitForWorkdayLogin,
   WORKDAY_TENANT_URL,
 } from "../dist/browser/index.js";
-// The redactor lives on T-311-capture-tooling (PR #128). It is imported
-// straight from source (matching that package's own `redact-har.ts` CLI
-// convention) rather than from `dist`, since it has no build step of its
-// own. If this import fails to resolve, PR #128 hasn't been merged into
-// this branch yet.
+import type { PageLike, WaitForWorkdayLoginResult } from "../dist/browser/index.js";
+// The redactor is imported straight from source (matching that package's
+// own `redact-har.ts` CLI convention) rather than from `dist`, since it has
+// no build step of its own.
 import { DEFAULT_HOSTS, redactHar, scanForLeftovers } from "../src/redact/index.ts";
 import type { Har, RedactedRequest } from "../src/redact/index.ts";
 import { shortPathSlug } from "../src/redact/safety.ts";
@@ -148,6 +152,26 @@ function hostAllowed(url: string, hosts: readonly string[]): boolean {
 
 function byteLen(text: string | null | undefined): number {
   return text ? Buffer.byteLength(text, "utf8") : 0;
+}
+
+/**
+ * `waitForWorkdayLogin`'s result type doesn't (yet, as of this writing)
+ * carry a `page` — but Duo MFA is known to close or swap the tab mid-flow
+ * (see T-314-follow-pages), so a fix there may start returning
+ * `{ status: "success", page }` for the page that actually matched. Coded
+ * defensively against both shapes: prefer `result.page` when present,
+ * otherwise fall back to whatever page is currently open in the context
+ * (not necessarily `session.page`, which may have been closed/replaced).
+ */
+function resolveActivePage(
+  session: { context: { pages(): PageLike[] }; page: PageLike },
+  loginResult: WaitForWorkdayLoginResult & { page?: PageLike },
+): PageLike {
+  if (loginResult.page) {
+    return loginResult.page;
+  }
+  const openPages = session.context.pages();
+  return openPages[openPages.length - 1] ?? session.page;
 }
 
 interface SummaryRow {
@@ -331,7 +355,8 @@ async function main(): Promise<void> {
       return;
     }
 
-    const page = session.page as unknown as Page;
+    const activePageLike = resolveActivePage(session, loginResult);
+    const page = activePageLike as unknown as Page;
     const navigatedAt = new Date();
     await page.goto(ACADEMIC_RECORD_URL, { waitUntil: "networkidle" });
     await page.waitForTimeout(3000);
