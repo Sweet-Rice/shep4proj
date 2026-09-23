@@ -1,11 +1,22 @@
 #!/usr/bin/env node
 /**
- * One-command Workday traffic capture (T-311, issue #79).
+ * One-command Workday traffic capture (T-311, issue #79; extended for
+ * current-term registrations in T-320, issue #136).
  *
  * Replaces the manual "open DevTools, save a HAR by hand" workflow in the
  * wiki's Workday-Capture-Guide with a single command:
  *
  *   pnpm --filter @jevschedule/workday capture --pii "Your Name,YourID,you@lsu.edu"
+ *
+ * Optional flags:
+ *   --task-url <url>   After the academic record, also navigate to this
+ *                       task page and let it load before the final prompt.
+ *                       For once the "View My Courses" (or another)
+ *                       endpoint is known and we want to drive straight to
+ *                       it instead of relying on the human to search for
+ *                       it by hand. Omit it (the default) when the
+ *                       endpoint is still unknown, per ENDPOINTS.md
+ *                       "Pending capture" - never guess the URL.
  *
  * What it does:
  *   1. Launches Edge/Chrome via `launchWorkdayBrowser`, recording a HAR of
@@ -20,9 +31,12 @@
  *      and waits for the network to go idle. Uses whichever page the login
  *      result reports (or, failing that, whatever's currently open in the
  *      context) rather than assuming the original tab is still around —
- *      see `resolveActivePage`.
- *   3. Lets the human click around further (e.g. expand a term) and press
- *      Enter when done, capped at 5 minutes.
+ *      see `resolveActivePage`. If `--task-url` was given, also navigates
+ *      there next.
+ *   3. Prompts the human to open "View My Courses" by hand (type it into
+ *      the Workday search bar, pick the task, wait for current courses to
+ *      show) and press Enter when done, capped at 5 minutes. This is the
+ *      single Enter wait for the whole capture.
  *   4. Tears down the browser (which flushes the HAR to
  *      `fixtures/workday/raw/<timestamp>.har` — git-ignored; this script
  *      refuses to run if that ever stops being true).
@@ -72,10 +86,18 @@ const ENTER_WAIT_CAP_MS = 5 * 60 * 1000;
 
 interface CliArgs {
   pii: string[];
+  /**
+   * Extra task page to navigate to after the academic record, for when the
+   * "View My Courses" (or another) endpoint's URL is known and we want the
+   * script to drive straight to it instead of relying on the human to type
+   * it into the Workday search bar (T-320).
+   */
+  taskUrl: string | undefined;
 }
 
 function parseArgs(argv: string[]): CliArgs {
   const pii: string[] = [];
+  let taskUrl: string | undefined;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--pii") {
@@ -84,11 +106,16 @@ function parseArgs(argv: string[]): CliArgs {
         const trimmed = p.trim();
         if (trimmed) pii.push(trimmed);
       }
+    } else if (arg === "--task-url") {
+      taskUrl = argv[++i];
+      if (!taskUrl) {
+        throw new Error("--task-url requires a value");
+      }
     } else {
       throw new Error(`Unknown argument: ${arg}`);
     }
   }
-  return { pii };
+  return { pii, taskUrl };
 }
 
 function repoRoot(): string {
@@ -399,7 +426,22 @@ async function main(): Promise<void> {
     await page.goto(ACADEMIC_RECORD_URL, { waitUntil: "networkidle" });
     await page.waitForTimeout(3000);
 
-    console.log("Captured. You can also click around (e.g. expand a term); press Enter when done.");
+    if (args.taskUrl) {
+      console.log(`Navigating to extra task page: ${args.taskUrl}`);
+      await page.goto(args.taskUrl, { waitUntil: "networkidle" });
+      await page.waitForTimeout(3000);
+    }
+
+    // T-320: the academic record only lists graded enrollments, not
+    // current-term registrations. "View My Courses" is the likely source
+    // for those, but its endpoint is unknown and must not be guessed (see
+    // ENDPOINTS.md "Pending capture") - so we ask the human to drive to it
+    // by hand rather than navigating there ourselves. This is the single
+    // Enter wait for the whole capture; nothing after it waits again.
+    console.log(
+      "Now open View My Courses: type it in the Workday search bar, pick the task, and " +
+        "wait until your current courses show. Press Enter when done.",
+    );
     await waitForEnter(ENTER_WAIT_CAP_MS);
 
     await teardownWorkdayBrowser(session);
