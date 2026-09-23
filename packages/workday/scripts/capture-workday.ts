@@ -182,8 +182,9 @@ interface SummaryRow {
   mimeType: string;
   bytes: number;
   leftoverHits: number;
-  classification: ResponseClass;
+  classification: ResponseClass | "write-error";
   likelyAcademicRecord: boolean;
+  writeError?: string;
 }
 
 function printSummary(rows: SummaryRow[]): void {
@@ -196,6 +197,7 @@ function printSummary(rows: SummaryRow[]): void {
     "bytes",
     "leftover hits",
     "class",
+    "write error",
   ];
   const cellsFor = (r: SummaryRow): string[] => [
     r.likelyAcademicRecord ? `* ${r.file}` : r.file,
@@ -206,10 +208,11 @@ function printSummary(rows: SummaryRow[]): void {
     String(r.bytes),
     String(r.leftoverHits),
     r.classification,
+    r.writeError ?? "",
   ];
   const rowsCells = rows.map(cellsFor);
   const widths = headers.map((h, i) => Math.max(h.length, ...rowsCells.map((c) => c[i]!.length)));
-  const fmt = (cells: string[]): string => cells.map((c, i) => c[i]!.padEnd(widths[i]!)).join("  ");
+  const fmt = (cells: string[]): string => cells.map((c, i) => c.padEnd(widths[i]!)).join("  ");
   console.log(fmt(headers));
   console.log(fmt(widths.map((w) => "-".repeat(w))));
   for (const cells of rowsCells) {
@@ -263,6 +266,8 @@ async function redactCapture(opts: {
 
   const rows: SummaryRow[] = [];
   let anyLeftovers = false;
+  let anyWriteErrors = false;
+  let written = 0;
 
   for (const { entry, idx, classification, urlPath, bytes } of analyzed) {
     const nn = String(idx + 1).padStart(2, "0");
@@ -271,7 +276,30 @@ async function redactCapture(opts: {
     const filePath = path.join(redactedDir, fileName);
 
     const serialized = JSON.stringify(entry, null, 2);
-    writeFileSync(filePath, serialized + "\n", "utf8");
+
+    // A per-file write failure (filesystem limit, permissions, disk full)
+    // must not abort the whole capture - report it in the summary table
+    // and keep going so the rest of the capture is still redacted.
+    try {
+      writeFileSync(filePath, serialized + "\n", "utf8");
+      written++;
+    } catch (err) {
+      anyWriteErrors = true;
+      const message = err instanceof Error ? err.message : String(err);
+      rows.push({
+        file: fileName,
+        method: entry.method,
+        urlPath,
+        status: entry.status,
+        mimeType: entry.mimeType ?? "",
+        bytes,
+        leftoverHits: 0,
+        classification: "write-error",
+        likelyAcademicRecord: false,
+        writeError: message,
+      });
+      continue;
+    }
 
     const hits = scanForLeftovers(serialized, pii);
     if (hits.length > 0) anyLeftovers = true;
@@ -299,9 +327,15 @@ async function redactCapture(opts: {
 
   printSummary(rows);
   console.log(
-    `\nWrote ${redacted.length} redacted request(s) to ${path.relative(root, redactedDir)} ` +
+    `\nWrote ${written} of ${redacted.length} redacted request(s) to ${path.relative(root, redactedDir)} ` +
       `(input: ${path.basename(rawPath)}).`,
   );
+
+  if (anyWriteErrors) {
+    console.error(
+      "\nOne or more files failed to write - see the write error column above. The rest of the run still completed.",
+    );
+  }
 
   if (likely) {
     console.log(
@@ -317,6 +351,10 @@ async function redactCapture(opts: {
     console.error(
       "\nLeftover scan found possible PII/tokens still present. Review the files above before committing.",
     );
+    process.exitCode = 1;
+  }
+
+  if (anyWriteErrors) {
     process.exitCode = 1;
   }
 }

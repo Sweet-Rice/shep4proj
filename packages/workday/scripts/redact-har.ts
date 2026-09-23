@@ -88,18 +88,25 @@ interface SummaryRow {
   urlPath: string;
   status: number;
   leftoverHits: number;
+  writeError?: string;
 }
 
 function printSummary(rows: SummaryRow[]): void {
-  const headers = ["file", "url path", "status", "leftover hits"];
-  const widths = headers.map((h, i) =>
-    Math.max(h.length, ...rows.map((r) => String(Object.values(r)[i]).length)),
-  );
-  const fmt = (cells: string[]): string => cells.map((c, i) => c.padEnd(widths[i])).join("  ");
+  const headers = ["file", "url path", "status", "leftover hits", "write error"];
+  const cellsFor = (r: SummaryRow): string[] => [
+    r.file,
+    r.urlPath,
+    String(r.status),
+    String(r.leftoverHits),
+    r.writeError ?? "",
+  ];
+  const rowsCells = rows.map(cellsFor);
+  const widths = headers.map((h, i) => Math.max(h.length, ...rowsCells.map((c) => c[i]!.length)));
+  const fmt = (cells: string[]): string => cells.map((c, i) => c.padEnd(widths[i]!)).join("  ");
   console.log(fmt(headers));
   console.log(fmt(widths.map((w) => "-".repeat(w))));
-  for (const r of rows) {
-    console.log(fmt([r.file, r.urlPath, String(r.status), String(r.leftoverHits)]));
+  for (const cells of rowsCells) {
+    console.log(fmt(cells));
   }
 }
 
@@ -136,6 +143,8 @@ export function main(): void {
 
   const rows: SummaryRow[] = [];
   let anyLeftovers = false;
+  let anyWriteErrors = false;
+  let written = 0;
 
   redacted.forEach((entry, idx) => {
     const nn = String(idx + 1).padStart(2, "0");
@@ -143,18 +152,37 @@ export function main(): void {
     const fileName = `${nn}-${entry.method.toLowerCase()}-${slug}.json`;
     const filePath = resolve(outAbs, fileName);
 
-    const serialized = JSON.stringify(entry, null, 2);
-    writeFileSync(filePath, serialized + "\n", "utf8");
-
-    const hits = scanForLeftovers(serialized, args.pii);
-    if (hits.length > 0) anyLeftovers = true;
-
     let urlPath: string;
     try {
       urlPath = new URL(entry.url).pathname;
     } catch {
       urlPath = entry.url;
     }
+
+    const serialized = JSON.stringify(entry, null, 2);
+
+    // A write failure for one entry (e.g. a filesystem limit even after
+    // slug shortening, permissions, disk full) must not abort the whole
+    // run - report it in the summary and keep going so the rest of the
+    // capture is still redacted and written.
+    try {
+      writeFileSync(filePath, serialized + "\n", "utf8");
+      written++;
+    } catch (err) {
+      anyWriteErrors = true;
+      const message = err instanceof Error ? err.message : String(err);
+      rows.push({
+        file: fileName,
+        urlPath,
+        status: entry.status,
+        leftoverHits: 0,
+        writeError: message,
+      });
+      return;
+    }
+
+    const hits = scanForLeftovers(serialized, args.pii);
+    if (hits.length > 0) anyLeftovers = true;
 
     rows.push({
       file: fileName,
@@ -166,13 +194,22 @@ export function main(): void {
 
   printSummary(rows);
   console.log(
-    `\nWrote ${redacted.length} redacted request(s) to ${args.out} (input: ${basename(args.in)}).`,
+    `\nWrote ${written} of ${redacted.length} redacted request(s) to ${args.out} (input: ${basename(args.in)}).`,
   );
+
+  if (anyWriteErrors) {
+    console.error(
+      "\nOne or more files failed to write - see the write error column above. The rest of the run still completed.",
+    );
+  }
 
   if (anyLeftovers) {
     console.error(
       "\nLeftover scan found possible PII/tokens still present. Review the files above before committing.",
     );
+  }
+
+  if (anyWriteErrors || anyLeftovers) {
     process.exit(1);
   }
 }

@@ -55,11 +55,40 @@ export function redactFreeText(text: string, piiList: string[]): string {
   return out;
 }
 
-/** JSON object keys whose *string* values should be faked outright. */
-const SENSITIVE_KEY_REGEX = /name|email|phone|address|birth|dob|ssn|id$|studentid|emplid/i;
+/** JSON object keys whose *string* values should be faked outright (non-name categories). */
+const OTHER_SENSITIVE_KEY_REGEX = /email|phone|address|birth|dob|ssn|id$|studentid|emplid/i;
 
-/** Keys that must never be faked even if they match SENSITIVE_KEY_REGEX. */
+/**
+ * Keys that unambiguously carry a real person's name, regardless of what
+ * the value looks like - faked outright.
+ */
+const PERSON_NAME_KEY_REGEX =
+  /(?:fullname|preferredname|legalname|studentname|displayname|firstname|lastname)$/i;
+
+/**
+ * Keys that look name-ish but are actually UI/navigation labels (Workday
+ * task/hub titles, widget labels, etc.), not person names. Never faked as
+ * names, even though they match /name/ or /id$/ superficially.
+ */
+const NON_PERSON_LABEL_KEY_REGEX = /taskname|hubname|widget|label|title/i;
+
+/** Keys that must never be faked even if they match the other regexes above. */
 const DENY_KEY_REGEX = /course|section|term|grade|credit/i;
+
+/** True if `value` looks like a person's name: 2-4 capitalized words. */
+function looksLikePersonName(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  const words = trimmed.split(/\s+/);
+  if (words.length < 2 || words.length > 4) return false;
+  return words.every((w) => /^[A-Z][A-Za-z'.-]*$/.test(w));
+}
+
+/** True if `value` case-insensitively matches one of the user-supplied --pii entries. */
+function matchesPiiList(value: string, piiList: string[]): boolean {
+  const v = value.trim().toLowerCase();
+  return piiList.some((p) => p.trim().toLowerCase() === v);
+}
 
 function fakeForKey(key: string, value: string): string {
   const k = key.toLowerCase();
@@ -73,9 +102,26 @@ function fakeForKey(key: string, value: string): string {
   return fakeForShape(value);
 }
 
-function shouldFakeKey(key: string): boolean {
+/**
+ * Decide whether a JSON key's string value should be faked outright.
+ *
+ * "name"-shaped keys need care: `taskName`, `hubName`, `widget`, `label`,
+ * and `title` hold Workday UI/navigation copy (e.g. a menu label), not
+ * personal data, and must never be faked. Real person-name keys (fullName,
+ * preferredName, legalName, studentName, displayName, firstName, lastName)
+ * always get faked. A plain `name` key is ambiguous, so it's only faked
+ * when the value both looks like a person name (2-4 capitalized words) and
+ * matches an entry in the user-supplied --pii list - when unsure, this
+ * leaves generic labels alone.
+ */
+function shouldFakeKey(key: string, value: string, piiList: string[]): boolean {
   if (DENY_KEY_REGEX.test(key)) return false;
-  return SENSITIVE_KEY_REGEX.test(key);
+  if (NON_PERSON_LABEL_KEY_REGEX.test(key)) return false;
+  if (PERSON_NAME_KEY_REGEX.test(key)) return true;
+  if (/^name$/i.test(key.trim())) {
+    return looksLikePersonName(value) && matchesPiiList(value, piiList);
+  }
+  return OTHER_SENSITIVE_KEY_REGEX.test(key);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -83,7 +129,7 @@ type JsonValue = any;
 
 function redactJsonValue(value: JsonValue, key: string | null, piiList: string[]): JsonValue {
   if (typeof value === "string") {
-    if (key && shouldFakeKey(key) && !looksLikeCourseCode(value)) {
+    if (key && shouldFakeKey(key, value, piiList) && !looksLikeCourseCode(value)) {
       return fakeForKey(key, value);
     }
     return redactFreeText(value, piiList);
