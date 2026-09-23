@@ -37,6 +37,24 @@ for the full plan, architecture, and backlog.
 
 Other useful root scripts: `pnpm lint`, `pnpm typecheck`, `pnpm format`.
 
+### Windows (PowerShell)
+
+```powershell
+winget install Schniz.fnm
+fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression   # also add this line to $PROFILE
+fnm install 24; fnm use 24
+corepack enable
+git clone https://github.com/Sweet-Rice/shep4proj.git; cd shep4proj
+pnpm install; pnpm -r build; pnpm -r test
+```
+
+- Line endings are forced to LF by `.gitattributes`, so `prettier --check` passes on Windows checkouts. If you cloned before that file existed, run `git rm --cached -r . ; git reset --hard` once.
+- The Workday scripts use Microsoft Edge (preinstalled on Windows) first and fall back to Chrome. Nothing extra is needed.
+- Workday tooling (log in yourself when the browser opens):
+  - `pnpm --filter @jevschedule/workday smoke:login` checks login detection (T-314).
+  - `pnpm --filter @jevschedule/workday capture` captures the academic record into `fixtures/workday/raw/` (git-ignored).
+  - `pnpm --filter @jevschedule/workday verify:record` parses the newest capture and prints only course codes and counts.
+
 ## Documentation
 
 Project plan, architecture, backlog, and data-handling notes live on the

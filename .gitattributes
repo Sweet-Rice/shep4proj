@@ -1,0 +1,7 @@
+# Keep LF everywhere so Prettier/ESLint pass on Windows checkouts.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.pdf binary
+*.har binary
