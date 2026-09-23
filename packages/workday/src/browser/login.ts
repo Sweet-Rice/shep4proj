@@ -28,24 +28,36 @@ export interface WaitForWorkdayLoginOptions {
 }
 
 export type WaitForWorkdayLoginResult =
-  | { status: "success" }
+  | { status: "success"; page: PageLike }
   | { status: "cancelled"; reason: "page-closed" | "context-closed" | "aborted" }
   | { status: "timeout" };
 
 /**
  * Waits for the student to finish the myLSU → Microsoft SSO/Duo → Workday
- * login flow in `session.page`, detected by the main-frame URL matching
- * `loggedInPattern` (default: any `/lsu/d/...` page).
+ * login flow, detected by the main-frame URL of any open page in `context`
+ * matching `loggedInPattern` (default: any `/lsu/d/...` page).
+ *
+ * Microsoft SSO + Duo frequently swaps the page out from under us: Duo can
+ * close the tab it started in and finish in a new one, or open the flow in a
+ * popup and close the original tab once it's done. So rather than watching
+ * only `session.page`, this watches the whole persistent `context` — every
+ * currently-open page, plus any page opened later (`context.on("page", …)`)
+ * — and checks each one's URL on navigation and as soon as it appears.
  *
  * Resolves — never rejects — with one of:
- * - `{ status: "success" }` once the URL matches after a navigation settles.
- * - `{ status: "cancelled", reason }` if the page or browser window is
- *   closed, or `signal` is aborted, before that happens.
+ * - `{ status: "success", page }` once some page's URL matches, naming which
+ *   page is now logged in (it may not be `session.page`).
+ * - `{ status: "cancelled", reason: "page-closed" }` only once every page in
+ *   the context has closed — a single closed page (the SSO tab, a popup)
+ *   with others still open just keeps the wait going.
+ * - `{ status: "cancelled", reason: "context-closed" }` if the browser
+ *   window itself is closed, or `"aborted"` if `signal` fires — before
+ *   login completes.
  * - `{ status: "timeout" }` if none of the above happens within `timeoutMs`
  *   (default 5 minutes).
  *
- * Every listener and timer registered here is removed before resolving, on
- * every path.
+ * Every listener and timer registered here — including on pages opened after
+ * the wait started — is removed before resolving, on every path.
  *
  * See SECURITY.md: this never logs the page URL or content, since the SSO
  * redirect chain can carry tokens in the query string or fragment.
@@ -56,25 +68,56 @@ export function waitForWorkdayLogin(
 ): Promise<WaitForWorkdayLoginResult> {
   const pattern = opts.loggedInPattern ?? DEFAULT_LOGGED_IN_PATTERN;
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const { context, page } = session;
+  const { context } = session;
   const signal = opts.signal;
 
   return new Promise<WaitForWorkdayLoginResult>((resolve) => {
     let settled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    const navListeners = new Map<PageLike, () => void>();
+    const closeListeners = new Map<PageLike, () => void>();
 
-    const onNavigated = (): void => checkCurrentUrl();
-    const onPageClosed = (): void => finish({ status: "cancelled", reason: "page-closed" });
     const onContextClosed = (): void => finish({ status: "cancelled", reason: "context-closed" });
     const onAbort = (): void => finish({ status: "cancelled", reason: "aborted" });
+    const onNewPage = (newPage: PageLike): void => {
+      watchPage(newPage);
+      checkPage(newPage);
+    };
+
+    function watchPage(target: PageLike): void {
+      if (navListeners.has(target)) {
+        return;
+      }
+      const onNavigated = (): void => void checkPage(target);
+      const onClosed = (): void => handlePageClosed(target);
+      navListeners.set(target, onNavigated);
+      closeListeners.set(target, onClosed);
+      target.on("framenavigated", onNavigated);
+      target.on("close", onClosed);
+    }
+
+    function unwatchPage(target: PageLike): void {
+      const onNavigated = navListeners.get(target);
+      const onClosed = closeListeners.get(target);
+      if (onNavigated) {
+        target.off("framenavigated", onNavigated);
+      }
+      if (onClosed) {
+        target.off("close", onClosed);
+      }
+      navListeners.delete(target);
+      closeListeners.delete(target);
+    }
 
     function cleanup(): void {
       if (timer !== undefined) {
         clearTimeout(timer);
         timer = undefined;
       }
-      page.off("framenavigated", onNavigated);
-      page.off("close", onPageClosed);
+      for (const target of [...navListeners.keys()]) {
+        unwatchPage(target);
+      }
+      context.off("page", onNewPage);
       context.off("close", onContextClosed);
       signal?.removeEventListener("abort", onAbort);
     }
@@ -88,17 +131,46 @@ export function waitForWorkdayLogin(
       resolve(result);
     }
 
-    function checkCurrentUrl(): void {
+    function handlePageClosed(target: PageLike): void {
+      unwatchPage(target);
+      let remaining: PageLike[];
+      try {
+        remaining = context.pages();
+      } catch {
+        remaining = [];
+      }
+      if (remaining.length === 0) {
+        finish({ status: "cancelled", reason: "page-closed" });
+      }
+    }
+
+    function checkPage(target: PageLike): boolean {
       let url: string;
       try {
-        url = page.url();
+        url = target.url();
       } catch {
         // Page may already be mid-teardown; a close event (if any) will
-        // resolve this promise instead.
-        return;
+        // handle it instead.
+        return false;
       }
       if (pattern.test(url)) {
-        finish({ status: "success" });
+        finish({ status: "success", page: target });
+        return true;
+      }
+      return false;
+    }
+
+    function checkOpenPages(): void {
+      let openPages: PageLike[];
+      try {
+        openPages = context.pages();
+      } catch {
+        return;
+      }
+      for (const target of openPages) {
+        if (checkPage(target)) {
+          return;
+        }
       }
     }
 
@@ -107,15 +179,21 @@ export function waitForWorkdayLogin(
       return;
     }
 
-    page.on("framenavigated", onNavigated);
-    page.on("close", onPageClosed);
+    context.on("page", onNewPage);
     context.on("close", onContextClosed);
     signal?.addEventListener("abort", onAbort);
 
+    for (const target of context.pages()) {
+      watchPage(target);
+    }
+    // Defensive: watch the caller-supplied page even if it's somehow not
+    // (yet) reflected in `context.pages()`.
+    watchPage(session.page);
+
     timer = setTimeout(() => finish({ status: "timeout" }), timeoutMs);
 
-    // Handle the case where the session is already logged in before this
+    // Handle the case where some open page is already logged in before this
     // function is called (e.g. a resumed/reused profile).
-    checkCurrentUrl();
+    checkOpenPages();
   });
 }

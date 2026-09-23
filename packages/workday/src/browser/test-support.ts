@@ -16,8 +16,13 @@ export function notInstalledError(channel: string): Error {
 
 export class FakePage implements PageLike {
   readonly urls: string[] = [];
-  private currentUrl = "about:blank";
+  private currentUrl: string;
   private readonly listeners = new Map<PageLikeEvent, Set<() => void>>();
+  closed = false;
+
+  constructor(initialUrl = "about:blank") {
+    this.currentUrl = initialUrl;
+  }
 
   async goto(url: string): Promise<void> {
     this.urls.push(url);
@@ -53,6 +58,7 @@ export class FakePage implements PageLike {
 
   /** Test helper: simulate the page/window being closed. */
   emitClose(): void {
+    this.closed = true;
     for (const listener of [...(this.listeners.get("close") ?? [])]) {
       listener();
     }
@@ -61,15 +67,33 @@ export class FakePage implements PageLike {
 
 export class FakeContext implements BrowserContextLike {
   closed = false;
-  private readonly page = new FakePage();
-  private readonly listeners = new Map<BrowserContextLikeEvent, Set<() => void>>();
+  private readonly pageList: FakePage[] = [new FakePage()];
+  private readonly listeners = new Map<
+    BrowserContextLikeEvent,
+    Set<(...args: PageLike[]) => void>
+  >();
 
   pages(): PageLike[] {
-    return [this.page];
+    return this.pageList.filter((page) => !page.closed);
   }
 
   async newPage(): Promise<PageLike> {
-    return this.page;
+    return this.addPage();
+  }
+
+  /**
+   * Test helper: simulate the SSO/MFA flow opening a new tab or popup in
+   * this context, firing the "page" event. `initialUrl` simulates a page
+   * that already has its main-frame URL set the instant it appears (rather
+   * than only after a later `emitNavigation`).
+   */
+  addPage(initialUrl?: string): FakePage {
+    const page = new FakePage(initialUrl);
+    this.pageList.push(page);
+    for (const listener of [...(this.listeners.get("page") ?? [])]) {
+      listener(page);
+    }
+    return page;
   }
 
   async close(): Promise<void> {
@@ -79,14 +103,14 @@ export class FakeContext implements BrowserContextLike {
     this.closed = true;
   }
 
-  on(event: BrowserContextLikeEvent, listener: () => void): void {
+  on(event: BrowserContextLikeEvent, listener: (...args: PageLike[]) => void): void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
     this.listeners.get(event)?.add(listener);
   }
 
-  off(event: BrowserContextLikeEvent, listener: () => void): void {
+  off(event: BrowserContextLikeEvent, listener: (...args: PageLike[]) => void): void {
     this.listeners.get(event)?.delete(listener);
   }
 
