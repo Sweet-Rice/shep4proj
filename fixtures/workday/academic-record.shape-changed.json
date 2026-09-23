@@ -37,6 +37,8 @@
                             "label": "Enrollments",
                             "gridId": "grid-Fall-Semester-2021",
                             "rowCount": 2,
+                            "hasSubtotal": true,
+                            "subtotalRowCount": 1,
                             "columns": [
                               {
                                 "columnId": "90.1",
@@ -82,7 +84,7 @@
                                   "widget": "gridCell",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-6domy6",
+                                      "instanceId": "inst-ixhsav",
                                       "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - MATH 1550 - Analytic Geometry and Calculus I - Fall Semester 2021 (08/23/2021-12/10/2021)",
                                       "v": 1,
                                       "pv": 1,
@@ -96,7 +98,7 @@
                                   "label": "Course",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-3mbyda",
+                                      "instanceId": "inst-txgidy",
                                       "text": "MATH 1550 - Analytic Geometry and Calculus I",
                                       "v": 1,
                                       "pv": 1,
@@ -110,7 +112,7 @@
                                   "label": "Grade",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-nmw23d",
+                                      "instanceId": "inst-gq31ig",
                                       "text": "A",
                                       "v": 1,
                                       "pv": 1,
@@ -153,7 +155,7 @@
                                   "widget": "gridCell",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-6domy6",
+                                      "instanceId": "inst-ixhsav",
                                       "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - MATH 1550 - Analytic Geometry and Calculus I - Fall Semester 2021 (08/23/2021-12/10/2021)",
                                       "v": 1,
                                       "pv": 1,
@@ -167,7 +169,7 @@
                                   "label": "Course",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-3mbyda",
+                                      "instanceId": "inst-txgidy",
                                       "text": "MATH 1550 - Analytic Geometry and Calculus I",
                                       "v": 1,
                                       "pv": 1,
@@ -181,7 +183,7 @@
                                   "label": "Grade",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-nmw23d",
+                                      "instanceId": "inst-gq31ig",
                                       "text": "A",
                                       "v": 1,
                                       "pv": 1,
@@ -225,7 +227,7 @@
                                     "widget": "gridCell",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-6domy6",
+                                        "instanceId": "inst-ixhsav",
                                         "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - MATH 1550 - Analytic Geometry and Calculus I - Fall Semester 2021 (08/23/2021-12/10/2021)",
                                         "v": 1,
                                         "pv": 1,
@@ -239,7 +241,7 @@
                                     "label": "Course",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-3mbyda",
+                                        "instanceId": "inst-txgidy",
                                         "text": "MATH 1550 - Analytic Geometry and Calculus I",
                                         "v": 1,
                                         "pv": 1,
@@ -253,7 +255,7 @@
                                     "label": "Grade",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-nmw23d",
+                                        "instanceId": "inst-gq31ig",
                                         "text": "A",
                                         "v": 1,
                                         "pv": 1,
@@ -296,7 +298,7 @@
                                     "widget": "gridCell",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-ghsqxc",
+                                        "instanceId": "inst-afrhug",
                                         "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 4999G - Special Topics in Computer Science - Fall Semester 2021 (08/23/2021-12/10/2021)",
                                         "v": 1,
                                         "pv": 1,
@@ -310,7 +312,7 @@
                                     "label": "Course",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-7l8yli",
+                                        "instanceId": "inst-ru1d3o",
                                         "text": "CSC 4999G - Special Topics in Computer Science",
                                         "v": 1,
                                         "pv": 1,
@@ -324,7 +326,7 @@
                                     "label": "Grade",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-ohzg7i",
+                                        "instanceId": "inst-7smjqr",
                                         "text": "F",
                                         "v": 1,
                                         "pv": 1,
@@ -358,6 +360,32 @@
                                     "precision": 2
                                   }
                                 }
+                              },
+                              {
+                                "id": "row-2-subtotal",
+                                "rowIndex": 2,
+                                "subtotalColumnIds": [
+                                  "90.6",
+                                  "90.7"
+                                ],
+                                "cellsMap": {
+                                  "90.6": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Grade Points",
+                                    "text": "16.00",
+                                    "value": 16,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.7": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Credit Hours",
+                                    "text": "7.00",
+                                    "value": 7,
+                                    "format": "n2",
+                                    "precision": 2
+                                  }
+                                }
                               }
                             ]
                           }
@@ -378,6 +406,8 @@
                             "label": "Enrollments",
                             "gridId": "grid-Fall-Semester-2024",
                             "rowCount": 2,
+                            "hasSubtotal": true,
+                            "subtotalRowCount": 1,
                             "columns": [
                               {
                                 "columnId": "90.1",
@@ -423,7 +453,7 @@
                                   "widget": "gridCell",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-9vakfl",
+                                      "instanceId": "inst-bm4d24",
                                       "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 1350 - Data Structures - Fall Semester 2024 (08/21/2024-12/13/2024)",
                                       "v": 1,
                                       "pv": 1,
@@ -437,7 +467,7 @@
                                   "label": "Course",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-ufmypa",
+                                      "instanceId": "inst-l68pvy",
                                       "text": "CSC 1350 - Data Structures",
                                       "v": 1,
                                       "pv": 1,
@@ -451,7 +481,7 @@
                                   "label": "Grade",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-59y1sn",
+                                      "instanceId": "inst-a3svhd",
                                       "text": "A",
                                       "v": 1,
                                       "pv": 1,
@@ -494,7 +524,7 @@
                                   "widget": "gridCell",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-9vakfl",
+                                      "instanceId": "inst-bm4d24",
                                       "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 1350 - Data Structures - Fall Semester 2024 (08/21/2024-12/13/2024)",
                                       "v": 1,
                                       "pv": 1,
@@ -508,7 +538,7 @@
                                   "label": "Course",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-ufmypa",
+                                      "instanceId": "inst-l68pvy",
                                       "text": "CSC 1350 - Data Structures",
                                       "v": 1,
                                       "pv": 1,
@@ -522,7 +552,7 @@
                                   "label": "Grade",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-59y1sn",
+                                      "instanceId": "inst-a3svhd",
                                       "text": "A",
                                       "v": 1,
                                       "pv": 1,
@@ -566,7 +596,7 @@
                                     "widget": "gridCell",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-9vakfl",
+                                        "instanceId": "inst-bm4d24",
                                         "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 1350 - Data Structures - Fall Semester 2024 (08/21/2024-12/13/2024)",
                                         "v": 1,
                                         "pv": 1,
@@ -580,7 +610,7 @@
                                     "label": "Course",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-ufmypa",
+                                        "instanceId": "inst-l68pvy",
                                         "text": "CSC 1350 - Data Structures",
                                         "v": 1,
                                         "pv": 1,
@@ -594,7 +624,7 @@
                                     "label": "Grade",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-59y1sn",
+                                        "instanceId": "inst-a3svhd",
                                         "text": "A",
                                         "v": 1,
                                         "pv": 1,
@@ -637,7 +667,7 @@
                                     "widget": "gridCell",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-rk7lzp",
+                                        "instanceId": "inst-j8zgmj",
                                         "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - ENGL 1000 - English Composition I - Fall Semester 2024 (08/21/2024-12/13/2024)",
                                         "v": 1,
                                         "pv": 1,
@@ -651,7 +681,7 @@
                                     "label": "Course",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-9ost6f",
+                                        "instanceId": "inst-b71cfj",
                                         "text": "ENGL 1000 - English Composition I",
                                         "v": 1,
                                         "pv": 1,
@@ -665,7 +695,7 @@
                                     "label": "Grade",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-h03uc0",
+                                        "instanceId": "inst-hxo6jh",
                                         "text": "B",
                                         "v": 1,
                                         "pv": 1,
@@ -699,6 +729,32 @@
                                     "precision": 2
                                   }
                                 }
+                              },
+                              {
+                                "id": "row-2-subtotal",
+                                "rowIndex": 2,
+                                "subtotalColumnIds": [
+                                  "90.6",
+                                  "90.7"
+                                ],
+                                "cellsMap": {
+                                  "90.6": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Grade Points",
+                                    "text": "21.00",
+                                    "value": 21,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.7": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Credit Hours",
+                                    "text": "6.00",
+                                    "value": 6,
+                                    "format": "n2",
+                                    "precision": 2
+                                  }
+                                }
                               }
                             ]
                           }
@@ -719,6 +775,8 @@
                             "label": "Enrollments",
                             "gridId": "grid-Spring-Semester-2025",
                             "rowCount": 3,
+                            "hasSubtotal": true,
+                            "subtotalRowCount": 1,
                             "columns": [
                               {
                                 "columnId": "90.1",
@@ -764,7 +822,7 @@
                                   "widget": "gridCell",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-9dux87",
+                                      "instanceId": "inst-gm79wu",
                                       "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 1351 - Computer Science II for Majors - Spring Semester 2025 (01/13/2025-05/10/2025)",
                                       "v": 1,
                                       "pv": 1,
@@ -778,7 +836,7 @@
                                   "label": "Course",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-lgzszy",
+                                      "instanceId": "inst-yio3l3",
                                       "text": "CSC 1351 - Computer Science II for Majors",
                                       "v": 1,
                                       "pv": 1,
@@ -792,7 +850,7 @@
                                   "label": "Grade",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-k3hf7b",
+                                      "instanceId": "inst-dbil3g",
                                       "text": "A+",
                                       "v": 1,
                                       "pv": 1,
@@ -835,7 +893,7 @@
                                   "widget": "gridCell",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-9dux87",
+                                      "instanceId": "inst-gm79wu",
                                       "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 1351 - Computer Science II for Majors - Spring Semester 2025 (01/13/2025-05/10/2025)",
                                       "v": 1,
                                       "pv": 1,
@@ -849,7 +907,7 @@
                                   "label": "Course",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-lgzszy",
+                                      "instanceId": "inst-yio3l3",
                                       "text": "CSC 1351 - Computer Science II for Majors",
                                       "v": 1,
                                       "pv": 1,
@@ -863,7 +921,7 @@
                                   "label": "Grade",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-k3hf7b",
+                                      "instanceId": "inst-dbil3g",
                                       "text": "A+",
                                       "v": 1,
                                       "pv": 1,
@@ -907,7 +965,7 @@
                                     "widget": "gridCell",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-9dux87",
+                                        "instanceId": "inst-gm79wu",
                                         "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 1351 - Computer Science II for Majors - Spring Semester 2025 (01/13/2025-05/10/2025)",
                                         "v": 1,
                                         "pv": 1,
@@ -921,7 +979,7 @@
                                     "label": "Course",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-lgzszy",
+                                        "instanceId": "inst-yio3l3",
                                         "text": "CSC 1351 - Computer Science II for Majors",
                                         "v": 1,
                                         "pv": 1,
@@ -935,7 +993,7 @@
                                     "label": "Grade",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-k3hf7b",
+                                        "instanceId": "inst-dbil3g",
                                         "text": "A+",
                                         "v": 1,
                                         "pv": 1,
@@ -978,7 +1036,7 @@
                                     "widget": "gridCell",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-dpgs08",
+                                        "instanceId": "inst-ni37yo",
                                         "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - ENGL 1001 - English Composition II - Spring Semester 2025 (01/13/2025-05/10/2025)",
                                         "v": 1,
                                         "pv": 1,
@@ -992,7 +1050,7 @@
                                     "label": "Course",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-rzfrfk",
+                                        "instanceId": "inst-kr9bz0",
                                         "text": "ENGL 1001 - English Composition II",
                                         "v": 1,
                                         "pv": 1,
@@ -1006,7 +1064,7 @@
                                     "label": "Grade",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-937i9q",
+                                        "instanceId": "inst-x5v2a0",
                                         "text": "Withdrawal",
                                         "v": 1,
                                         "pv": 1,
@@ -1033,7 +1091,7 @@
                                     "widget": "gridCell",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-827m5q",
+                                        "instanceId": "inst-7j35pt",
                                         "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - MATH 1552 - Analytic Geometry and Calculus II - Spring Semester 2025 (01/13/2025-05/10/2025)",
                                         "v": 1,
                                         "pv": 1,
@@ -1047,7 +1105,7 @@
                                     "label": "Course",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-2wb9rg",
+                                        "instanceId": "inst-6r0s7u",
                                         "text": "MATH 1552 - Analytic Geometry and Calculus II",
                                         "v": 1,
                                         "pv": 1,
@@ -1061,7 +1119,7 @@
                                     "label": "Grade",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-rwk6dm",
+                                        "instanceId": "inst-yof6ud",
                                         "text": "C",
                                         "v": 1,
                                         "pv": 1,
@@ -1095,6 +1153,32 @@
                                     "precision": 2
                                   }
                                 }
+                              },
+                              {
+                                "id": "row-3-subtotal",
+                                "rowIndex": 3,
+                                "subtotalColumnIds": [
+                                  "90.6",
+                                  "90.7"
+                                ],
+                                "cellsMap": {
+                                  "90.6": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Grade Points",
+                                    "text": "20.00",
+                                    "value": 20,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.7": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Credit Hours",
+                                    "text": "10.00",
+                                    "value": 10,
+                                    "format": "n2",
+                                    "precision": 2
+                                  }
+                                }
                               }
                             ]
                           }
@@ -1115,6 +1199,8 @@
                             "label": "Enrollments",
                             "gridId": "grid-Wintersession-2025",
                             "rowCount": 1,
+                            "hasSubtotal": true,
+                            "subtotalRowCount": 1,
                             "columns": [
                               {
                                 "columnId": "90.1",
@@ -1160,7 +1246,7 @@
                                   "widget": "gridCell",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-1ipej7",
+                                      "instanceId": "inst-u32x6o",
                                       "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 2259 - Introduction to Data Structures, Algorithms, and Discrete Mathematics I - Wintersession 2025 (12/16/2025-01/06/2026)",
                                       "v": 1,
                                       "pv": 1,
@@ -1174,7 +1260,7 @@
                                   "label": "Course",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-9m4g8u",
+                                      "instanceId": "inst-r1lo4a",
                                       "text": "CSC 2259 - Introduction to Data Structures, Algorithms, and Discrete Mathematics I",
                                       "v": 1,
                                       "pv": 1,
@@ -1188,7 +1274,7 @@
                                   "label": "Grade",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-7gzzat",
+                                      "instanceId": "inst-wr82pb",
                                       "text": "P",
                                       "v": 1,
                                       "pv": 1,
@@ -1215,7 +1301,7 @@
                                   "widget": "gridCell",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-1ipej7",
+                                      "instanceId": "inst-u32x6o",
                                       "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 2259 - Introduction to Data Structures, Algorithms, and Discrete Mathematics I - Wintersession 2025 (12/16/2025-01/06/2026)",
                                       "v": 1,
                                       "pv": 1,
@@ -1229,7 +1315,7 @@
                                   "label": "Course",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-9m4g8u",
+                                      "instanceId": "inst-r1lo4a",
                                       "text": "CSC 2259 - Introduction to Data Structures, Algorithms, and Discrete Mathematics I",
                                       "v": 1,
                                       "pv": 1,
@@ -1243,7 +1329,7 @@
                                   "label": "Grade",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-7gzzat",
+                                      "instanceId": "inst-wr82pb",
                                       "text": "P",
                                       "v": 1,
                                       "pv": 1,
@@ -1271,7 +1357,7 @@
                                     "widget": "gridCell",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-1ipej7",
+                                        "instanceId": "inst-u32x6o",
                                         "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 2259 - Introduction to Data Structures, Algorithms, and Discrete Mathematics I - Wintersession 2025 (12/16/2025-01/06/2026)",
                                         "v": 1,
                                         "pv": 1,
@@ -1285,7 +1371,7 @@
                                     "label": "Course",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-9m4g8u",
+                                        "instanceId": "inst-r1lo4a",
                                         "text": "CSC 2259 - Introduction to Data Structures, Algorithms, and Discrete Mathematics I",
                                         "v": 1,
                                         "pv": 1,
@@ -1299,7 +1385,7 @@
                                     "label": "Grade",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-7gzzat",
+                                        "instanceId": "inst-wr82pb",
                                         "text": "P",
                                         "v": 1,
                                         "pv": 1,
@@ -1307,6 +1393,32 @@
                                         "widget": "instance"
                                       }
                                     ]
+                                  },
+                                  "90.7": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Credit Hours",
+                                    "text": "1.00",
+                                    "value": 1,
+                                    "format": "n2",
+                                    "precision": 2
+                                  }
+                                }
+                              },
+                              {
+                                "id": "row-1-subtotal",
+                                "rowIndex": 1,
+                                "subtotalColumnIds": [
+                                  "90.6",
+                                  "90.7"
+                                ],
+                                "cellsMap": {
+                                  "90.6": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Grade Points",
+                                    "text": "0.00",
+                                    "value": 0,
+                                    "format": "n2",
+                                    "precision": 2
                                   },
                                   "90.7": {
                                     "widget": "gridCellNumeric",
@@ -1337,6 +1449,8 @@
                             "label": "Enrollments",
                             "gridId": "grid-Fall-Semester-2026",
                             "rowCount": 2,
+                            "hasSubtotal": true,
+                            "subtotalRowCount": 1,
                             "columns": [
                               {
                                 "columnId": "90.1",
@@ -1382,7 +1496,7 @@
                                   "widget": "gridCell",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-py9bzo",
+                                      "instanceId": "inst-r4j3ej",
                                       "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 3102 - Advanced Data Structures, Algorithms, and Discrete Mathematics for Cybersecurity - Fall Semester 2026 (08/24/2026-12/12/2026)",
                                       "v": 1,
                                       "pv": 1,
@@ -1396,7 +1510,7 @@
                                   "label": "Course",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-46e85d",
+                                      "instanceId": "inst-4ewcwr",
                                       "text": "CSC 3102 - Advanced Data Structures, Algorithms, and Discrete Mathematics for Cybersecurity",
                                       "v": 1,
                                       "pv": 1,
@@ -1428,7 +1542,7 @@
                                   "widget": "gridCell",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-py9bzo",
+                                      "instanceId": "inst-r4j3ej",
                                       "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 3102 - Advanced Data Structures, Algorithms, and Discrete Mathematics for Cybersecurity - Fall Semester 2026 (08/24/2026-12/12/2026)",
                                       "v": 1,
                                       "pv": 1,
@@ -1442,7 +1556,7 @@
                                   "label": "Course",
                                   "instances": [
                                     {
-                                      "instanceId": "inst-46e85d",
+                                      "instanceId": "inst-4ewcwr",
                                       "text": "CSC 3102 - Advanced Data Structures, Algorithms, and Discrete Mathematics for Cybersecurity",
                                       "v": 1,
                                       "pv": 1,
@@ -1475,7 +1589,7 @@
                                     "widget": "gridCell",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-py9bzo",
+                                        "instanceId": "inst-r4j3ej",
                                         "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - CSC 3102 - Advanced Data Structures, Algorithms, and Discrete Mathematics for Cybersecurity - Fall Semester 2026 (08/24/2026-12/12/2026)",
                                         "v": 1,
                                         "pv": 1,
@@ -1489,7 +1603,7 @@
                                     "label": "Course",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-46e85d",
+                                        "instanceId": "inst-4ewcwr",
                                         "text": "CSC 3102 - Advanced Data Structures, Algorithms, and Discrete Mathematics for Cybersecurity",
                                         "v": 1,
                                         "pv": 1,
@@ -1521,7 +1635,7 @@
                                     "widget": "gridCell",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-9wfpe2",
+                                        "instanceId": "inst-nz84hq",
                                         "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - MATH 2065 - Elementary Differential Equations - Fall Semester 2026 (08/24/2026-12/12/2026)",
                                         "v": 1,
                                         "pv": 1,
@@ -1535,7 +1649,7 @@
                                     "label": "Course",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-xvlan8",
+                                        "instanceId": "inst-0nlpft",
                                         "text": "MATH 2065 - Elementary Differential Equations",
                                         "v": 1,
                                         "pv": 1,
@@ -1549,7 +1663,7 @@
                                     "label": "Grade",
                                     "instances": [
                                       {
-                                        "instanceId": "inst-zxmuss",
+                                        "instanceId": "inst-g9gb59",
                                         "text": "A",
                                         "v": 1,
                                         "pv": 1,
@@ -1579,6 +1693,32 @@
                                     "label": "Earned Grade Points",
                                     "text": "12.00",
                                     "value": 12,
+                                    "format": "n2",
+                                    "precision": 2
+                                  }
+                                }
+                              },
+                              {
+                                "id": "row-2-subtotal",
+                                "rowIndex": 2,
+                                "subtotalColumnIds": [
+                                  "90.6",
+                                  "90.7"
+                                ],
+                                "cellsMap": {
+                                  "90.6": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Grade Points",
+                                    "text": "12.00",
+                                    "value": 12,
+                                    "format": "n2",
+                                    "precision": 2
+                                  },
+                                  "90.7": {
+                                    "widget": "gridCellNumeric",
+                                    "label": "Credit Hours",
+                                    "text": "6.00",
+                                    "value": 6,
                                     "format": "n2",
                                     "precision": 2
                                   }
@@ -1646,7 +1786,7 @@
                           "widget": "gridCell",
                           "instances": [
                             {
-                              "instanceId": "inst-obhg1q",
+                              "instanceId": "inst-n9tkty",
                               "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - ENGL 1001 (Converted Advanced Standing Credit: Evaluated)",
                               "v": 1,
                               "pv": 1,
@@ -1660,7 +1800,7 @@
                           "label": "Transfer Credit",
                           "instances": [
                             {
-                              "instanceId": "inst-aozlrv",
+                              "instanceId": "inst-xm4gpu",
                               "text": "ENGL 1001 - ENGL COMPOSITION",
                               "v": 1,
                               "pv": 1,
@@ -1682,7 +1822,7 @@
                           "label": "Grade",
                           "instances": [
                             {
-                              "instanceId": "inst-uibsi0",
+                              "instanceId": "inst-smxbu2",
                               "text": "Pass",
                               "v": 1,
                               "pv": 1,
@@ -1696,7 +1836,7 @@
                           "label": "Originating Exam",
                           "instances": [
                             {
-                              "instanceId": "inst-dn8xgo",
+                              "instanceId": "inst-7mkvkq",
                               "text": "Converted Advanced Standing Credit : Evaluated : 1",
                               "v": 1,
                               "pv": 1,
@@ -1715,7 +1855,7 @@
                           "widget": "gridCell",
                           "instances": [
                             {
-                              "instanceId": "inst-obhg1q",
+                              "instanceId": "inst-n9tkty",
                               "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - ENGL 1001 (Converted Advanced Standing Credit: Evaluated)",
                               "v": 1,
                               "pv": 1,
@@ -1729,7 +1869,7 @@
                           "label": "Transfer Credit",
                           "instances": [
                             {
-                              "instanceId": "inst-aozlrv",
+                              "instanceId": "inst-xm4gpu",
                               "text": "ENGL 1001 - ENGL COMPOSITION",
                               "v": 1,
                               "pv": 1,
@@ -1751,7 +1891,7 @@
                           "label": "Grade",
                           "instances": [
                             {
-                              "instanceId": "inst-uibsi0",
+                              "instanceId": "inst-smxbu2",
                               "text": "Pass",
                               "v": 1,
                               "pv": 1,
@@ -1765,7 +1905,7 @@
                           "label": "Originating Exam",
                           "instances": [
                             {
-                              "instanceId": "inst-dn8xgo",
+                              "instanceId": "inst-7mkvkq",
                               "text": "Converted Advanced Standing Credit : Evaluated : 1",
                               "v": 1,
                               "pv": 1,
@@ -1785,7 +1925,7 @@
                             "widget": "gridCell",
                             "instances": [
                               {
-                                "instanceId": "inst-obhg1q",
+                                "instanceId": "inst-n9tkty",
                                 "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - ENGL 1001 (Converted Advanced Standing Credit: Evaluated)",
                                 "v": 1,
                                 "pv": 1,
@@ -1799,7 +1939,7 @@
                             "label": "Transfer Credit",
                             "instances": [
                               {
-                                "instanceId": "inst-aozlrv",
+                                "instanceId": "inst-xm4gpu",
                                 "text": "ENGL 1001 - ENGL COMPOSITION",
                                 "v": 1,
                                 "pv": 1,
@@ -1821,7 +1961,7 @@
                             "label": "Grade",
                             "instances": [
                               {
-                                "instanceId": "inst-uibsi0",
+                                "instanceId": "inst-smxbu2",
                                 "text": "Pass",
                                 "v": 1,
                                 "pv": 1,
@@ -1835,7 +1975,7 @@
                             "label": "Originating Exam",
                             "instances": [
                               {
-                                "instanceId": "inst-dn8xgo",
+                                "instanceId": "inst-7mkvkq",
                                 "text": "Converted Advanced Standing Credit : Evaluated : 1",
                                 "v": 1,
                                 "pv": 1,
@@ -1854,7 +1994,7 @@
                             "widget": "gridCell",
                             "instances": [
                               {
-                                "instanceId": "inst-yvsla4",
+                                "instanceId": "inst-1j1tv1",
                                 "text": "Student One (00000001) - LSUAM - LSU Baton Rouge - LSUAMENGR - College of Engineering/Undergraduate (BS) - 08/11/2023 - Active - MATH 1431 (Converted Advanced Standing Credit: Evaluated)",
                                 "v": 1,
                                 "pv": 1,
@@ -1868,7 +2008,7 @@
                             "label": "Transfer Credit",
                             "instances": [
                               {
-                                "instanceId": "inst-t4nqx8",
+                                "instanceId": "inst-p3rtkx",
                                 "text": "MATH 1431 - CALCULUS I",
                                 "v": 1,
                                 "pv": 1,
@@ -1890,7 +2030,7 @@
                             "label": "Grade",
                             "instances": [
                               {
-                                "instanceId": "inst-t9eskx",
+                                "instanceId": "inst-qohfyz",
                                 "text": "Pass",
                                 "v": 1,
                                 "pv": 1,
@@ -1904,7 +2044,7 @@
                             "label": "Originating Exam",
                             "instances": [
                               {
-                                "instanceId": "inst-cg90oc",
+                                "instanceId": "inst-qbj8dm",
                                 "text": "Converted Advanced Standing Credit : Evaluated : 1",
                                 "v": 1,
                                 "pv": 1,

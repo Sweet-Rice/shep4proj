@@ -349,4 +349,115 @@ describe("parseAcademicRecord", () => {
 
     expect(() => parseAcademicRecord(json)).toThrow(WorkdayShapeError);
   });
+
+  it("skips a Workday grid-total (subtotal) row silently, without returning or flagging it", () => {
+    const json = {
+      body: {
+        widget: "grid",
+        label: "Enrollments",
+        hasSubtotal: true,
+        subtotalRowCount: 1,
+        columns: [
+          { columnId: "90.2", label: "Course" },
+          { columnId: "90.6", label: "Grade Points" },
+          { columnId: "90.7", label: "Credit Hours" },
+        ],
+        rows: [
+          {
+            rowIndex: 0,
+            cellsMap: {
+              "90.2": { instances: [{ text: "CSC 1350 - Data Structures" }] },
+              "90.6": { value: 12 },
+              "90.7": { value: 3 },
+            },
+          },
+          // The grid-total row: no Course/Grade instances, only numeric
+          // totals, marked via subtotalColumnIds.
+          {
+            rowIndex: 1,
+            subtotalColumnIds: ["90.6", "90.7"],
+            cellsMap: {
+              "90.6": { value: 12 },
+              "90.7": { value: 3 },
+            },
+          },
+        ],
+      },
+    };
+
+    const result = parseAcademicRecord(json);
+    expect(result.courses).toHaveLength(1);
+    expect(result.courses[0]?.code).toBe("CSC 1350");
+    expect(result.unrecognizedRows).toEqual([]);
+  });
+
+  it("also recognizes a subtotal row via hasSubtotal + missing course text + present numeric cells, without an explicit subtotalColumnIds", () => {
+    const json = {
+      body: {
+        widget: "grid",
+        label: "Enrollments",
+        hasSubtotal: true,
+        columns: [
+          { columnId: "90.2", label: "Course" },
+          { columnId: "90.7", label: "Credit Hours" },
+        ],
+        rows: [
+          {
+            rowIndex: 0,
+            cellsMap: {
+              "90.2": { instances: [{ text: "MATH 1550 - Calculus I" }] },
+              "90.7": { value: 4 },
+            },
+          },
+          {
+            rowIndex: 1,
+            cellsMap: {
+              "90.7": { value: 4 },
+            },
+          },
+        ],
+      },
+    };
+
+    const result = parseAcademicRecord(json);
+    expect(result.courses).toHaveLength(1);
+    expect(result.unrecognizedRows).toEqual([]);
+  });
+
+  it("still flags a genuinely broken row (course cell present but malformed) even in a grid with subtotals", () => {
+    const json = {
+      body: {
+        widget: "grid",
+        label: "Enrollments",
+        hasSubtotal: true,
+        subtotalRowCount: 1,
+        columns: [
+          { columnId: "90.2", label: "Course" },
+          { columnId: "90.7", label: "Credit Hours" },
+        ],
+        rows: [
+          {
+            rowIndex: 0,
+            cellsMap: {
+              "90.2": { instances: [{ text: "this has no dash separator" }] },
+              "90.7": { value: 3 },
+            },
+          },
+          {
+            rowIndex: 1,
+            subtotalColumnIds: ["90.7"],
+            cellsMap: {
+              "90.7": { value: 3 },
+            },
+          },
+        ],
+      },
+    };
+
+    const result = parseAcademicRecord(json);
+    expect(result.courses).toEqual([]);
+    expect(result.unrecognizedRows).toEqual([
+      { gridLabel: "Enrollments", rowIndex: 0, reason: "unparsable course text" },
+    ]);
+  });
 });
