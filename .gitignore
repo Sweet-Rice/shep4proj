@@ -7,5 +7,10 @@ coverage
 .env*
 !.env.example
 fixtures/**/raw/
+# Timestamped capture-output dirs written by redact-har.ts / capture-workday.ts
+# (e.g. fixtures/workday/redacted/2026-09-23T11-05-02-734Z/) - not the
+# hand-built synthetic fixtures committed at fixtures/workday/*.json.
+fixtures/workday/redacted/*/
+!fixtures/workday/redacted/.gitkeep
 *.log
 .DS_Store

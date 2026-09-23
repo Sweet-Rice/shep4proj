@@ -1,6 +1,6 @@
 import { redactBodyText } from "./body.ts";
 import type { Har } from "./har-types.ts";
-import { headerNames, redactQueryString } from "./headers.ts";
+import { headerNames, redactUrl } from "./headers.ts";
 
 export interface RedactOptions {
   /** Suffix-matched allowlist of hosts to keep. Everything else is dropped. */
@@ -56,7 +56,7 @@ export function redactHar(har: Har, opts: RedactOptions = {}): RedactedRequest[]
 
     results.push({
       method: req.method,
-      url: redactQueryString(req.url),
+      url: redactUrl(req.url),
       status: res?.status ?? 0,
       requestHeaderNames: headerNames(req.headers),
       responseHeaderNames: headerNames(res?.headers),
