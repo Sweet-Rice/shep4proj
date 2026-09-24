@@ -30,7 +30,8 @@
     "redact:har": "node scripts/redact-har.ts",
     "capture": "tsc -b && node scripts/capture-workday.ts",
     "verify:record": "node scripts/verify-record.ts",
-    "inspect:grids": "node scripts/inspect-grids.ts"
+    "inspect:grids": "node scripts/inspect-grids.ts",
+    "verify:registrations": "node scripts/verify-registrations.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
