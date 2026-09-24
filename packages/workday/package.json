@@ -13,6 +13,10 @@
     "./academic-record": {
       "types": "./dist/academic-record/index.d.ts",
       "default": "./dist/academic-record/index.js"
+    },
+    "./current-registrations": {
+      "types": "./dist/current-registrations/index.d.ts",
+      "default": "./dist/current-registrations/index.js"
     }
   },
   "scripts": {
