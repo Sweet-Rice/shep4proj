@@ -1,0 +1,26 @@
+# Local Postgres for the server (apps/server). Start with `docker compose up -d`.
+# Every setting has a default, so no .env is required; copy .env.example to .env
+# to override them.
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-jevschedule}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jevschedule}
+      POSTGRES_DB: ${POSTGRES_DB:-jevschedule}
+    # Bound to localhost only so the dev database isn't reachable from the network.
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    # Postgres 18+ images keep PGDATA at /var/lib/postgresql/18/docker, so the
+    # volume goes on /var/lib/postgresql (not .../data as in older images).
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
