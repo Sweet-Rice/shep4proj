@@ -84,15 +84,25 @@ function resolveColumnId(
     for (const c of columns) {
       if (c.label === targetLabel) return String(c.columnId);
     }
-    for (const c of columns) {
-      const cid = String(c.columnId);
-      for (const r of rows) {
-        if (r.cellsMap[cid]?.label === targetLabel) return cid;
+    // Section-level columns (e.g. Section, Instructional Format) are, in a
+    // real capture, often undeclared in the grid's own `columns` array -
+    // they exist only as keys in each row's `cellsMap`. Scan the actual
+    // cell ids (not just declared column ids) for a label match.
+    for (const r of rows) {
+      for (const [cid, cell] of Object.entries(r.cellsMap)) {
+        if (cell?.label === targetLabel) return cid;
       }
     }
   }
   for (const c of columns) {
     if (String(c.columnId).endsWith(idSuffix)) return String(c.columnId);
+  }
+  // Same rationale as above: fall back to any row's cell id ending in the
+  // suffix when no declared column matches either.
+  for (const r of rows) {
+    for (const cid of Object.keys(r.cellsMap)) {
+      if (cid.endsWith(idSuffix)) return cid;
+    }
   }
   return undefined;
 }
@@ -266,6 +276,17 @@ function parseCourseText(text: string): ParsedCourseText | null {
   return { subject, number, code: `${subject} ${number}`, title };
 }
 
+/**
+ * Section cell text is observed as `<section id> - <course title>` (e.g.
+ * `CSC 4330-001-LEC-FA - SOFTWARE SYSTEMS DEV`). We only expose the id part
+ * before the first " - ", per real capture structure (T-320 follow-up).
+ */
+function parseSectionId(text: string | null): string | null {
+  if (!text) return null;
+  const idx = text.indexOf(" - ");
+  return idx === -1 ? text : text.slice(0, idx).trim();
+}
+
 const DATE_RE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
 
 /** Normalizes an `MM/DD/YYYY` date string to ISO `yyyy-mm-dd`; null if unparsable. */
@@ -344,7 +365,7 @@ function buildSectionAt(
   const startDate = dateAt(row.cellsMap[colIds.startDateColId ?? ""], i);
   const endDate = dateAt(row.cellsMap[colIds.endDateColId ?? ""], i);
   return {
-    section: cellTextAt(row.cellsMap[colIds.sectionColId ?? ""], i),
+    section: parseSectionId(cellTextAt(row.cellsMap[colIds.sectionColId ?? ""], i)),
     instructionalFormat: cellTextAt(row.cellsMap[colIds.instructionalFormatColId ?? ""], i),
     deliveryMode: cellTextAt(row.cellsMap[colIds.deliveryModeColId ?? ""], i),
     meetingPatterns: meetingPatternsAt(
@@ -431,6 +452,52 @@ function parseGridWithZod(node: JsonObject, path: string) {
   return result.data;
 }
 
+/** True if any of a row's parsed sections carries actual data (not just an empty placeholder). */
+function hasSectionData(sections: RegisteredSection[]): boolean {
+  return sections.some(
+    (s) =>
+      s.section !== null ||
+      s.instructionalFormat !== null ||
+      s.deliveryMode !== null ||
+      s.instructor !== null ||
+      s.startDate !== null ||
+      s.endDate !== null ||
+      s.meetingPatterns.length > 0,
+  );
+}
+
+/**
+ * A course's "identity" for dedup purposes: the set of its section ids.
+ * Workday emits rowspan-style continuation rows (an empty Course Listing
+ * cell carrying an additional section of the row above) and, in the dropped
+ * grid, repeat events of the very same section - both collapse to a single
+ * signature so callers see one logical course, not duplicates. The same
+ * course code with genuinely different sections (e.g. two special-topics
+ * sections) yields a different signature and stays separate.
+ */
+function sectionSetSignature(sections: RegisteredSection[]): string {
+  return sections
+    .map((s) => s.section)
+    .filter((id): id is string => id !== null)
+    .sort()
+    .join("\u0000");
+}
+
+/** Dedupes courses whose section-id sets are identical, keeping the first occurrence. */
+function dedupeBySectionSet(courses: CurrentCourse[]): CurrentCourse[] {
+  const seen = new Set<string>();
+  const result: CurrentCourse[] = [];
+  for (const course of courses) {
+    const signature = sectionSetSignature(course.sections);
+    // An empty signature (no section ids at all) can't be meaningfully
+    // deduped against another empty one - keep every such course.
+    if (signature !== "" && seen.has(signature)) continue;
+    if (signature !== "") seen.add(signature);
+    result.push(course);
+  }
+  return result;
+}
+
 function processGrid(
   grid: ReturnType<typeof parseGridWithZod>,
   gridLabel: string,
@@ -457,6 +524,8 @@ function processGrid(
     );
   }
 
+  const gridCourses: CurrentCourse[] = [];
+
   for (const row of grid.rows) {
     if (isSubtotalRow(row, grid, courseListingColId, [creditHoursColId])) {
       continue;
@@ -464,6 +533,20 @@ function processGrid(
 
     const courseText = getInstanceText(row.cellsMap[courseListingColId]);
     if (!courseText) {
+      // Workday emits rowspan-style continuation rows: an empty Course
+      // Listing cell with its own section-level cells is an additional
+      // section of the course in the preceding row, not a separate course.
+      const continuationSections = sectionsForRow(
+        row,
+        `${gridPath}.rows[${row.rowIndex}]`,
+        sectionColIds,
+      );
+      const previousCourse = gridCourses[gridCourses.length - 1];
+      if (previousCourse && hasSectionData(continuationSections)) {
+        previousCourse.sections.push(...continuationSections);
+        continue;
+      }
+
       unrecognizedRows.push({ gridLabel, rowIndex: row.rowIndex, reason: "missing course text" });
       continue;
     }
@@ -492,7 +575,7 @@ function processGrid(
       if (term) break;
     }
 
-    out.push({
+    gridCourses.push({
       code: parsedCourse.code,
       subject: parsedCourse.subject,
       number: parsedCourse.number,
@@ -504,6 +587,8 @@ function processGrid(
       sections,
     });
   }
+
+  out.push(...dedupeBySectionSet(gridCourses));
 }
 
 export function parseCurrentRegistrations(json: unknown): CurrentRegistrationsResult {
