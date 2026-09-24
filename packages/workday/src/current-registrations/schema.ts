@@ -4,11 +4,16 @@
  *
  * Mirrors `../academic-record/schema.ts`'s approach: lenient about extra
  * keys (every object schema uses `.passthrough()`), strict about the shapes
- * we actually read. The real response shape is unknown (see ENDPOINTS.md
- * "Pending capture" / T-320) — only grid/column/row structure was observed
- * via `inspect:grids`, never cell values — so this schema is deliberately
- * more permissive than the academic record's on `value`, since a date cell
- * may hold a string rather than a number.
+ * we actually read.
+ *
+ * `Cell.value` is deliberately `z.unknown()`, wider than the academic
+ * record's numeric-only cells: a real "View My Courses" capture showed a
+ * date cell's `value` is an *object* (`{Y, M, D, V}`), not a number or
+ * string, and other cells (e.g. Instructor, Actions) are containers with a
+ * `children` array and no `text`/`instances`/`value` at all. Every field
+ * here stays optional so a single unusual cell shape never fails the whole
+ * grid's validation — `parse.ts` records an unrecognized row instead of
+ * throwing wherever a specific cell can't be interpreted.
  */
 import { z } from "zod";
 
@@ -29,11 +34,14 @@ export const CellSchema = z
     label: z.string().optional(),
     instances: z.array(InstanceSchema).optional(),
     text: z.string().optional(),
-    // Unlike the academic record's numeric-only cells, a date cell here may
-    // carry a string value instead of a number - be lenient about which.
-    value: z.union([z.number(), z.string()]).optional(),
+    // See the module doc comment: a real date cell's value is an object
+    // ({Y, M, D, V}), not a number or string - stay maximally permissive.
+    value: z.unknown().optional(),
     format: z.string().optional(),
     precision: z.number().optional(),
+    // A container cell (e.g. Instructor, Actions) has no text/instances/
+    // value of its own - the data lives in nested `children`.
+    children: z.array(z.unknown()).optional(),
   })
   .passthrough();
 

@@ -129,6 +129,84 @@ function getNumericValue(cell: Cell | undefined): number | null {
   return null;
 }
 
+/**
+ * Recursively collects `text` (own or `instances[].text`) from `node` and
+ * every descendant reachable through a `children` array. Used for
+ * container-shaped cells (e.g. Instructor) that carry no `text`/
+ * `instances`/`value` of their own - only nested descendants do.
+ */
+function collectContainerTexts(node: unknown, out: string[]): void {
+  if (Array.isArray(node)) {
+    for (const item of node) collectContainerTexts(item, out);
+    return;
+  }
+  if (!isPlainObject(node)) return;
+
+  if (typeof node.text === "string" && node.text.trim() !== "") {
+    out.push(node.text.trim());
+  }
+  if (Array.isArray(node.instances)) {
+    for (const inst of node.instances) {
+      if (isPlainObject(inst) && typeof inst.text === "string" && inst.text.trim() !== "") {
+        out.push(inst.text.trim());
+      }
+    }
+  }
+  if (Array.isArray(node.children)) {
+    for (const child of node.children) collectContainerTexts(child, out);
+  }
+}
+
+/**
+ * Reads a name-like value from a cell that may be a plain instance/text
+ * cell OR a container with no text/instances of its own, only nested
+ * `children` (e.g. a real "View My Courses" Instructor cell). Returns null
+ * rather than throwing when nothing can be found.
+ */
+function textFromCellOrContainer(cell: Cell | undefined, i: number): string | null {
+  if (!cell) return null;
+  const direct = cellTextAt(cell, i);
+  if (direct) return direct;
+  const texts: string[] = [];
+  collectContainerTexts(cell, texts);
+  if (texts.length === 0) return null;
+  // Index-align when the container has one descendant text per section (as
+  // real multi-section rows do); otherwise fall back to the single text.
+  return texts[i] ?? (texts.length === 1 ? texts[0]! : null);
+}
+
+function toDatePart(value: unknown): string | null {
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  if (typeof value === "string" && value.trim() !== "") return value.trim();
+  return null;
+}
+
+/** Builds an ISO `yyyy-mm-dd` from a date cell's `{Y, M, D, V}` object value, observed in a real capture. */
+function isoFromDateValueObject(value: unknown): string | null {
+  if (!isPlainObject(value)) return null;
+  const year = toDatePart(value.Y);
+  const month = toDatePart(value.M);
+  const day = toDatePart(value.D);
+  if (!year || !month || !day) return null;
+  const yyyy = year.padStart(4, "0");
+  const mm = month.padStart(2, "0");
+  const dd = day.padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/**
+ * Reads a section's start/end date at index `i`, preferring the observed
+ * `{Y, M, D, V}` object `value` shape, and falling back to parsing
+ * `MM/DD/YYYY` text (via instances or `text`) for a differently-shaped
+ * capture. Null if neither works.
+ */
+function dateAt(cell: Cell | undefined, i: number): string | null {
+  if (!cell) return null;
+  const fromObject = isoFromDateValueObject(cell.value);
+  if (fromObject) return fromObject;
+  return normalizeDate(cellTextAt(cell, i));
+}
+
 /** Meeting patterns for section index `i`: every instance's text when there's exactly one section, else just that index's. */
 function meetingPatternsAt(cell: Cell | undefined, i: number, sectionCount: number): string[] {
   if (!cell) return [];
@@ -263,8 +341,8 @@ function buildSectionAt(
   i: number,
   sectionCount: number,
 ): RegisteredSection {
-  const startDate = normalizeDate(cellTextAt(row.cellsMap[colIds.startDateColId ?? ""], i));
-  const endDate = normalizeDate(cellTextAt(row.cellsMap[colIds.endDateColId ?? ""], i));
+  const startDate = dateAt(row.cellsMap[colIds.startDateColId ?? ""], i);
+  const endDate = dateAt(row.cellsMap[colIds.endDateColId ?? ""], i);
   return {
     section: cellTextAt(row.cellsMap[colIds.sectionColId ?? ""], i),
     instructionalFormat: cellTextAt(row.cellsMap[colIds.instructionalFormatColId ?? ""], i),
@@ -274,7 +352,10 @@ function buildSectionAt(
       i,
       sectionCount,
     ),
-    instructor: cellTextAt(row.cellsMap[colIds.instructorColId ?? ""], i),
+    // Instructor may be a plain instance cell or (observed in a real
+    // capture) a container with no text/instances of its own - only
+    // nested `children`. See `textFromCellOrContainer`.
+    instructor: textFromCellOrContainer(row.cellsMap[colIds.instructorColId ?? ""], i),
     startDate,
     endDate,
   };

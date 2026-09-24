@@ -48,6 +48,11 @@
                     "label": "Course Listing",
                     "instances": [{ "instanceId": "inst-a1", "text": "CSC 4330 - Software Systems Development", "widget": "instance" }]
                   },
+                  "262.9": {
+                    "widget": "gridCell",
+                    "label": "Actions",
+                    "children": [{ "widget": "button", "text": "Drop" }]
+                  },
                   "262.10": { "widget": "gridCellNumeric", "label": "Credit Hours", "text": "3.00", "value": 3, "format": "n2", "precision": 2 },
                   "262.11": {
                     "widget": "gridCell",
@@ -82,17 +87,29 @@
                   "256.9": {
                     "widget": "gridCell",
                     "label": "Instructor",
-                    "instances": [{ "instanceId": "inst-a8", "text": "Jane Instructor", "widget": "instance" }]
+                    "title": "Instructor",
+                    "children": [
+                      {
+                        "widget": "container",
+                        "children": [
+                          { "widget": "instance", "instances": [{ "instanceId": "inst-a8", "text": "Jane Instructor" }] }
+                        ]
+                      }
+                    ]
                   },
                   "256.10": {
-                    "widget": "gridCell",
+                    "widget": "date",
                     "label": "Start Date",
-                    "instances": [{ "instanceId": "inst-a9", "text": "01/12/2026", "widget": "instance" }]
+                    "dateTimePrecision": "day",
+                    "text": "01/12/2026",
+                    "value": { "Y": 2026, "M": 1, "D": 12, "V": 1768176000000 }
                   },
                   "256.11": {
-                    "widget": "gridCell",
+                    "widget": "date",
                     "label": "End Date",
-                    "instances": [{ "instanceId": "inst-a10", "text": "05/01/2026", "widget": "instance" }]
+                    "dateTimePrecision": "day",
+                    "text": "05/01/2026",
+                    "value": { "Y": 2026, "M": 5, "D": 1, "V": 1777939200000 }
                   }
                 }
               },
@@ -154,26 +171,35 @@
                   "256.9": {
                     "widget": "gridCell",
                     "label": "Instructor",
-                    "instances": [
-                      { "instanceId": "inst-b13", "text": "John Prof", "widget": "instance" },
-                      { "instanceId": "inst-b14", "text": "John Prof", "widget": "instance" }
+                    "title": "Instructor",
+                    "children": [
+                      {
+                        "widget": "container",
+                        "children": [
+                          { "widget": "instance", "instances": [{ "instanceId": "inst-b13", "text": "John Prof" }] }
+                        ]
+                      },
+                      {
+                        "widget": "container",
+                        "children": [
+                          { "widget": "instance", "instances": [{ "instanceId": "inst-b14", "text": "John Prof" }] }
+                        ]
+                      }
                     ]
                   },
                   "256.10": {
-                    "widget": "gridCell",
+                    "widget": "date",
                     "label": "Start Date",
-                    "instances": [
-                      { "instanceId": "inst-b15", "text": "01/12/2026", "widget": "instance" },
-                      { "instanceId": "inst-b16", "text": "01/12/2026", "widget": "instance" }
-                    ]
+                    "dateTimePrecision": "day",
+                    "text": "01/12/2026",
+                    "value": { "Y": 2026, "M": 1, "D": 12, "V": 1768176000000 }
                   },
                   "256.11": {
-                    "widget": "gridCell",
+                    "widget": "date",
                     "label": "End Date",
-                    "instances": [
-                      { "instanceId": "inst-b17", "text": "05/01/2026", "widget": "instance" },
-                      { "instanceId": "inst-b18", "text": "05/01/2026", "widget": "instance" }
-                    ]
+                    "dateTimePrecision": "day",
+                    "text": "05/01/2026",
+                    "value": { "Y": 2026, "M": 5, "D": 1, "V": 1777939200000 }
                   }
                 }
               },
@@ -220,17 +246,29 @@
                   "256.9": {
                     "widget": "gridCell",
                     "label": "Instructor",
-                    "instances": [{ "instanceId": "inst-c8", "text": "Ann Prof", "widget": "instance" }]
+                    "title": "Instructor",
+                    "children": [
+                      {
+                        "widget": "container",
+                        "children": [
+                          { "widget": "instance", "instances": [{ "instanceId": "inst-c8", "text": "Ann Prof" }] }
+                        ]
+                      }
+                    ]
                   },
                   "256.10": {
-                    "widget": "gridCell",
+                    "widget": "date",
                     "label": "Start Date",
-                    "instances": [{ "instanceId": "inst-c9", "text": "01/12/2026", "widget": "instance" }]
+                    "dateTimePrecision": "day",
+                    "text": "01/12/2026",
+                    "value": { "Y": 2026, "M": 1, "D": 12, "V": 1768176000000 }
                   },
                   "256.11": {
-                    "widget": "gridCell",
+                    "widget": "date",
                     "label": "End Date",
-                    "instances": [{ "instanceId": "inst-c10", "text": "05/01/2026", "widget": "instance" }]
+                    "dateTimePrecision": "day",
+                    "text": "05/01/2026",
+                    "value": { "Y": 2026, "M": 5, "D": 1, "V": 1777939200000 }
                   }
                 }
               },
