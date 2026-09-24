@@ -21,4 +21,15 @@ export const ALLOWED_ENDPOINTS: readonly AllowedEndpoint[] = [
     description:
       "Read the student's academic record (completed/in-progress coursework and transfer credit).",
   },
+  {
+    id: "current-registrations-get",
+    method: "GET",
+    // The "View My Courses" task id, 2998$28771. The equivalent
+    // `page-context-id/<contextId>.htmld` variant is already covered by
+    // academic-record-get's pattern above, which allows any context id
+    // shared between the two tasks - see ENDPOINTS.md.
+    pattern: /^https:\/\/www\.myworkday\.com\/lsu\/generic-hub\/task\/2998\$28771\.htmld(\?.*)?$/,
+    description:
+      "Read the student's current-term registrations (View My Courses): enrolled courses with their sections, and dropped/withdrawn sections.",
+  },
 ];

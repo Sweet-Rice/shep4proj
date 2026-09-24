@@ -1,0 +1,1055 @@
+{
+  "title": "View My Courses",
+  "widget": "page",
+  "sessionConfig": {
+    "locale": "en-US",
+    "timezone": "America/Chicago"
+  },
+  "uiTheme": {
+    "brand": "lsu",
+    "mode": "light"
+  },
+  "body": {
+    "widget": "container",
+    "title": "Current Registrations",
+    "children": [
+      {
+        "widget": "section",
+        "children": [
+          {
+            "widget": "grid",
+            "label": "My Enrolled Courses",
+            "gridId": "grid-enrolled",
+            "rowCount": 5,
+            "hasSubtotal": true,
+            "subtotalRowCount": 1,
+            "columns": [
+              {
+                "columnId": "262.2",
+                "widget": "gridColumn",
+                "propertyName": "courseListing",
+                "label": "Course Listing"
+              },
+              {
+                "columnId": "262.9",
+                "widget": "gridColumn",
+                "propertyName": "actions",
+                "label": "Actions"
+              },
+              {
+                "columnId": "262.10",
+                "widget": "gridColumn",
+                "propertyName": "creditHours",
+                "label": "Credit Hours"
+              },
+              {
+                "columnId": "262.11",
+                "widget": "gridColumn",
+                "propertyName": "gradingBasis",
+                "label": "Grading Basis"
+              },
+              {
+                "columnId": "262.12",
+                "widget": "gridColumn",
+                "propertyName": "enrolledSections",
+                "label": "Enrolled Sections"
+              },
+              {
+                "columnId": "256.1",
+                "widget": "gridColumn",
+                "propertyName": "section",
+                "label": "Section"
+              },
+              {
+                "columnId": "256.2",
+                "widget": "gridColumn",
+                "propertyName": "registrationStatus",
+                "label": "Registration Status"
+              },
+              {
+                "columnId": "256.6",
+                "widget": "gridColumn",
+                "propertyName": "instructionalFormat",
+                "label": "Instructional Format"
+              },
+              {
+                "columnId": "256.7",
+                "widget": "gridColumn",
+                "propertyName": "deliveryMode",
+                "label": "Delivery Mode"
+              },
+              {
+                "columnId": "256.8",
+                "widget": "gridColumn",
+                "propertyName": "meetingPatterns",
+                "label": "Meeting Patterns"
+              },
+              {
+                "columnId": "256.9",
+                "widget": "gridColumn",
+                "propertyName": "instructor",
+                "label": "Instructor"
+              },
+              {
+                "columnId": "256.10",
+                "widget": "gridColumn",
+                "propertyName": "startDate",
+                "label": "Start Date"
+              },
+              {
+                "columnId": "256.11",
+                "widget": "gridColumn",
+                "propertyName": "endDate",
+                "label": "End Date"
+              }
+            ],
+            "rows": [
+              {
+                "id": "row-0",
+                "rowIndex": 0,
+                "cellsMap": {
+                  "262.2": {
+                    "widget": "gridCell",
+                    "label": "Course Listing",
+                    "instances": [
+                      {
+                        "instanceId": "inst-a1",
+                        "text": "CSC 4330 - Software Systems Development",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "262.9": {
+                    "widget": "gridCell",
+                    "label": "Actions",
+                    "children": [{ "widget": "button", "text": "Drop" }]
+                  },
+                  "262.10": {
+                    "widget": "gridCellNumeric",
+                    "label": "Credit Hours",
+                    "text": "3.00",
+                    "value": 3,
+                    "format": "n2",
+                    "precision": 2
+                  },
+                  "262.11": {
+                    "widget": "gridCell",
+                    "label": "Grading Basis",
+                    "instances": [
+                      { "instanceId": "inst-a2", "text": "Letter Grade", "widget": "instance" }
+                    ]
+                  },
+                  "256.1": {
+                    "widget": "gridCell",
+                    "label": "Section",
+                    "instances": [
+                      {
+                        "instanceId": "inst-a3",
+                        "text": "CSC 4330-1 - Software Systems Development",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "256.2": {
+                    "widget": "gridCell",
+                    "label": "Registration Status",
+                    "instances": [
+                      { "instanceId": "inst-a4", "text": "Registered", "widget": "instance" }
+                    ]
+                  },
+                  "256.6": {
+                    "widget": "gridCell",
+                    "label": "Instructional Format",
+                    "instances": [
+                      { "instanceId": "inst-a5", "text": "Lecture", "widget": "instance" }
+                    ]
+                  },
+                  "256.7": {
+                    "widget": "gridCell",
+                    "label": "Delivery Mode",
+                    "instances": [
+                      { "instanceId": "inst-a6", "text": "Face-to-Face", "widget": "instance" }
+                    ]
+                  },
+                  "256.8": {
+                    "widget": "gridCell",
+                    "label": "Meeting Patterns",
+                    "instances": [
+                      {
+                        "instanceId": "inst-a7",
+                        "text": "MWF | 10:30 AM - 11:20 AM | Patrick F Taylor 1200",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "256.9": {
+                    "widget": "gridCell",
+                    "label": "Instructor",
+                    "title": "Instructor",
+                    "children": [
+                      {
+                        "widget": "container",
+                        "children": [
+                          {
+                            "widget": "instance",
+                            "instances": [{ "instanceId": "inst-a8", "text": "Jane Instructor" }]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "256.10": {
+                    "widget": "date",
+                    "label": "Start Date",
+                    "dateTimePrecision": "day",
+                    "text": "01/12/2026",
+                    "value": { "Y": 2026, "M": 1, "D": 12, "V": 1768176000000 }
+                  },
+                  "256.11": {
+                    "widget": "date",
+                    "label": "End Date",
+                    "dateTimePrecision": "day",
+                    "text": "05/01/2026",
+                    "value": { "Y": 2026, "M": 5, "D": 1, "V": 1777939200000 }
+                  }
+                }
+              },
+              {
+                "id": "row-0-continuation",
+                "rowIndex": 1,
+                "cellsMap": {
+                  "256.1": {
+                    "widget": "gridCell",
+                    "label": "Section",
+                    "instances": [
+                      {
+                        "instanceId": "inst-a1b",
+                        "text": "CSC 4330-002 - Software Systems Development",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "256.2": {
+                    "widget": "gridCell",
+                    "label": "Registration Status",
+                    "instances": [
+                      { "instanceId": "inst-a2b", "text": "Registered", "widget": "instance" }
+                    ]
+                  },
+                  "256.6": {
+                    "widget": "gridCell",
+                    "label": "Instructional Format",
+                    "instances": [
+                      { "instanceId": "inst-a3b", "text": "Laboratory", "widget": "instance" }
+                    ]
+                  },
+                  "256.7": {
+                    "widget": "gridCell",
+                    "label": "Delivery Mode",
+                    "instances": [
+                      { "instanceId": "inst-a4b", "text": "Face-to-Face", "widget": "instance" }
+                    ]
+                  },
+                  "256.8": {
+                    "widget": "gridCell",
+                    "label": "Meeting Patterns",
+                    "instances": [
+                      {
+                        "instanceId": "inst-a5b",
+                        "text": "R | 2:30 PM - 5:20 PM | Patrick F Taylor 1200",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "256.9": {
+                    "widget": "gridCell",
+                    "label": "Instructor",
+                    "title": "Instructor",
+                    "children": [
+                      {
+                        "widget": "container",
+                        "children": [
+                          {
+                            "widget": "instance",
+                            "instances": [{ "instanceId": "inst-a6b", "text": "Jane Instructor" }]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "256.10": {
+                    "widget": "date",
+                    "label": "Start Date",
+                    "dateTimePrecision": "day",
+                    "text": "01/12/2026",
+                    "value": { "Y": 2026, "M": 1, "D": 12, "V": 1768176000000 }
+                  },
+                  "256.11": {
+                    "widget": "date",
+                    "label": "End Date",
+                    "dateTimePrecision": "day",
+                    "text": "05/01/2026",
+                    "value": { "Y": 2026, "M": 5, "D": 1, "V": 1777939200000 }
+                  }
+                }
+              },
+              {
+                "id": "row-1",
+                "rowIndex": 2,
+                "cellsMap": {
+                  "262.2": {
+                    "widget": "gridCell",
+                    "label": "Course Listing",
+                    "instances": [
+                      {
+                        "instanceId": "inst-b1",
+                        "text": "CSC 4001 - Operating Systems",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "262.10": {
+                    "widget": "gridCellNumeric",
+                    "label": "Credit Hours",
+                    "text": "3.00",
+                    "value": 3,
+                    "format": "n2",
+                    "precision": 2
+                  },
+                  "262.11": {
+                    "widget": "gridCell",
+                    "label": "Grading Basis",
+                    "instances": [
+                      { "instanceId": "inst-b2", "text": "Letter Grade", "widget": "instance" }
+                    ]
+                  },
+                  "256.1": {
+                    "widget": "gridCell",
+                    "label": "Section",
+                    "instances": [
+                      {
+                        "instanceId": "inst-b3",
+                        "text": "CSC 4001-1 - Operating Systems",
+                        "widget": "instance"
+                      },
+                      {
+                        "instanceId": "inst-b4",
+                        "text": "CSC 4001-2 (Lab) - Operating Systems",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "256.2": {
+                    "widget": "gridCell",
+                    "label": "Registration Status",
+                    "instances": [
+                      { "instanceId": "inst-b5", "text": "Registered", "widget": "instance" },
+                      { "instanceId": "inst-b6", "text": "Registered", "widget": "instance" }
+                    ]
+                  },
+                  "256.6": {
+                    "widget": "gridCell",
+                    "label": "Instructional Format",
+                    "instances": [
+                      { "instanceId": "inst-b7", "text": "Lecture", "widget": "instance" },
+                      { "instanceId": "inst-b8", "text": "Laboratory", "widget": "instance" }
+                    ]
+                  },
+                  "256.7": {
+                    "widget": "gridCell",
+                    "label": "Delivery Mode",
+                    "instances": [
+                      { "instanceId": "inst-b9", "text": "Face-to-Face", "widget": "instance" },
+                      { "instanceId": "inst-b10", "text": "Face-to-Face", "widget": "instance" }
+                    ]
+                  },
+                  "256.8": {
+                    "widget": "gridCell",
+                    "label": "Meeting Patterns",
+                    "instances": [
+                      {
+                        "instanceId": "inst-b11",
+                        "text": "MWF | 1:30 PM - 2:20 PM | Patrick F Taylor 1200",
+                        "widget": "instance"
+                      },
+                      {
+                        "instanceId": "inst-b12",
+                        "text": "T | 2:00 PM - 4:50 PM | Patrick F Taylor 1220",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "256.9": {
+                    "widget": "gridCell",
+                    "label": "Instructor",
+                    "title": "Instructor",
+                    "children": [
+                      {
+                        "widget": "container",
+                        "children": [
+                          {
+                            "widget": "instance",
+                            "instances": [{ "instanceId": "inst-b13", "text": "John Prof" }]
+                          }
+                        ]
+                      },
+                      {
+                        "widget": "container",
+                        "children": [
+                          {
+                            "widget": "instance",
+                            "instances": [{ "instanceId": "inst-b14", "text": "John Prof" }]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "256.10": {
+                    "widget": "date",
+                    "label": "Start Date",
+                    "dateTimePrecision": "day",
+                    "text": "01/12/2026",
+                    "value": { "Y": 2026, "M": 1, "D": 12, "V": 1768176000000 }
+                  },
+                  "256.11": {
+                    "widget": "date",
+                    "label": "End Date",
+                    "dateTimePrecision": "day",
+                    "text": "05/01/2026",
+                    "value": { "Y": 2026, "M": 5, "D": 1, "V": 1777939200000 }
+                  }
+                }
+              },
+              {
+                "id": "row-2",
+                "rowIndex": 3,
+                "cellsMap": {
+                  "262.2": {
+                    "widget": "gridCell",
+                    "label": "Course Listing",
+                    "instances": [
+                      {
+                        "instanceId": "inst-c1",
+                        "text": "MATH 4997 - Independent Study",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "262.10": {
+                    "widget": "gridCellNumeric",
+                    "label": "Credit Hours",
+                    "text": "1.00",
+                    "value": 1,
+                    "format": "n2",
+                    "precision": 2
+                  },
+                  "262.11": {
+                    "widget": "gridCell",
+                    "label": "Grading Basis",
+                    "instances": [
+                      { "instanceId": "inst-c2", "text": "Pass/Fail", "widget": "instance" }
+                    ]
+                  },
+                  "256.1": {
+                    "widget": "gridCell",
+                    "label": "Section",
+                    "instances": [
+                      {
+                        "instanceId": "inst-c3",
+                        "text": "MATH 4997-1 - Independent Study",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "256.2": {
+                    "widget": "gridCell",
+                    "label": "Registration Status",
+                    "instances": [
+                      { "instanceId": "inst-c4", "text": "Waitlisted", "widget": "instance" }
+                    ]
+                  },
+                  "256.6": {
+                    "widget": "gridCell",
+                    "label": "Instructional Format",
+                    "instances": [
+                      { "instanceId": "inst-c5", "text": "Independent Study", "widget": "instance" }
+                    ]
+                  },
+                  "256.7": {
+                    "widget": "gridCell",
+                    "label": "Delivery Mode",
+                    "instances": [
+                      { "instanceId": "inst-c6", "text": "Online", "widget": "instance" }
+                    ]
+                  },
+                  "256.8": {
+                    "widget": "gridCell",
+                    "label": "Meeting Patterns",
+                    "instances": [
+                      {
+                        "instanceId": "inst-c7",
+                        "text": "Independent Study | TBA",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "256.9": {
+                    "widget": "gridCell",
+                    "label": "Instructor",
+                    "title": "Instructor",
+                    "children": [
+                      {
+                        "widget": "container",
+                        "children": [
+                          {
+                            "widget": "instance",
+                            "instances": [{ "instanceId": "inst-c8", "text": "Ann Prof" }]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "256.10": {
+                    "widget": "date",
+                    "label": "Start Date",
+                    "dateTimePrecision": "day",
+                    "text": "01/12/2026",
+                    "value": { "Y": 2026, "M": 1, "D": 12, "V": 1768176000000 }
+                  },
+                  "256.11": {
+                    "widget": "date",
+                    "label": "End Date",
+                    "dateTimePrecision": "day",
+                    "text": "05/01/2026",
+                    "value": { "Y": 2026, "M": 5, "D": 1, "V": 1777939200000 }
+                  }
+                }
+              },
+              {
+                "id": "row-4-subtotal",
+                "rowIndex": 4,
+                "subtotalColumnIds": ["262.10"],
+                "cellsMap": {
+                  "262.10": {
+                    "widget": "gridCellNumeric",
+                    "label": "Credit Hours",
+                    "text": "7.00",
+                    "value": 7,
+                    "format": "n2",
+                    "precision": 2
+                  }
+                }
+              }
+            ],
+            "maxLengthValueRow": {
+              "id": "row-0",
+              "rowIndex": 0,
+              "cellsMap": {
+                "262.2": {
+                  "widget": "gridCell",
+                  "label": "Course Listing",
+                  "instances": [
+                    {
+                      "instanceId": "inst-a1",
+                      "text": "CSC 4330 - Software Systems Development",
+                      "widget": "instance"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "widget": "grid",
+            "gridId": "grid-dropped",
+            "rowCount": 4,
+            "columns": [
+              {
+                "columnId": "485.2",
+                "widget": "gridColumn",
+                "propertyName": "courseListing",
+                "label": "Course Listing"
+              },
+              {
+                "columnId": "485.3",
+                "widget": "gridColumn",
+                "propertyName": "creditHours",
+                "label": "Credit Hours"
+              },
+              {
+                "columnId": "485.4",
+                "widget": "gridColumn",
+                "propertyName": "gradingBasis",
+                "label": "Grading Basis"
+              },
+              {
+                "columnId": "485.5",
+                "widget": "gridColumn",
+                "propertyName": "droppedSections",
+                "label": "Dropped/Withdrawn Sections"
+              },
+              {
+                "columnId": "479.1",
+                "widget": "gridColumn",
+                "propertyName": "section",
+                "label": "Section"
+              },
+              {
+                "columnId": "479.2",
+                "widget": "gridColumn",
+                "propertyName": "registrationStatus",
+                "label": "Registration Status"
+              },
+              {
+                "columnId": "479.6",
+                "widget": "gridColumn",
+                "propertyName": "instructionalFormat",
+                "label": "Instructional Format"
+              },
+              {
+                "columnId": "479.7",
+                "widget": "gridColumn",
+                "propertyName": "deliveryMode",
+                "label": "Delivery Mode"
+              },
+              {
+                "columnId": "479.8",
+                "widget": "gridColumn",
+                "propertyName": "meetingPatterns",
+                "label": "Meeting Patterns"
+              },
+              {
+                "columnId": "479.9",
+                "widget": "gridColumn",
+                "propertyName": "instructor",
+                "label": "Instructor"
+              },
+              {
+                "columnId": "479.10",
+                "widget": "gridColumn",
+                "propertyName": "startDate",
+                "label": "Start Date"
+              },
+              {
+                "columnId": "479.11",
+                "widget": "gridColumn",
+                "propertyName": "endDate",
+                "label": "End Date"
+              }
+            ],
+            "rows": [
+              {
+                "id": "row-0",
+                "rowIndex": 0,
+                "cellsMap": {
+                  "485.2": {
+                    "widget": "gridCell",
+                    "label": "Course Listing",
+                    "instances": [
+                      {
+                        "instanceId": "inst-d1",
+                        "text": "ENGL 2000 - Composition II",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "485.3": {
+                    "widget": "gridCellNumeric",
+                    "label": "Credit Hours",
+                    "text": "3.00",
+                    "value": 3,
+                    "format": "n2",
+                    "precision": 2
+                  },
+                  "485.4": {
+                    "widget": "gridCell",
+                    "label": "Grading Basis",
+                    "instances": [
+                      { "instanceId": "inst-d2", "text": "Letter Grade", "widget": "instance" }
+                    ]
+                  },
+                  "485.5": {
+                    "widget": "gridCell",
+                    "label": "Dropped/Withdrawn Sections",
+                    "instances": [
+                      {
+                        "instanceId": "inst-d3",
+                        "text": "ENGL 2000-1 - Composition II (Dropped)",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "479.1": {
+                    "widget": "gridCell",
+                    "label": "Section",
+                    "instances": [
+                      {
+                        "instanceId": "inst-d4",
+                        "text": "ENGL 2000-1 - Composition II",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "479.2": {
+                    "widget": "gridCell",
+                    "label": "Registration Status",
+                    "instances": [
+                      { "instanceId": "inst-d5", "text": "Dropped", "widget": "instance" }
+                    ]
+                  },
+                  "479.6": {
+                    "widget": "gridCell",
+                    "label": "Instructional Format",
+                    "instances": [
+                      { "instanceId": "inst-d6", "text": "Lecture", "widget": "instance" }
+                    ]
+                  },
+                  "479.7": {
+                    "widget": "gridCell",
+                    "label": "Delivery Mode",
+                    "instances": [
+                      { "instanceId": "inst-d7", "text": "Face-to-Face", "widget": "instance" }
+                    ]
+                  },
+                  "479.8": {
+                    "widget": "gridCell",
+                    "label": "Meeting Patterns",
+                    "instances": [
+                      {
+                        "instanceId": "inst-d8",
+                        "text": "TR | 9:00 AM - 10:20 AM | Coates Hall 105",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "479.9": {
+                    "widget": "gridCell",
+                    "label": "Instructor",
+                    "instances": [
+                      { "instanceId": "inst-d9", "text": "Sam Faculty", "widget": "instance" }
+                    ]
+                  },
+                  "479.10": {
+                    "widget": "gridCell",
+                    "label": "Start Date",
+                    "instances": [
+                      { "instanceId": "inst-d10", "text": "01/12/2026", "widget": "instance" }
+                    ]
+                  },
+                  "479.11": {
+                    "widget": "gridCell",
+                    "label": "End Date",
+                    "instances": [
+                      { "instanceId": "inst-d11", "text": "05/01/2026", "widget": "instance" }
+                    ]
+                  }
+                }
+              },
+              {
+                "id": "row-0-continuation",
+                "rowIndex": 1,
+                "cellsMap": {
+                  "479.1": {
+                    "widget": "gridCell",
+                    "label": "Section",
+                    "instances": [
+                      {
+                        "instanceId": "inst-d4b",
+                        "text": "ENGL 2000-2 (Lab) - Composition II",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "479.2": {
+                    "widget": "gridCell",
+                    "label": "Registration Status",
+                    "instances": [
+                      { "instanceId": "inst-d5b", "text": "Dropped", "widget": "instance" }
+                    ]
+                  },
+                  "479.6": {
+                    "widget": "gridCell",
+                    "label": "Instructional Format",
+                    "instances": [
+                      { "instanceId": "inst-d6b", "text": "Laboratory", "widget": "instance" }
+                    ]
+                  },
+                  "479.7": {
+                    "widget": "gridCell",
+                    "label": "Delivery Mode",
+                    "instances": [
+                      { "instanceId": "inst-d7b", "text": "Face-to-Face", "widget": "instance" }
+                    ]
+                  },
+                  "479.8": {
+                    "widget": "gridCell",
+                    "label": "Meeting Patterns",
+                    "instances": [
+                      {
+                        "instanceId": "inst-d8b",
+                        "text": "F | 1:00 PM - 2:20 PM | Coates Hall 105",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "479.9": {
+                    "widget": "gridCell",
+                    "label": "Instructor",
+                    "instances": [
+                      { "instanceId": "inst-d9b", "text": "Sam Faculty", "widget": "instance" }
+                    ]
+                  },
+                  "479.10": {
+                    "widget": "gridCell",
+                    "label": "Start Date",
+                    "instances": [
+                      { "instanceId": "inst-d10b", "text": "01/12/2026", "widget": "instance" }
+                    ]
+                  },
+                  "479.11": {
+                    "widget": "gridCell",
+                    "label": "End Date",
+                    "instances": [
+                      { "instanceId": "inst-d11b", "text": "05/01/2026", "widget": "instance" }
+                    ]
+                  }
+                }
+              },
+              {
+                "id": "row-2",
+                "rowIndex": 2,
+                "cellsMap": {
+                  "485.2": {
+                    "widget": "gridCell",
+                    "label": "Course Listing",
+                    "instances": [
+                      {
+                        "instanceId": "inst-e1",
+                        "text": "HIST 2055 - Western Civilization",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "485.3": {
+                    "widget": "gridCellNumeric",
+                    "label": "Credit Hours",
+                    "text": "3.00",
+                    "value": 3,
+                    "format": "n2",
+                    "precision": 2
+                  },
+                  "485.4": {
+                    "widget": "gridCell",
+                    "label": "Grading Basis",
+                    "instances": [
+                      { "instanceId": "inst-e2", "text": "Letter Grade", "widget": "instance" }
+                    ]
+                  },
+                  "485.5": {
+                    "widget": "gridCell",
+                    "label": "Dropped/Withdrawn Sections",
+                    "instances": [
+                      {
+                        "instanceId": "inst-e3",
+                        "text": "HIST 2055-1 - Western Civilization (Dropped)",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "479.1": {
+                    "widget": "gridCell",
+                    "label": "Section",
+                    "instances": [
+                      {
+                        "instanceId": "inst-e4",
+                        "text": "HIST 2055-1 - Western Civilization",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "479.2": {
+                    "widget": "gridCell",
+                    "label": "Registration Status",
+                    "instances": [
+                      { "instanceId": "inst-e5", "text": "Dropped", "widget": "instance" }
+                    ]
+                  },
+                  "479.6": {
+                    "widget": "gridCell",
+                    "label": "Instructional Format",
+                    "instances": [
+                      { "instanceId": "inst-e6", "text": "Lecture", "widget": "instance" }
+                    ]
+                  },
+                  "479.7": {
+                    "widget": "gridCell",
+                    "label": "Delivery Mode",
+                    "instances": [
+                      { "instanceId": "inst-e7", "text": "Face-to-Face", "widget": "instance" }
+                    ]
+                  },
+                  "479.8": {
+                    "widget": "gridCell",
+                    "label": "Meeting Patterns",
+                    "instances": [
+                      {
+                        "instanceId": "inst-e8",
+                        "text": "MWF | 9:30 AM - 10:20 AM | Coates Hall 201",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "479.9": {
+                    "widget": "gridCell",
+                    "label": "Instructor",
+                    "instances": [
+                      { "instanceId": "inst-e9", "text": "Pat Historian", "widget": "instance" }
+                    ]
+                  },
+                  "479.10": {
+                    "widget": "gridCell",
+                    "label": "Start Date",
+                    "instances": [
+                      { "instanceId": "inst-e10", "text": "01/12/2026", "widget": "instance" }
+                    ]
+                  },
+                  "479.11": {
+                    "widget": "gridCell",
+                    "label": "End Date",
+                    "instances": [
+                      { "instanceId": "inst-e11", "text": "05/01/2026", "widget": "instance" }
+                    ]
+                  }
+                }
+              },
+              {
+                "id": "row-3-duplicate-event",
+                "rowIndex": 3,
+                "cellsMap": {
+                  "485.2": {
+                    "widget": "gridCell",
+                    "label": "Course Listing",
+                    "instances": [
+                      {
+                        "instanceId": "inst-f1",
+                        "text": "HIST 2055 - Western Civilization",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "485.3": {
+                    "widget": "gridCellNumeric",
+                    "label": "Credit Hours",
+                    "text": "3.00",
+                    "value": 3,
+                    "format": "n2",
+                    "precision": 2
+                  },
+                  "485.4": {
+                    "widget": "gridCell",
+                    "label": "Grading Basis",
+                    "instances": [
+                      { "instanceId": "inst-f2", "text": "Letter Grade", "widget": "instance" }
+                    ]
+                  },
+                  "485.5": {
+                    "widget": "gridCell",
+                    "label": "Dropped/Withdrawn Sections",
+                    "instances": [
+                      {
+                        "instanceId": "inst-f3",
+                        "text": "HIST 2055-1 - Western Civilization (Withdrawn)",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "479.1": {
+                    "widget": "gridCell",
+                    "label": "Section",
+                    "instances": [
+                      {
+                        "instanceId": "inst-f4",
+                        "text": "HIST 2055-1 - Western Civilization",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "479.2": {
+                    "widget": "gridCell",
+                    "label": "Registration Status",
+                    "instances": [
+                      { "instanceId": "inst-f5", "text": "Withdrawn", "widget": "instance" }
+                    ]
+                  },
+                  "479.6": {
+                    "widget": "gridCell",
+                    "label": "Instructional Format",
+                    "instances": [
+                      { "instanceId": "inst-f6", "text": "Lecture", "widget": "instance" }
+                    ]
+                  },
+                  "479.7": {
+                    "widget": "gridCell",
+                    "label": "Delivery Mode",
+                    "instances": [
+                      { "instanceId": "inst-f7", "text": "Face-to-Face", "widget": "instance" }
+                    ]
+                  },
+                  "479.8": {
+                    "widget": "gridCell",
+                    "label": "Meeting Patterns",
+                    "instances": [
+                      {
+                        "instanceId": "inst-f8",
+                        "text": "MWF | 9:30 AM - 10:20 AM | Coates Hall 201",
+                        "widget": "instance"
+                      }
+                    ]
+                  },
+                  "479.9": {
+                    "widget": "gridCell",
+                    "label": "Instructor",
+                    "instances": [
+                      { "instanceId": "inst-f9", "text": "Pat Historian", "widget": "instance" }
+                    ]
+                  },
+                  "479.10": {
+                    "widget": "gridCell",
+                    "label": "Start Date",
+                    "instances": [
+                      { "instanceId": "inst-f10", "text": "01/12/2026", "widget": "instance" }
+                    ]
+                  },
+                  "479.11": {
+                    "widget": "gridCell",
+                    "label": "End Date",
+                    "instances": [
+                      { "instanceId": "inst-f11", "text": "05/01/2026", "widget": "instance" }
+                    ]
+                  }
+                }
+              }
+            ],
+            "maxWordLengthValueRow": {
+              "id": "row-0",
+              "rowIndex": 0,
+              "cellsMap": {
+                "485.2": {
+                  "widget": "gridCell",
+                  "label": "Course Listing",
+                  "instances": [
+                    {
+                      "instanceId": "inst-d1",
+                      "text": "ENGL 2000 - Composition II",
+                      "widget": "instance"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

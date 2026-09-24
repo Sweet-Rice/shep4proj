@@ -4,9 +4,13 @@ import {
   ACADEMIC_RECORD_TASK_ID,
   WORKDAY_HAR_URL_FILTER,
   classifyResponse,
+  extractGridSummaries,
+  isAcademicRecordGrid,
+  isCurrentRegistrationsGrid,
   isWorkdayHost,
   jsonTopLevelKeys,
-  pickLikelyRecordEntry,
+  pickLikelyAcademicRecordEntry,
+  pickLikelyRegistrationsEntry,
   type RecordCandidate,
 } from "./capture-lib.ts";
 
@@ -110,82 +114,156 @@ describe("jsonTopLevelKeys", () => {
   });
 });
 
-describe("pickLikelyRecordEntry", () => {
+const academicRecordBody = JSON.stringify({
+  body: {
+    widget: "grid",
+    label: "Enrollments",
+    columns: [{ columnId: "90.2", label: "Course" }],
+    rows: [],
+  },
+});
+
+const currentRegistrationsBody = JSON.stringify({
+  body: {
+    widget: "grid",
+    label: "My Enrolled Courses",
+    columns: [
+      { columnId: "262.2", label: "Course Listing" },
+      { columnId: "256.2", label: "Registration Status" },
+    ],
+    rows: [],
+  },
+});
+
+describe("extractGridSummaries", () => {
+  it("returns [] for a non-JSON body", () => {
+    expect(extractGridSummaries("<html></html>")).toEqual([]);
+  });
+
+  it("returns [] for null / a JSON body with no body key", () => {
+    expect(extractGridSummaries(null)).toEqual([]);
+    expect(extractGridSummaries(JSON.stringify({ title: "no body" }))).toEqual([]);
+  });
+
+  it("extracts a grid's label and column labels, never row/cell content", () => {
+    const summaries = extractGridSummaries(academicRecordBody);
+    expect(summaries).toEqual([{ label: "Enrollments", columnLabels: ["Course"] }]);
+  });
+});
+
+describe("isAcademicRecordGrid / isCurrentRegistrationsGrid", () => {
+  it("classifies the Enrollments grid as the academic record, not registrations", () => {
+    const [summary] = extractGridSummaries(academicRecordBody);
+    expect(isAcademicRecordGrid(summary!)).toBe(true);
+    expect(isCurrentRegistrationsGrid(summary!)).toBe(false);
+  });
+
+  it("classifies the My Enrolled Courses grid as registrations, not the academic record", () => {
+    const [summary] = extractGridSummaries(currentRegistrationsBody);
+    expect(isCurrentRegistrationsGrid(summary!)).toBe(true);
+    expect(isAcademicRecordGrid(summary!)).toBe(false);
+  });
+});
+
+describe("pickLikelyAcademicRecordEntry / pickLikelyRegistrationsEntry", () => {
   function candidate(overrides: Partial<RecordCandidate>): RecordCandidate {
     return {
       urlPath: "/api/other",
       classification: "other",
       bytes: 0,
       afterNavigation: false,
+      bodyText: null,
       ...overrides,
     };
   }
 
-  it("prefers an entry whose path names the academic-record task id", () => {
+  it("never picks an HTML shell, even one whose URL names the right task id", () => {
     const entries = [
-      candidate({
-        urlPath: "/api/big",
-        classification: "json",
-        bytes: 999999,
-        afterNavigation: true,
-      }),
       candidate({
         urlPath: `/lsu/d/task/${ACADEMIC_RECORD_TASK_ID}.htmld`,
         classification: "html",
-        bytes: 10,
-        afterNavigation: false,
-      }),
-    ];
-    const picked = pickLikelyRecordEntry(entries);
-    expect(picked?.urlPath).toContain(ACADEMIC_RECORD_TASK_ID);
-  });
-
-  it("falls back to the largest post-navigation JSON response", () => {
-    const entries = [
-      candidate({
-        urlPath: "/api/small",
-        classification: "json",
-        bytes: 100,
+        bytes: 33000,
         afterNavigation: true,
+        bodyText: "<!DOCTYPE html><html></html>",
       }),
       candidate({
-        urlPath: "/api/pre-nav-big",
-        classification: "json",
-        bytes: 99999,
-        afterNavigation: false,
-      }),
-      candidate({
-        urlPath: "/api/big",
+        urlPath: "/lsu/generic-hub/page-context-id/c0.htmld",
         classification: "json",
         bytes: 5000,
         afterNavigation: true,
-      }),
-      candidate({
-        urlPath: "/api/html",
-        classification: "html",
-        bytes: 100000,
-        afterNavigation: true,
+        bodyText: academicRecordBody,
       }),
     ];
-    const picked = pickLikelyRecordEntry(entries);
-    expect(picked?.urlPath).toBe("/api/big");
+    const picked = pickLikelyAcademicRecordEntry(entries);
+    expect(picked?.classification).toBe("json");
+    expect(picked?.urlPath).toBe("/lsu/generic-hub/page-context-id/c0.htmld");
   });
 
-  it("returns undefined when nothing matches either heuristic", () => {
+  it("picks the largest JSON response that actually contains a matching grid", () => {
+    const entries = [
+      candidate({
+        urlPath: "/api/unrelated-big",
+        classification: "json",
+        bytes: 999999,
+        afterNavigation: true,
+        bodyText: JSON.stringify({ body: { widget: "container", children: [] } }),
+      }),
+      candidate({
+        urlPath: "/lsu/generic-hub/page-context-id/c0.htmld",
+        classification: "json",
+        bytes: 5000,
+        afterNavigation: true,
+        bodyText: academicRecordBody,
+      }),
+    ];
+    const picked = pickLikelyAcademicRecordEntry(entries);
+    expect(picked?.urlPath).toBe("/lsu/generic-hub/page-context-id/c0.htmld");
+  });
+
+  it("names the academic record and the registrations entries separately", () => {
+    const entries = [
+      candidate({
+        urlPath: "/lsu/generic-hub/page-context-id/c0.htmld",
+        classification: "json",
+        bytes: 5000,
+        afterNavigation: true,
+        bodyText: academicRecordBody,
+      }),
+      candidate({
+        urlPath: "/lsu/generic-hub/page-context-id/c4.htmld",
+        classification: "json",
+        bytes: 3000,
+        afterNavigation: true,
+        bodyText: currentRegistrationsBody,
+      }),
+    ];
+
+    expect(pickLikelyAcademicRecordEntry(entries)?.urlPath).toBe(
+      "/lsu/generic-hub/page-context-id/c0.htmld",
+    );
+    expect(pickLikelyRegistrationsEntry(entries)?.urlPath).toBe(
+      "/lsu/generic-hub/page-context-id/c4.htmld",
+    );
+  });
+
+  it("returns undefined when nothing contains a matching grid", () => {
     const entries = [
       candidate({
         urlPath: "/api/pre-nav",
         classification: "json",
         bytes: 100,
         afterNavigation: false,
+        bodyText: JSON.stringify({ body: { widget: "container", children: [] } }),
       }),
       candidate({
         urlPath: "/api/html",
         classification: "html",
         bytes: 100,
         afterNavigation: true,
+        bodyText: "<html></html>",
       }),
     ];
-    expect(pickLikelyRecordEntry(entries)).toBeUndefined();
+    expect(pickLikelyAcademicRecordEntry(entries)).toBeUndefined();
+    expect(pickLikelyRegistrationsEntry(entries)).toBeUndefined();
   });
 });

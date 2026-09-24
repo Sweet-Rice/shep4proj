@@ -74,7 +74,8 @@ import { shortPathSlug } from "../src/redact/safety.ts";
 import {
   classifyResponse,
   jsonTopLevelKeys,
-  pickLikelyRecordEntry,
+  pickLikelyAcademicRecordEntry,
+  pickLikelyRegistrationsEntry,
   WORKDAY_HAR_URL_FILTER,
   type ResponseClass,
 } from "./capture-lib.ts";
@@ -211,6 +212,7 @@ interface SummaryRow {
   leftoverHits: number;
   classification: ResponseClass | "write-error";
   likelyAcademicRecord: boolean;
+  likelyRegistrations: boolean;
   writeError?: string;
 }
 
@@ -226,8 +228,14 @@ function printSummary(rows: SummaryRow[]): void {
     "class",
     "write error",
   ];
+  const markerFor = (r: SummaryRow): string => {
+    if (r.likelyAcademicRecord && r.likelyRegistrations) return "*+ ";
+    if (r.likelyAcademicRecord) return "* ";
+    if (r.likelyRegistrations) return "+ ";
+    return "";
+  };
   const cellsFor = (r: SummaryRow): string[] => [
-    r.likelyAcademicRecord ? `* ${r.file}` : r.file,
+    `${markerFor(r)}${r.file}`,
     r.method,
     r.urlPath,
     String(r.status),
@@ -286,10 +294,12 @@ async function redactCapture(opts: {
       classification,
       urlPath,
       bytes: byteLen(entry.responseBody),
+      bodyText: entry.responseBody,
     };
   });
 
-  const likely = pickLikelyRecordEntry(analyzed);
+  const likelyRecord = pickLikelyAcademicRecordEntry(analyzed);
+  const likelyRegistrations = pickLikelyRegistrationsEntry(analyzed);
 
   const rows: SummaryRow[] = [];
   let anyLeftovers = false;
@@ -323,6 +333,7 @@ async function redactCapture(opts: {
         leftoverHits: 0,
         classification: "write-error",
         likelyAcademicRecord: false,
+        likelyRegistrations: false,
         writeError: message,
       });
       continue;
@@ -340,7 +351,8 @@ async function redactCapture(opts: {
       bytes,
       leftoverHits: hits.length,
       classification,
-      likelyAcademicRecord: likely?.idx === idx,
+      likelyAcademicRecord: likelyRecord?.idx === idx,
+      likelyRegistrations: likelyRegistrations?.idx === idx,
     });
 
     // Local-only classification detail: top-level JSON key names, never values.
@@ -364,21 +376,35 @@ async function redactCapture(opts: {
     );
   }
 
-  if (likely) {
+  if (likelyRecord) {
     console.log(
-      `\nMost likely to carry the academic record: a ${likely.classification} response at ${likely.urlPath} (${likely.bytes} bytes).`,
+      `\nMost likely to carry the academic record: a ${likelyRecord.classification} response at ${likelyRecord.urlPath} (${likelyRecord.bytes} bytes).`,
     );
   } else {
     console.log(
-      "\nNo entry clearly matched the academic-record task id or stood out as the largest post-navigation JSON response — review the table above by hand.",
+      "\nNo entry's body contained an academic-record-shaped grid — review the table above by hand.",
+    );
+  }
+
+  if (likelyRegistrations) {
+    console.log(
+      `Most likely to carry current registrations: a ${likelyRegistrations.classification} response at ${likelyRegistrations.urlPath} (${likelyRegistrations.bytes} bytes).`,
+    );
+  } else {
+    console.log(
+      "No entry's body contained a current-registrations-shaped grid — review the table above by hand.",
     );
   }
 
   if (anyLeftovers) {
+    // Deliberately not process.exitCode = 1 here: this is a local review aid
+    // (the human reads the leftover-hits column and decides), not a hard
+    // failure - a nonzero exit here was confusing since the run itself
+    // succeeded. The strict redact:har CLI (used for a final, standalone
+    // redaction) still exits nonzero on leftovers.
     console.error(
       "\nLeftover scan found possible PII/tokens still present. Review the files above before committing.",
     );
-    process.exitCode = 1;
   }
 
   if (anyWriteErrors) {
