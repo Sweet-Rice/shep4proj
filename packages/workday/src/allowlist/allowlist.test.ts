@@ -125,6 +125,73 @@ describe("ALLOWED_ENDPOINTS: academic-record-get", () => {
   });
 });
 
+describe("ALLOWED_ENDPOINTS: current-registrations-get", () => {
+  it("allows the task/2998$28771.htmld variant with a clientRequestID query", () => {
+    expect(() =>
+      assertAllowed(
+        "GET",
+        "https://www.myworkday.com/lsu/generic-hub/task/2998$28771.htmld?clientRequestID=22222222-2222-4222-8222-222222222222",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).not.toThrow();
+  });
+
+  it("allows the shared page-context-id/<contextId>.htmld variant (same pattern as academic-record-get)", () => {
+    expect(() =>
+      assertAllowed(
+        "GET",
+        "https://www.myworkday.com/lsu/generic-hub/page-context-id/c4.htmld",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).not.toThrow();
+  });
+
+  it("rejects POST to the registrations URL", () => {
+    expect(() =>
+      assertAllowed(
+        "POST",
+        "https://www.myworkday.com/lsu/generic-hub/task/2998$28771.htmld",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).toThrow(EndpointNotAllowedError);
+  });
+
+  it("rejects the hub-nav URL (/lsu/task/2998$28771.htmld) — no course data", () => {
+    expect(() =>
+      assertAllowed(
+        "GET",
+        "https://www.myworkday.com/lsu/task/2998$28771.htmld",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).toThrow(EndpointNotAllowedError);
+  });
+
+  it("rejects the registration write API and the drop API - the deny patterns win over any allowlist entry", () => {
+    expect(() =>
+      assertAllowed(
+        "GET",
+        "https://www.myworkday.com/wday/sirg/protectedapi/asorInternal/v1/lsu/registration",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).toThrow(EndpointNotAllowedError);
+
+    expect(() =>
+      assertAllowed(
+        "POST",
+        "https://www.myworkday.com/wday/sirg/protectedapi/asorInternal/v1/lsu/drop",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).toThrow(EndpointNotAllowedError);
+  });
+
+  it("isn't incidentally caught by DENY_PATTERNS: task id 2998$28771 contains neither 'regist' nor 'drop'", () => {
+    const url = "https://www.myworkday.com/lsu/generic-hub/task/2998$28771.htmld";
+    expect(/regist/i.test(url)).toBe(false);
+    expect(/drop/i.test(url)).toBe(false);
+    expect(() => assertAllowed("GET", url, ALLOWED_ENDPOINTS)).not.toThrow();
+  });
+});
+
 describe("guardedFetch", () => {
   it("calls page.evaluate for an allowed request", async () => {
     const page = makeFakePage();

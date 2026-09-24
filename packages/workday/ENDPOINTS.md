@@ -87,6 +87,12 @@ change.
   - An equivalent body is also served at
     `GET /lsu/generic-hub/page-context-id/<contextId>.htmld` — same shape,
     different addressing. Both variants are allowlisted.
+  - This `page-context-id/<contextId>` pattern is **generic**: it isn't tied
+    to task 2998$30300, and the same `ALLOWED_ENDPOINTS` entry (regex
+    alternation) also covers `current-registrations-get` below, since both
+    tasks have been observed served from a `page-context-id` URL in
+    practice, with the context id varying per session. There is no separate
+    `page-context-id` allowlist entry — it's shared between the two.
   - Called by the Workday UI from `https://www.myworkday.com/lsu/d/task/2998$30300.htmld`,
     which is only an HTML shell (~33 KB) — the actual data comes from the
     `generic-hub` call above (~200 KB JSON).
@@ -95,42 +101,55 @@ change.
     session context — e.g. from the response of `GET /lsu/app-root`, which
     carries `sessionSecureToken` — **to confirm in implementation** (T-312/T-315).
 
+### current-registrations-get
+- Purpose: Reads the student's current-term registrations ("View My
+  Courses") — enrolled courses with their section(s), and dropped/withdrawn
+  sections. The academic record above only lists *graded* coursework, so
+  this is the only source for in-progress registrations. Returned as JSON
+  with a top-level `title`/`widget`/`body`; enrolled courses live in a
+  `widget:"grid"` labelled "My Enrolled Courses" (course-level column ids
+  observed as `262.x`: `262.2` Course Listing, `262.10` Credit Hours,
+  `262.11` Grading Basis, `262.12` Enrolled Sections; section-level column
+  ids observed as `256.x`: `256.1` Section, `256.2` Registration Status,
+  `256.6` Instructional Format, `256.7` Delivery Mode, `256.8` Meeting
+  Patterns, `256.9` Instructor, `256.10` Start Date, `256.11` End Date).
+  Dropped/withdrawn sections live in a second, unlabeled grid identified by
+  a "Dropped/Withdrawn Sections" column (`485.x`/`479.x` in the observed
+  capture). Parsed by `parseCurrentRegistrations` (T-320).
+- Method: GET
+- URL pattern: `https://www.myworkday.com/lsu/generic-hub/task/2998$28771.htmld?clientRequestID=<uuid>`
+  (**to confirm** — task 2998$28771 is the "View My Courses" task id
+  observed via `HUB_NAV` at `GET /lsu/task/2998$28771.htmld`, by analogy
+  with the academic record's `task/2998$30300` → `d/task/2998$30300`
+  pairing; the exact `generic-hub/task/...` URL for this task has not
+  itself been directly captured, only its `page-context-id` equivalent —
+  see below.)
+- Required headers: same as `academic-record-get` — `session-secure-token`,
+  `x-workday-client`, `accept`, `content-type`, `referer` (plus the session
+  cookie).
+- Fixture: `fixtures/workday/current-registrations.synthetic.json` (added
+  by T-320)
+- Notes:
+  - Observed in practice served at
+    `GET /lsu/generic-hub/page-context-id/<contextId>.htmld` — the same
+    shared, generic pattern already allowlisted by `academic-record-get`
+    above (context id varies per session; not tied to either task). See
+    `extractCurrentRegistrationsFromHar`, which picks the matching HAR
+    entry by grid content rather than by URL, precisely because the context
+    id can't be relied on.
+  - `2998$28771` contains neither `regist` nor `drop`, so it isn't
+    incidentally caught by `DENY_PATTERNS` (which target the registration
+    *write* APIs, not this read-only task id) — verified by a dedicated
+    allowlist test.
+
 ### Observed but not allowlisted
 
 | Endpoint | Why not |
 | --- | --- |
 | `GET /lsu/task/2998$30300.htmld` (HUB_NAV) | Navigation-panel metadata for the Academics hub only; carries no course data, so there's nothing here worth the allowlist surface area. |
+| `GET /lsu/task/2998$28771.htmld` (HUB_NAV) | Same as above, for "View My Courses" — navigation-panel metadata only, no grid data. |
 | `GET /lsu/app-root` | Possibly needed to obtain `sessionSecureToken` for the academic-record call; not yet allowlisted pending confirmation in T-312/T-315 of how the session token is actually sourced. |
 | `GET /wday/sirg/protectedapi/asorInternal/v1/lsu/registration` | Registration-related; stays on the deny side per `SECURITY.md` — never allowlist. |
-
-## Pending capture
-
-### Current registrations (T-320)
-
-The academic record grid above lists only graded enrollments — completed,
-failed, or withdrawn coursework. It does not include the student's
-**current-term registrations** (courses registered for but not yet
-graded). The most likely source is the Workday task "View My Courses", but
-**its endpoint is unknown and must not be guessed** — per SECURITY.md, a
-human with an LSU login has to capture it first.
-
-Steps to capture and inspect it once available:
-
-1. Run `pnpm --filter @jevschedule/workday capture --pii "..."`. After the
-   academic record loads, the script now prompts: open View My Courses by
-   typing it into the Workday search bar, pick the task, and wait for
-   current courses to show, then press Enter.
-2. Run `pnpm --filter @jevschedule/workday inspect:grids` against the
-   resulting HAR (defaults to the newest file in `fixtures/workday/raw/`)
-   to see the response's structure — grid labels, row counts, and
-   `columnId=label` pairs, with no cell values, instance text, or names
-   printed.
-3. Once the endpoint is confirmed, add it as a new entry here (see "Entry
-   format" above) and a parser can be built against it. Until then, no code
-   may call it.
-4. If the URL is already known on a later run, pass it via `--task-url
-   <url>` to `capture` so the script navigates there automatically instead
-   of relying on manual search.
 
 ## How this was captured
 
