@@ -291,6 +291,7 @@ describe("parseCurrentRegistrations", () => {
           label: "My Enrolled Courses",
           columns: [
             { columnId: "262.2", label: "Course Listing" },
+            { columnId: "262.10", label: "Credit Hours" },
             { columnId: "256.2", label: "Registration Status" },
             { columnId: "256.10", label: "Start Date" },
           ],
@@ -326,6 +327,7 @@ describe("parseCurrentRegistrations", () => {
         label: "My Enrolled Courses",
         columns: [
           { columnId: "262.2", label: "Course Listing" },
+          { columnId: "262.10", label: "Credit Hours" },
           { columnId: "256.2", label: "Registration Status" },
           { columnId: "256.10", label: "Start Date" },
         ],
@@ -448,5 +450,31 @@ describe("parseCurrentRegistrations", () => {
     expect(serialized).not.toContain("Student One");
     expect(serialized).not.toContain("00000001");
     expect(serialized).not.toMatch(/[^\s]+@[^\s]+\.[^\s]+/);
+  });
+
+  it("rejects a grid whose columns resolve to the same id when a label is missing", () => {
+    const fixture = loadFixture("current-registrations.synthetic.json");
+    const cloned = structuredClone(fixture);
+
+    function removeRegistrationStatusLabel(node: unknown): void {
+      if (Array.isArray(node)) {
+        for (const item of node) removeRegistrationStatusLabel(item);
+      } else if (node && typeof node === "object") {
+        const obj = node as Record<string, unknown>;
+        if (obj.label === "Registration Status") {
+          delete obj.label;
+        }
+        for (const value of Object.values(obj)) {
+          removeRegistrationStatusLabel(value);
+        }
+      }
+    }
+
+    removeRegistrationStatusLabel(cloned);
+
+    expect(() => parseCurrentRegistrations(cloned)).toThrow(WorkdayShapeError);
+    expect(() => parseCurrentRegistrations(cloned)).toThrow(
+      /resolves "Course Listing" and "Registration Status" to the same column/,
+    );
   });
 });

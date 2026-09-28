@@ -356,6 +356,25 @@ function resolveSectionColumnIds(columns: Column[], rows: Row[]): SectionColumnI
   };
 }
 
+function assertDistinctColumns(
+  gridLabel: string,
+  gridPath: string,
+  cols: Record<string, string | undefined>,
+): void {
+  const seen = new Map<string, string>();
+  for (const [label, id] of Object.entries(cols)) {
+    if (id === undefined) continue;
+    const existing = seen.get(id);
+    if (existing !== undefined) {
+      throw new WorkdayShapeError(
+        `Grid "${gridLabel}" resolves "${existing}" and "${label}" to the same column ${id}`,
+        `${gridPath}.columns`,
+      );
+    }
+    seen.set(id, label);
+  }
+}
+
 function buildSectionAt(
   row: Row,
   colIds: SectionColumnIds,
@@ -423,6 +442,15 @@ function sectionsForRow(
       const parsed = GridSchema.safeParse(candidate.node);
       if (!parsed.success) continue;
       const nestedColIds = resolveSectionColumnIds(parsed.data.columns, parsed.data.rows);
+      assertDistinctColumns(parsed.data.label ?? "Sections", candidate.path, {
+        Section: nestedColIds.sectionColId,
+        "Instructional Format": nestedColIds.instructionalFormatColId,
+        "Delivery Mode": nestedColIds.deliveryModeColId,
+        "Meeting Patterns": nestedColIds.meetingPatternsColId,
+        Instructor: nestedColIds.instructorColId,
+        "Start Date": nestedColIds.startDateColId,
+        "End Date": nestedColIds.endDateColId,
+      });
       for (const nestedRow of parsed.data.rows) {
         nestedSections.push(buildSectionAt(nestedRow, nestedColIds, 0, 1));
       }
@@ -516,6 +544,20 @@ function processGrid(
     ".2",
   );
   const sectionColIds = resolveSectionColumnIds(grid.columns, grid.rows);
+
+  assertDistinctColumns(gridLabel, gridPath, {
+    "Course Listing": courseListingColId,
+    "Credit Hours": creditHoursColId,
+    "Grading Basis": gradingBasisColId,
+    "Registration Status": registrationStatusColId,
+    Section: sectionColIds.sectionColId,
+    "Instructional Format": sectionColIds.instructionalFormatColId,
+    "Delivery Mode": sectionColIds.deliveryModeColId,
+    "Meeting Patterns": sectionColIds.meetingPatternsColId,
+    Instructor: sectionColIds.instructorColId,
+    "Start Date": sectionColIds.startDateColId,
+    "End Date": sectionColIds.endDateColId,
+  });
 
   if (!courseListingColId) {
     throw new WorkdayShapeError(
