@@ -397,11 +397,8 @@ async function redactCapture(opts: {
   }
 
   if (anyLeftovers) {
-    // Deliberately not process.exitCode = 1 here: this is a local review aid
-    // (the human reads the leftover-hits column and decides), not a hard
-    // failure - a nonzero exit here was confusing since the run itself
-    // succeeded. The strict redact:har CLI (used for a final, standalone
-    // redaction) still exits nonzero on leftovers.
+    process.exitCode = 1;
+    // Leftovers fail the run like redact:har does; the redacted files are still written for review.
     console.error(
       "\nLeftover scan found possible PII/tokens still present. Review the files above before committing.",
     );
