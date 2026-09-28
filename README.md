@@ -34,6 +34,13 @@ for the full plan, architecture, and backlog.
    pnpm -r build
    pnpm -r test
    ```
+5. Start the local Postgres used by the server (needs [Docker](https://docs.docker.com/get-docker/)):
+   ```sh
+   docker compose up -d        # Postgres 18 on 127.0.0.1:5432, data kept in a named volume
+   docker compose down         # stop it (add -v to also delete the data)
+   ```
+   Defaults work without any setup. To change the user, password, database or port,
+   copy `.env.example` to `.env` and edit it.
 
 Other useful root scripts: `pnpm lint`, `pnpm typecheck`, `pnpm format`.
 
