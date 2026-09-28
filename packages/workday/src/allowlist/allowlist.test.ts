@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ALLOWED_ENDPOINTS } from "./allowed-endpoints.js";
 import { assertAllowed } from "./assert-allowed.js";
+import { DENY_PATTERNS } from "./deny-patterns.js";
 import { EndpointNotAllowedError } from "./errors.js";
 import { guardedFetch } from "./guarded-fetch.js";
 import type { AllowedEndpoint, PageLike } from "./types.js";
@@ -126,14 +127,14 @@ describe("ALLOWED_ENDPOINTS: academic-record-get", () => {
 });
 
 describe("ALLOWED_ENDPOINTS: current-registrations-get", () => {
-  it("allows the task/2998$28771.htmld variant with a clientRequestID query", () => {
+  it("rejects the unconfirmed task/2998$28771.htmld variant until directly observed", () => {
     expect(() =>
       assertAllowed(
         "GET",
         "https://www.myworkday.com/lsu/generic-hub/task/2998$28771.htmld?clientRequestID=22222222-2222-4222-8222-222222222222",
         ALLOWED_ENDPOINTS,
       ),
-    ).not.toThrow();
+    ).toThrow(EndpointNotAllowedError);
   });
 
   it("allows the shared page-context-id/<contextId>.htmld variant (same pattern as academic-record-get)", () => {
@@ -150,7 +151,7 @@ describe("ALLOWED_ENDPOINTS: current-registrations-get", () => {
     expect(() =>
       assertAllowed(
         "POST",
-        "https://www.myworkday.com/lsu/generic-hub/task/2998$28771.htmld",
+        "https://www.myworkday.com/lsu/generic-hub/page-context-id/c4.htmld",
         ALLOWED_ENDPOINTS,
       ),
     ).toThrow(EndpointNotAllowedError);
@@ -188,7 +189,9 @@ describe("ALLOWED_ENDPOINTS: current-registrations-get", () => {
     const url = "https://www.myworkday.com/lsu/generic-hub/task/2998$28771.htmld";
     expect(/regist/i.test(url)).toBe(false);
     expect(/drop/i.test(url)).toBe(false);
-    expect(() => assertAllowed("GET", url, ALLOWED_ENDPOINTS)).not.toThrow();
+    for (const pattern of DENY_PATTERNS) {
+      expect(pattern.test(url)).toBe(false);
+    }
   });
 });
 

@@ -24,11 +24,12 @@ export const ALLOWED_ENDPOINTS: readonly AllowedEndpoint[] = [
   {
     id: "current-registrations-get",
     method: "GET",
-    // The "View My Courses" task id, 2998$28771. The equivalent
-    // `page-context-id/<contextId>.htmld` variant is already covered by
-    // academic-record-get's pattern above, which allows any context id
-    // shared between the two tasks - see ENDPOINTS.md.
-    pattern: /^https:\/\/www\.myworkday\.com\/lsu\/generic-hub\/task\/2998\$28771\.htmld(\?.*)?$/,
+    // Matches the observed `page-context-id/<contextId>.htmld` route for
+    // "View My Courses" (context id varies per session). The unconfirmed
+    // `task/2998$28771.htmld` URL is not allowlisted until directly observed.
+    // See ENDPOINTS.md.
+    pattern:
+      /^https:\/\/www\.myworkday\.com\/lsu\/generic-hub\/page-context-id\/[A-Za-z0-9]+\.htmld(\?.*)?$/,
     description:
       "Read the student's current-term registrations (View My Courses): enrolled courses with their sections, and dropped/withdrawn sections.",
   },

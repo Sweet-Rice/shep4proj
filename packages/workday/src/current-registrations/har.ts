@@ -5,9 +5,9 @@
  * URL shape.
  *
  * Unlike the academic record (whose task id is fixed), the "View My
- * Courses" context id varies per session and the same body has been seen
- * served from either `generic-hub/task/2998$28771.htmld` or
- * `generic-hub/page-context-id/<ctx>.htmld` (see ENDPOINTS.md). So instead
+ * Courses" context id varies per session and the body was observed
+ * served from `generic-hub/page-context-id/<ctx>.htmld` (see ENDPOINTS.md).
+ * So instead
  * of matching a URL pattern, this looks at every JSON response under
  * `/generic-hub/` and picks the one whose body actually contains a grid
  * matching the "My Enrolled Courses" rule (see `parse.ts`'s `classifyGrid`).

@@ -88,11 +88,9 @@ change.
     `GET /lsu/generic-hub/page-context-id/<contextId>.htmld` — same shape,
     different addressing. Both variants are allowlisted.
   - This `page-context-id/<contextId>` pattern is **generic**: it isn't tied
-    to task 2998$30300, and the same `ALLOWED_ENDPOINTS` entry (regex
-    alternation) also covers `current-registrations-get` below, since both
-    tasks have been observed served from a `page-context-id` URL in
-    practice, with the context id varying per session. There is no separate
-    `page-context-id` allowlist entry — it's shared between the two.
+    to task 2998$30300, and is also allowlisted by `current-registrations-get`
+    below, since both tasks have been observed served from a `page-context-id`
+    URL in practice, with the context id varying per session.
   - Called by the Workday UI from `https://www.myworkday.com/lsu/d/task/2998$30300.htmld`,
     which is only an HTML shell (~33 KB) — the actual data comes from the
     `generic-hub` call above (~200 KB JSON).
@@ -117,13 +115,7 @@ change.
   a "Dropped/Withdrawn Sections" column (`485.x`/`479.x` in the observed
   capture). Parsed by `parseCurrentRegistrations` (T-320).
 - Method: GET
-- URL pattern: `https://www.myworkday.com/lsu/generic-hub/task/2998$28771.htmld?clientRequestID=<uuid>`
-  (**to confirm** — task 2998$28771 is the "View My Courses" task id
-  observed via `HUB_NAV` at `GET /lsu/task/2998$28771.htmld`, by analogy
-  with the academic record's `task/2998$30300` → `d/task/2998$30300`
-  pairing; the exact `generic-hub/task/...` URL for this task has not
-  itself been directly captured, only its `page-context-id` equivalent —
-  see below.)
+- URL pattern: `https://www.myworkday.com/lsu/generic-hub/page-context-id/<contextId>.htmld`
 - Required headers: same as `academic-record-get` — `session-secure-token`,
   `x-workday-client`, `accept`, `content-type`, `referer` (plus the session
   cookie).
@@ -131,17 +123,16 @@ change.
   by T-320)
 - Notes:
   - Observed in practice served at
-    `GET /lsu/generic-hub/page-context-id/<contextId>.htmld` — the same
-    shared, generic pattern already allowlisted by `academic-record-get`
-    above (context id varies per session; not tied to either task). See
-    `extractCurrentRegistrationsFromHar`, which picks the matching HAR
-    entry by grid content rather than by URL, precisely because the context
-    id can't be relied on.
-  - `2998$28771` contains neither `regist` nor `drop`, so it isn't
-    incidentally caught by `DENY_PATTERNS` (which target the registration
-    *write* APIs, not this read-only task id) — verified by a dedicated
-    allowlist test.
-
+    `GET /lsu/generic-hub/page-context-id/<contextId>.htmld` (context id
+    varies per session). See `extractCurrentRegistrationsFromHar`, which picks
+    the matching HAR entry by grid content rather than by URL, precisely
+    because the context id can't be relied on.
+  - The inferred `https://www.myworkday.com/lsu/generic-hub/task/2998$28771.htmld?clientRequestID=<uuid>`
+    URL is **not allowlisted** until a human capture confirms it. Task 2998$28771
+    contains neither `regist` nor `drop`, so if ever directly observed it
+    would not be incidentally caught by `DENY_PATTERNS` (which target the
+    registration *write* APIs, not this read-only task id) — verified by a
+    dedicated test in `allowlist.test.ts`.
 ### Observed but not allowlisted
 
 | Endpoint | Why not |
