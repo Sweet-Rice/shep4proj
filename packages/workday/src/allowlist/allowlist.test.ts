@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ALLOWED_ENDPOINTS } from "./allowed-endpoints.js";
 import { assertAllowed } from "./assert-allowed.js";
+import { DENY_PATTERNS } from "./deny-patterns.js";
 import { EndpointNotAllowedError } from "./errors.js";
 import { guardedFetch } from "./guarded-fetch.js";
 import type { AllowedEndpoint, PageLike } from "./types.js";
@@ -122,6 +123,75 @@ describe("ALLOWED_ENDPOINTS: academic-record-get", () => {
         ALLOWED_ENDPOINTS,
       ),
     ).toThrow(EndpointNotAllowedError);
+  });
+});
+
+describe("ALLOWED_ENDPOINTS: current-registrations-get", () => {
+  it("rejects the unconfirmed task/2998$28771.htmld variant until directly observed", () => {
+    expect(() =>
+      assertAllowed(
+        "GET",
+        "https://www.myworkday.com/lsu/generic-hub/task/2998$28771.htmld?clientRequestID=22222222-2222-4222-8222-222222222222",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).toThrow(EndpointNotAllowedError);
+  });
+
+  it("allows the shared page-context-id/<contextId>.htmld variant (same pattern as academic-record-get)", () => {
+    expect(() =>
+      assertAllowed(
+        "GET",
+        "https://www.myworkday.com/lsu/generic-hub/page-context-id/c4.htmld",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).not.toThrow();
+  });
+
+  it("rejects POST to the registrations URL", () => {
+    expect(() =>
+      assertAllowed(
+        "POST",
+        "https://www.myworkday.com/lsu/generic-hub/page-context-id/c4.htmld",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).toThrow(EndpointNotAllowedError);
+  });
+
+  it("rejects the hub-nav URL (/lsu/task/2998$28771.htmld) — no course data", () => {
+    expect(() =>
+      assertAllowed(
+        "GET",
+        "https://www.myworkday.com/lsu/task/2998$28771.htmld",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).toThrow(EndpointNotAllowedError);
+  });
+
+  it("rejects the registration write API and the drop API - the deny patterns win over any allowlist entry", () => {
+    expect(() =>
+      assertAllowed(
+        "GET",
+        "https://www.myworkday.com/wday/sirg/protectedapi/asorInternal/v1/lsu/registration",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).toThrow(EndpointNotAllowedError);
+
+    expect(() =>
+      assertAllowed(
+        "POST",
+        "https://www.myworkday.com/wday/sirg/protectedapi/asorInternal/v1/lsu/drop",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).toThrow(EndpointNotAllowedError);
+  });
+
+  it("isn't incidentally caught by DENY_PATTERNS: task id 2998$28771 contains neither 'regist' nor 'drop'", () => {
+    const url = "https://www.myworkday.com/lsu/generic-hub/task/2998$28771.htmld";
+    expect(/regist/i.test(url)).toBe(false);
+    expect(/drop/i.test(url)).toBe(false);
+    for (const pattern of DENY_PATTERNS) {
+      expect(pattern.test(url)).toBe(false);
+    }
   });
 });
 
