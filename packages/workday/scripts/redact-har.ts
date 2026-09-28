@@ -13,6 +13,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { DEFAULT_HOSTS, redactHar } from "../src/redact/redactHar.ts";
 import { scanForLeftovers } from "../src/redact/scanForLeftovers.ts";
@@ -214,7 +215,8 @@ export function main(): void {
   }
 }
 
-const isMainModule = process.argv[1] && import.meta.url === `file://${process.argv[1]}`;
+// Only run main() when executed directly (not when imported for tests).
+const isMainModule = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMainModule) {
   main();
 }
