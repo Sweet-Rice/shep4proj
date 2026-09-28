@@ -1,4 +1,5 @@
 import { greet, PACKAGE_NAME as SHARED_PACKAGE_NAME } from "@jevschedule/shared";
+export { CourseSchema, type Course } from "@jevschedule/shared";
 
 /** Package identifier, used to prove cross-package builds work. */
 export const PACKAGE_NAME = "@jevschedule/desktop";

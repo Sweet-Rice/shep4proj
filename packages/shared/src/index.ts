@@ -1,6 +1,9 @@
 /** Package identifier, used to prove cross-package builds work. */
 export const PACKAGE_NAME = "@jevschedule/shared";
 
+export { CourseSchema } from "./course.js";
+export type { Course } from "./course.js";
+
 /**
  * Placeholder for the shared planner types, zod schemas, and prereq /
  * requirement / eligibility / conflict logic that will live in this package.
