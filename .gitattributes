@@ -5,3 +5,7 @@
 *.jpg binary
 *.pdf binary
 *.har binary
+
+# Saved catalog HTML is a verbatim capture of what LSU served (some pages contain
+# CRLF). Store it byte-for-byte so the checksums in its README stay valid.
+fixtures/catalog/**/*.html -text
