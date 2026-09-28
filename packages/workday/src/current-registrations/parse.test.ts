@@ -477,4 +477,134 @@ describe("parseCurrentRegistrations", () => {
       /resolves "Course Listing" and "Registration Status" to the same column/,
     );
   });
+
+  it("filters out instructor emails from a multi-section container cell and preserves index alignment", () => {
+    const json = {
+      body: {
+        widget: "grid",
+        label: "My Enrolled Courses",
+        columns: [
+          { columnId: "262.2", label: "Course Listing" },
+          { columnId: "256.1", label: "Section" },
+          { columnId: "256.2", label: "Registration Status" },
+          { columnId: "256.9", label: "Instructor" },
+        ],
+        rows: [
+          {
+            rowIndex: 0,
+            cellsMap: {
+              "262.2": { instances: [{ text: "CSC 1200 - Ethics in Computing" }] },
+              "256.1": {
+                instances: [{ text: "CSC 1200-1" }, { text: "CSC 1200-2" }],
+              },
+              "256.2": { instances: [{ text: "Registered" }] },
+              "256.9": {
+                widget: "gridCell",
+                label: "Instructor",
+                children: [
+                  {
+                    widget: "container",
+                    children: [
+                      { widget: "instance", instances: [{ text: "Jane Instructor" }] },
+                      { widget: "instance", instances: [{ text: "jane.instructor@example.edu" }] },
+                    ],
+                  },
+                  {
+                    widget: "container",
+                    children: [
+                      { widget: "instance", instances: [{ text: "John Prof" }] },
+                      { widget: "instance", instances: [{ text: "john.prof@example.edu" }] },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    };
+
+    const result = parseCurrentRegistrations(json);
+    expect(result.enrolled).toHaveLength(1);
+    expect(result.enrolled[0]?.sections).toHaveLength(2);
+    expect(result.enrolled[0]?.sections[0]?.instructor).toBe("Jane Instructor");
+    expect(result.enrolled[0]?.sections[1]?.instructor).toBe("John Prof");
+    expect(JSON.stringify(result)).not.toContain("@");
+  });
+
+  it("filters out instructor email from a single-section container cell", () => {
+    const json = {
+      body: {
+        widget: "grid",
+        label: "My Enrolled Courses",
+        columns: [
+          { columnId: "262.2", label: "Course Listing" },
+          { columnId: "256.1", label: "Section" },
+          { columnId: "256.2", label: "Registration Status" },
+          { columnId: "256.9", label: "Instructor" },
+        ],
+        rows: [
+          {
+            rowIndex: 0,
+            cellsMap: {
+              "262.2": { instances: [{ text: "CSC 1200 - Ethics in Computing" }] },
+              "256.1": {
+                instances: [{ text: "CSC 1200-1" }],
+              },
+              "256.2": { instances: [{ text: "Registered" }] },
+              "256.9": {
+                widget: "gridCell",
+                label: "Instructor",
+                children: [
+                  {
+                    widget: "container",
+                    children: [
+                      { widget: "instance", instances: [{ text: "Jane Instructor" }] },
+                      { widget: "instance", instances: [{ text: "jane.instructor@example.edu" }] },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    };
+
+    const result = parseCurrentRegistrations(json);
+    expect(result.enrolled).toHaveLength(1);
+    expect(result.enrolled[0]?.sections).toHaveLength(1);
+    expect(result.enrolled[0]?.sections[0]?.instructor).toBe("Jane Instructor");
+    expect(JSON.stringify(result)).not.toContain("@");
+  });
+
+  it("rejects an email in a direct instance instructor cell", () => {
+    const json = {
+      body: {
+        widget: "grid",
+        label: "My Enrolled Courses",
+        columns: [
+          { columnId: "262.2", label: "Course Listing" },
+          { columnId: "256.1", label: "Section" },
+          { columnId: "256.2", label: "Registration Status" },
+          { columnId: "256.9", label: "Instructor" },
+        ],
+        rows: [
+          {
+            rowIndex: 0,
+            cellsMap: {
+              "262.2": { instances: [{ text: "CSC 1200 - Ethics in Computing" }] },
+              "256.1": { instances: [{ text: "CSC 1200-1" }] },
+              "256.2": { instances: [{ text: "Registered" }] },
+              "256.9": { instances: [{ text: "jane.instructor@example.edu" }] },
+            },
+          },
+        ],
+      },
+    };
+
+    const result = parseCurrentRegistrations(json);
+    expect(result.enrolled[0]?.sections[0]?.instructor).toBeNull();
+    expect(JSON.stringify(result)).not.toContain("@");
+  });
 });

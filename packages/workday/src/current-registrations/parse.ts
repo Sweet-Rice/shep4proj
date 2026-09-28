@@ -139,11 +139,13 @@ function getNumericValue(cell: Cell | undefined): number | null {
   return null;
 }
 
+const EMAIL_PATTERN = /\S+@\S+/;
+
 /**
  * Recursively collects `text` (own or `instances[].text`) from `node` and
- * every descendant reachable through a `children` array. Used for
- * container-shaped cells (e.g. Instructor) that carry no `text`/
- * `instances`/`value` of their own - only nested descendants do.
+ * every descendant reachable through a `children` array, excluding email
+ * addresses. Used for container-shaped cells (e.g. Instructor) that carry
+ * no `text`/`instances`/`value` of their own - only nested descendants do.
  */
 function collectContainerTexts(node: unknown, out: string[]): void {
   if (Array.isArray(node)) {
@@ -152,12 +154,17 @@ function collectContainerTexts(node: unknown, out: string[]): void {
   }
   if (!isPlainObject(node)) return;
 
-  if (typeof node.text === "string" && node.text.trim() !== "") {
+  if (typeof node.text === "string" && node.text.trim() !== "" && !EMAIL_PATTERN.test(node.text)) {
     out.push(node.text.trim());
   }
   if (Array.isArray(node.instances)) {
     for (const inst of node.instances) {
-      if (isPlainObject(inst) && typeof inst.text === "string" && inst.text.trim() !== "") {
+      if (
+        isPlainObject(inst) &&
+        typeof inst.text === "string" &&
+        inst.text.trim() !== "" &&
+        !EMAIL_PATTERN.test(inst.text)
+      ) {
         out.push(inst.text.trim());
       }
     }
@@ -171,12 +178,20 @@ function collectContainerTexts(node: unknown, out: string[]): void {
  * Reads a name-like value from a cell that may be a plain instance/text
  * cell OR a container with no text/instances of its own, only nested
  * `children` (e.g. a real "View My Courses" Instructor cell). Returns null
- * rather than throwing when nothing can be found.
+ * rather than throwing when nothing can be found, and never emits an email.
  */
 function textFromCellOrContainer(cell: Cell | undefined, i: number): string | null {
   if (!cell) return null;
-  const direct = cellTextAt(cell, i);
-  if (direct) return direct;
+  const filteredCell = cell.instances
+    ? {
+        ...cell,
+        instances: cell.instances.filter(
+          (inst) => typeof inst.text !== "string" || !EMAIL_PATTERN.test(inst.text),
+        ),
+      }
+    : cell;
+  const direct = cellTextAt(filteredCell, i);
+  if (direct) return EMAIL_PATTERN.test(direct) ? null : direct;
   const texts: string[] = [];
   collectContainerTexts(cell, texts);
   if (texts.length === 0) return null;
