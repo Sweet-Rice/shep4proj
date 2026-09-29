@@ -25,6 +25,10 @@ export const MIGRATIONS: readonly string[] = [
      code TEXT NOT NULL UNIQUE,
      PRIMARY KEY (term_id, position)
    ) STRICT`,
+  `CREATE TABLE plan_settings (
+     id INTEGER PRIMARY KEY CHECK (id = 1),
+     credit_limit INTEGER NOT NULL CHECK (credit_limit > 0)
+   ) STRICT`,
 ];
 
 /** Thrown when the database was written by a newer app version than this one. */

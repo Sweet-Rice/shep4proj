@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { PlanSchema, type Plan } from "./plan.js";
+import { DEFAULT_CREDIT_LIMIT, PlanSchema, type Plan } from "./plan.js";
 
 const plan: Plan = {
+  creditLimit: 18,
   terms: [
     { season: "Fall", year: 2027, courses: ["CSC 3102", "CSC 3380"] },
     { season: "Spring", year: 2028, courses: ["CSC 4330"] },
@@ -15,11 +16,15 @@ describe("PlanSchema", () => {
   });
 
   it("accepts an empty plan", () => {
-    expect(PlanSchema.parse({ terms: [] })).toEqual({ terms: [] });
+    expect(PlanSchema.parse({ creditLimit: 19, terms: [] })).toEqual({
+      creditLimit: 19,
+      terms: [],
+    });
   });
 
   it("rejects the same term twice", () => {
     const result = PlanSchema.safeParse({
+      creditLimit: 19,
       terms: [
         { season: "Fall", year: 2027, courses: [] },
         { season: "Fall", year: 2027, courses: [] },
@@ -34,6 +39,7 @@ describe("PlanSchema", () => {
 
   it("rejects a course planned in two terms", () => {
     const result = PlanSchema.safeParse({
+      creditLimit: 19,
       terms: [
         { season: "Fall", year: 2027, courses: ["CSC 3102"] },
         { season: "Spring", year: 2028, courses: ["CSC 3102"] },
@@ -51,6 +57,22 @@ describe("PlanSchema", () => {
     ["a fractional year", { season: "Fall", year: 2027.5, courses: [] }],
     ["a malformed course code", { season: "Fall", year: 2027, courses: ["csc3102"] }],
   ])("rejects %s", (_label, term) => {
-    expect(PlanSchema.safeParse({ terms: [term] }).success).toBe(false);
+    expect(PlanSchema.safeParse({ creditLimit: 19, terms: [term] }).success).toBe(false);
+  });
+
+  it.each([
+    ["a missing credit limit", { terms: [] }],
+    ["a zero credit limit", { creditLimit: 0, terms: [] }],
+    ["a fractional credit limit", { creditLimit: 18.5, terms: [] }],
+  ])("rejects %s", (_label, candidate) => {
+    expect(PlanSchema.safeParse(candidate).success).toBe(false);
+  });
+});
+
+describe("DEFAULT_CREDIT_LIMIT", () => {
+  it("is a valid credit limit", () => {
+    expect(PlanSchema.safeParse({ creditLimit: DEFAULT_CREDIT_LIMIT, terms: [] }).success).toBe(
+      true,
+    );
   });
 });

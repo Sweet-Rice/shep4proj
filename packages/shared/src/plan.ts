@@ -16,12 +16,23 @@ export const PlanTermSchema = z.object({
 export type PlanTerm = z.infer<typeof PlanTermSchema>;
 
 /**
+ * Default maximum credit hours per term. LSU raises undergraduates' credit-hour maximum to 19
+ * once priority registration ends, and exceeding it needs college approval (LSU Registrar,
+ * "Course Scheduling and Registration Guidebook", Credit Hour Maximum).
+ */
+export const DEFAULT_CREDIT_LIMIT = 19;
+
+/**
  * A student's semester-by-semester plan (US-08), in the order the student arranged it. Each
  * term appears once and each course is planned at most once across the whole plan; whether
  * the order respects prerequisites is `validatePlan`'s job (T-233), not the schema's.
+ *
+ * `creditLimit` is the student's maximum credit hours per term (T-236). It lives on the plan so
+ * `validatePlan(plan, completed)` can enforce it without another argument.
  */
 export const PlanSchema = z
   .object({
+    creditLimit: z.number().int().positive(),
     terms: z.array(PlanTermSchema),
   })
   .superRefine((plan, ctx) => {
