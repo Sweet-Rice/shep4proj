@@ -12,6 +12,8 @@ export { LetterGradeSchema } from "./grade.js";
 export type { LetterGrade } from "./grade.js";
 export { PrereqNodeSchema } from "./prereq.js";
 export type { PrereqNode } from "./prereq.js";
+export { parsePrereqText } from "./prereq-parser.js";
+export type { PrereqFailureReason, PrereqParseResult } from "./prereq-parser.js";
 export {
   ChooseNRequirementSchema,
   CourseRefSchema,
