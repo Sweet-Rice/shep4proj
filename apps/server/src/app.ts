@@ -2,6 +2,7 @@ import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastif
 import type { Db } from "./db/client.js";
 import { loadDegreePrograms } from "./degrees/load.js";
 import { registerCourseRoutes } from "./routes/courses.js";
+import { registerDegreeRoutes } from "./routes/degrees.js";
 
 /** Body returned by `GET /health`. */
 export interface HealthResponse {
@@ -23,8 +24,9 @@ export function buildServer(opts: ServerOptions = {}): FastifyInstance {
   const app = Fastify(fastifyOpts);
 
   if (degreeDataDir) {
-    void app.register(async () => {
-      await loadDegreePrograms(degreeDataDir);
+    void app.register(async (instance) => {
+      const programs = await loadDegreePrograms(degreeDataDir);
+      registerDegreeRoutes(instance, { programs });
     });
   }
 
