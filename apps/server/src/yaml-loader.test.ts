@@ -70,6 +70,21 @@ describe("yaml-loader", () => {
     expect(results).toHaveLength(1);
     expect(results[0]?.data).toEqual({ name: "Valid", version: 1 });
   });
+
+  it("ignores subdirectories even if their names end with .yaml or .yml", async () => {
+    const yamlFile = path.join(tempDir, "valid.yaml");
+    await fs.writeFile(yamlFile, "name: Valid\nversion: 1\n");
+
+    const subDirYaml = path.join(tempDir, "nested.yaml");
+    await fs.mkdir(subDirYaml);
+
+    const subDirYml = path.join(tempDir, "sub.yml");
+    await fs.mkdir(subDirYml);
+
+    const results = await loadYamlFiles(tempDir, TestSchema);
+    expect(results).toHaveLength(1);
+    expect(results[0]?.data).toEqual({ name: "Valid", version: 1 });
+  });
   it("fails fast on malformed YAML", async () => {
     const malformedFile = path.join(tempDir, "malformed.yaml");
     await fs.writeFile(malformedFile, "name: Test\nversion: [unclosed array");
