@@ -1,0 +1,60 @@
+name: Scraper canary
+
+on:
+  schedule:
+    - cron: "17 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      force_failure:
+        type: boolean
+        default: false
+        description: Fail on purpose to test the issue step
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: scraper-canary
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build scraper
+        run: pnpm --filter @jevschedule/scraper build
+
+      - name: Run canary
+        env:
+          CANARY_FORCE_FAILURE: ${{ inputs.force_failure == true }}
+          CATALOG_BROWSER_CHANNEL: chrome
+        run: node packages/scraper/scripts/canary.ts
+
+      - name: Open scraper-broken issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          existing=$(gh issue list --label scraper-broken --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Scraper canary failed again: $RUN_URL"
+          else
+            gh issue create --title "Scraper canary failed" --label scraper-broken --body "The weekly catalog scraper canary failed: $RUN_URL. Check whether the catalog HTML changed and update the parsers and fixtures."
+          fi
