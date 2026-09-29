@@ -1,41 +1,50 @@
-import * as fs from "fs/promises";
-import * as path from "path";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
 import * as yaml from "yaml";
-import { z } from "zod";
+import type { z } from "zod";
+
+export interface LoadedYamlFile<T> {
+  path: string;
+  data: T;
+}
 
 /**
  * Loads all YAML files from a directory, parses them, and validates them
  * against the provided Zod schema. Fails fast by throwing an error on the
  * first malformed or invalid YAML file.
  */
-export async function loadYamlFiles<T>(
+export async function loadYamlFiles<S extends z.ZodTypeAny>(
   directory: string,
-  schema: z.ZodTypeAny,
-): Promise<{ path: string; data: T }[]> {
+  schema: S,
+): Promise<LoadedYamlFile<z.output<S>>[]> {
   const entries = await fs.readdir(directory, { withFileTypes: true });
-  const results: { path: string; data: T }[] = [];
+  const files = entries
+    .filter(
+      (entry) => entry.isFile() && (entry.name.endsWith(".yaml") || entry.name.endsWith(".yml")),
+    )
+    .map((entry) => entry.name);
+  files.sort((a, b) => a.localeCompare(b));
 
-  for (const entry of entries) {
-    if (entry.isFile() && (entry.name.endsWith(".yaml") || entry.name.endsWith(".yml"))) {
-      const fullPath = path.join(directory, entry.name);
-      const fileContents = await fs.readFile(fullPath, "utf-8");
+  const results: LoadedYamlFile<z.output<S>>[] = [];
 
-      let parsed: unknown;
-      try {
-        parsed = yaml.parse(fileContents);
-      } catch (error: unknown) {
-        throw new Error(
-          `Failed to parse YAML file ${fullPath}: ${error instanceof Error ? error.message : String(error)}`,
-        );
-      }
+  for (const fileName of files) {
+    const fullPath = path.join(directory, fileName);
+    const fileContents = await fs.readFile(fullPath, "utf-8");
 
-      const result = schema.safeParse(parsed);
-      if (!result.success) {
-        throw new Error(`Schema validation failed for ${fullPath}: ${result.error.message}`);
-      }
-
-      results.push({ path: fullPath, data: result.data });
+    let parsed: unknown;
+    try {
+      parsed = yaml.parse(fileContents);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error("Failed to parse YAML file " + fullPath + ": " + message);
     }
+
+    const result = schema.safeParse(parsed);
+    if (!result.success) {
+      throw new Error("Schema validation failed for " + fullPath + ": " + result.error.message);
+    }
+
+    results.push({ path: fullPath, data: result.data });
   }
 
   return results;
