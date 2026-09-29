@@ -1,10 +1,30 @@
+import type { Dirent } from "node:fs";
 import * as fs from "node:fs/promises";
+import type * as fsType from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { loadYamlFiles } from "./yaml-loader.js";
 
+let readdirOrderHook: ((entries: Dirent[]) => Dirent[]) | null = null;
+
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof fsType>();
+  return {
+    ...actual,
+    readdir: (async (pathParam: string, optionsParam?: unknown) => {
+      const res = await (actual.readdir as (p: string, o?: unknown) => Promise<unknown>)(
+        pathParam,
+        optionsParam,
+      );
+      if (readdirOrderHook && Array.isArray(res)) {
+        return readdirOrderHook(res as Dirent[]);
+      }
+      return res;
+    }) as typeof actual.readdir,
+  };
+});
 const TestSchema = z.object({
   name: z.string(),
   version: z.number(),
@@ -18,6 +38,7 @@ describe("yaml-loader", () => {
   });
 
   afterEach(async () => {
+    readdirOrderHook = null;
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
@@ -27,6 +48,10 @@ describe("yaml-loader", () => {
 
     const file1 = path.join(tempDir, "alpha.yaml");
     await fs.writeFile(file1, "name: Alpha\nversion: 1\n");
+
+    // Force readdir to yield entries in reverse alphabetical order, proving
+    // loadYamlFiles actively sorts entries rather than relying on filesystem order.
+    readdirOrderHook = (entries) => [...entries].reverse();
 
     const results = await loadYamlFiles(tempDir, TestSchema);
     expect(results).toHaveLength(2);
@@ -45,7 +70,6 @@ describe("yaml-loader", () => {
     expect(results).toHaveLength(1);
     expect(results[0]?.data).toEqual({ name: "Valid", version: 1 });
   });
-
   it("fails fast on malformed YAML", async () => {
     const malformedFile = path.join(tempDir, "malformed.yaml");
     await fs.writeFile(malformedFile, "name: Test\nversion: [unclosed array");
