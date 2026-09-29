@@ -34,7 +34,9 @@ interface CorpusEntry {
 }
 
 async function main(): Promise<void> {
+  const args = process.argv.slice(2).filter((arg) => arg !== "--");
   const { values } = parseArgs({
+    args,
     options: {
       cache: { type: "string" },
       out: { type: "string" },
