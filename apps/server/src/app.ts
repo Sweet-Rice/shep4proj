@@ -1,5 +1,6 @@
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify";
 import type { Db } from "./db/client.js";
+import { loadDegreePrograms } from "./degrees/load.js";
 import { registerCourseRoutes } from "./routes/courses.js";
 
 /** Body returned by `GET /health`. */
@@ -9,6 +10,7 @@ export interface HealthResponse {
 
 export interface ServerOptions extends FastifyServerOptions {
   db?: Db;
+  degreeDataDir?: string;
 }
 
 /**
@@ -17,8 +19,14 @@ export interface ServerOptions extends FastifyServerOptions {
  * registered here; later tasks add their own (courses, degrees, …).
  */
 export function buildServer(opts: ServerOptions = {}): FastifyInstance {
-  const { db, ...fastifyOpts } = opts;
+  const { db, degreeDataDir, ...fastifyOpts } = opts;
   const app = Fastify(fastifyOpts);
+
+  if (degreeDataDir) {
+    void app.register(async () => {
+      await loadDegreePrograms(degreeDataDir);
+    });
+  }
 
   app.get(
     "/health",

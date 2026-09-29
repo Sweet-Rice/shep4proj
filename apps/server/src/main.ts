@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { buildServer } from "./app.js";
 import { readListenConfig } from "./config.js";
 import { createDb } from "./db/client.js";
+import { DEFAULT_DEGREE_DATA_DIR } from "./degrees/load.js";
 
 if (!process.env["DATABASE_URL"] && existsSync("../../.env")) {
   process.loadEnvFile("../../.env");
@@ -13,12 +14,14 @@ const databaseUrl = process.env["DATABASE_URL"];
 let dbClose: (() => Promise<void>) | undefined;
 let app;
 
+const degreeDataDir = process.env["DEGREE_DATA_DIR"] || DEFAULT_DEGREE_DATA_DIR;
+
 if (databaseUrl) {
   const { db, close } = createDb(databaseUrl);
   dbClose = close;
-  app = buildServer({ db, logger: true });
+  app = buildServer({ db, degreeDataDir, logger: true });
 } else {
-  app = buildServer({ logger: true });
+  app = buildServer({ degreeDataDir, logger: true });
   app.log.warn("DATABASE_URL is not set; /courses routes are disabled (see .env.example)");
 }
 

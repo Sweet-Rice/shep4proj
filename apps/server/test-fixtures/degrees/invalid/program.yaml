@@ -1,0 +1,7 @@
+id: invalid-program
+program: Invalid Program
+concentration: Invalid Concentration
+catalogYear: "invalid"
+totalCredits: 120
+source: "https://example.com"
+requirements: []
