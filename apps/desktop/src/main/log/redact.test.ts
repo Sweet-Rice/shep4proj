@@ -56,6 +56,16 @@ describe("redactLogText", () => {
     expect(output).not.toContain(pathToken);
   });
 
+  it("redacts slash-bearing token values without redacting stack-trace paths", () => {
+    const slashToken = ["k7Qm2Zx9Lp4Rv8Tn", "Wc3Hy6Bj1Fd5Gs0", "Ke2Nq8Ua4Mz7Xo9Yt=="].join("/");
+    const tokenLine = `provider returned ${slashToken}`;
+    const stackLine = "    at createWindow (/home/student/projects/app/out/main/index.js:30:15)";
+
+    expect(redactLogText(tokenLine)).not.toContain(slashToken);
+    expect(redactLogText(tokenLine)).toContain(REDACTED);
+    expect(redactLogText(stackLine)).toBe(stackLine);
+  });
+
   it.each([
     "    at createWindow (file:///home/student/projects/jevschedule/apps/desktop/out/main/index.js:30:15)",
     "    at open (/Users/Student/Library/Application Support/jevschedule/out/main/index.js:12:3)",

@@ -18,14 +18,25 @@ interface Rule {
 const TOKEN_SEGMENT = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[\w+-]{20,}={0,2}$/;
 
 /**
- * Base64's alphabet includes `/`, so the long-run fallback also matches file paths such as the
- * `/home/.../out/main/index` in a stack frame. A run with slashes is only redacted when one of
- * its segments looks like a token, so stack traces keep their paths while a token inside a URL
- * path (`/api/<token>/data`) is still caught.
+ * Base64's alphabet includes `/`, which overlaps with Unix file paths. Preserve only runs that
+ * begin like an absolute path and have ordinary path segments; slash-bearing credentials are
+ * redacted even when none of their individual segments looks token-shaped.
  */
 function redactLongRun(run: string): string {
-  if (!run.includes("/")) return REDACTED;
-  return run.split("/").some((segment) => TOKEN_SEGMENT.test(segment)) ? REDACTED : run;
+  const normalized = run.replaceAll("\\", "/");
+  const absolute = normalized.startsWith("/") || /^[A-Za-z]:\//.test(normalized);
+  if (!absolute) return REDACTED;
+
+  const segments = normalized
+    .replace(/^[A-Za-z]:/, "")
+    .split("/")
+    .filter(Boolean);
+  const isFilePath =
+    segments.length >= 2 &&
+    segments.every((segment) => /^[A-Za-z0-9._-]+$/.test(segment)) &&
+    !segments.some((segment) => TOKEN_SEGMENT.test(segment));
+
+  return isFilePath ? run : REDACTED;
 }
 
 /**
@@ -58,7 +69,7 @@ const RULES: readonly Rule[] = [
   // Shape-based fallbacks: JWTs, long hex strings, long base64/base64url runs.
   { pattern: /\beyJ[\w-]+\.[\w-]+\.[\w-]*/g, replace: REDACTED },
   { pattern: /\b[0-9a-f]{32,}\b/gi, replace: REDACTED },
-  { pattern: /[A-Za-z0-9+/_-]{40,}={0,2}/g, replace: redactLongRun },
+  { pattern: /[A-Za-z0-9+/_.-]{40,}={0,2}/g, replace: redactLongRun },
 ];
 
 /**
