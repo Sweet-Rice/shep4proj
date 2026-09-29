@@ -16,10 +16,13 @@
   },
   "dependencies": {
     "@jevschedule/shared": "workspace:*",
+    "better-sqlite3": "^13.0.3",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.6.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
