@@ -1,0 +1,898 @@
+{
+  "catalogYear": "2026-2027",
+  "catoid": "35",
+  "generatedBy": "packages/scraper/scripts/capture-prereq-corpus.ts",
+  "capturedAt": "2026-09-29T10:53:04.462Z",
+  "courseCount": 91,
+  "coursesWithoutPrereq": [
+    "CSC 1110",
+    "CSC 1250",
+    "CSC 1362",
+    "CSC 4357",
+    "CSC 7080",
+    "CSC 7300",
+    "CSC 7335",
+    "CSC 7343",
+    "CSC 7344",
+    "CSC 7362",
+    "CSC 7435",
+    "CSC 7462",
+    "CSC 7535",
+    "CSC 7544",
+    "CSC 7562",
+    "CSC 7598",
+    "CSC 7644",
+    "CSC 7700",
+    "CSC 7800",
+    "CSC 7900"
+  ],
+  "entries": [
+    {
+      "code": "CSC 1100",
+      "coid": "229585",
+      "text": "credit in MATH 1021 or registration in MATH 1023.",
+      "courseCodes": [
+        "MATH 1021",
+        "MATH 1023"
+      ],
+      "tags": [
+        "or-list",
+        "coreq",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 1240",
+      "coid": "229580",
+      "text": "MATH 1021 or placement in MATH 1022, MATH 1023, MATH 1431, MATH 1550 or MATH 1551.",
+      "courseCodes": [
+        "MATH 1021",
+        "MATH 1022",
+        "MATH 1023",
+        "MATH 1431",
+        "MATH 1550",
+        "MATH 1551"
+      ],
+      "tags": [
+        "and-list",
+        "or-list",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 1253",
+      "coid": "229579",
+      "text": "credit or registration in MATH 1550 or credit in MATH 1431.",
+      "courseCodes": [
+        "MATH 1550",
+        "MATH 1431"
+      ],
+      "tags": [
+        "or-list",
+        "coreq",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 1254",
+      "coid": "229582",
+      "text": "CSC 1253; credit or registration in MATH 1550.",
+      "courseCodes": [
+        "CSC 1253",
+        "MATH 1550"
+      ],
+      "tags": [
+        "semicolon-groups",
+        "coreq",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 1350",
+      "coid": "229578",
+      "text": "credit or registration in MATH 1022 or MATH 1023 or MATH 1550 or MATH 1551 or MATH 1552.",
+      "courseCodes": [
+        "MATH 1022",
+        "MATH 1023",
+        "MATH 1550",
+        "MATH 1551",
+        "MATH 1552"
+      ],
+      "tags": [
+        "or-list",
+        "coreq",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 1351",
+      "coid": "229581",
+      "text": "CSC 1350; credit or registration in MATH 1550.",
+      "courseCodes": [
+        "CSC 1350",
+        "MATH 1550"
+      ],
+      "tags": [
+        "semicolon-groups",
+        "coreq",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 2259",
+      "coid": "229591",
+      "text": "credit or registration in",
+      "courseCodes": [],
+      "tags": [
+        "coreq"
+      ]
+    },
+    {
+      "code": "CSC 2262",
+      "coid": "229576",
+      "text": "CSC 1254 or CSC 1351, and credit or registration in MATH 2090",
+      "courseCodes": [
+        "CSC 1254",
+        "CSC 1351",
+        "MATH 2090"
+      ],
+      "tags": [
+        "mixed-and-or",
+        "coreq",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 2362",
+      "coid": "233773",
+      "text": "CSC 1350 or CSC 1253 or equivalent.",
+      "courseCodes": [
+        "CSC 1350",
+        "CSC 1253"
+      ],
+      "tags": [
+        "or-list",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 2463",
+      "coid": "232985",
+      "text": "MATH 1021; credit or registration in CSC 1253 or CSC 1350,or IE 2060 or ART 2050 or MUS 2732 or permission of instructor.",
+      "courseCodes": [
+        "MATH 1021",
+        "CSC 1253",
+        "CSC 1350",
+        "IE 2060",
+        "ART 2050",
+        "MUS 2732"
+      ],
+      "tags": [
+        "and-list",
+        "or-list",
+        "semicolon-groups",
+        "coreq",
+        "non-course",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 2533",
+      "coid": "229577",
+      "text": "MATH 1550.",
+      "courseCodes": [
+        "MATH 1550"
+      ],
+      "tags": [
+        "single",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 2610",
+      "coid": "232986",
+      "text": "CSC 1254 or CSC 1351 or ISDS 3107.",
+      "courseCodes": [
+        "CSC 1254",
+        "CSC 1351",
+        "ISDS 3107"
+      ],
+      "tags": [
+        "or-list",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 2700",
+      "coid": "229586",
+      "text": "CSC 1254 or CSC 1351 or permission of department.",
+      "courseCodes": [
+        "CSC 1254",
+        "CSC 1351"
+      ],
+      "tags": [
+        "or-list",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 2730",
+      "coid": "232997",
+      "text": "CSC 1254 or CSC 1351 or ISDS 3107.",
+      "courseCodes": [
+        "CSC 1254",
+        "CSC 1351",
+        "ISDS 3107"
+      ],
+      "tags": [
+        "or-list",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 3102",
+      "coid": "229589",
+      "text": "CSC 1254 or CSC 1351 and credit or concurrent enrollment in CSC 2259 or EE 2741.",
+      "courseCodes": [
+        "CSC 1254",
+        "CSC 1351",
+        "CSC 2259",
+        "EE 2741"
+      ],
+      "tags": [
+        "mixed-and-or",
+        "coreq",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 3200",
+      "coid": "233370",
+      "text": "ENGL 1005 or ENGL 2000 or HNRS 2000; CSC 3102.",
+      "courseCodes": [
+        "ENGL 1005",
+        "ENGL 2000",
+        "HNRS 2000",
+        "CSC 3102"
+      ],
+      "tags": [
+        "or-list",
+        "semicolon-groups",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 3304",
+      "coid": "233774",
+      "text": "credit or registration in CSC 3102.",
+      "courseCodes": [
+        "CSC 3102"
+      ],
+      "tags": [
+        "single",
+        "coreq"
+      ]
+    },
+    {
+      "code": "CSC 3380",
+      "coid": "229590",
+      "text": "CSC 1254 or CSC 1351.",
+      "courseCodes": [
+        "CSC 1254",
+        "CSC 1351"
+      ],
+      "tags": [
+        "or-list"
+      ]
+    },
+    {
+      "code": "CSC 3501",
+      "coid": "229583",
+      "text": "CSC 2259.",
+      "courseCodes": [
+        "CSC 2259"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 3605",
+      "coid": "236899",
+      "text": "BIOL 2601.",
+      "courseCodes": [
+        "BIOL 2601"
+      ],
+      "tags": [
+        "single",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 3700",
+      "coid": "233990",
+      "text": "CSC 3102 or permission of department.",
+      "courseCodes": [
+        "CSC 3102"
+      ],
+      "tags": [
+        "or-list",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 3730",
+      "coid": "233594",
+      "text": "CSC 3102 and IE 3302 or EE 3150 or EXST 4050 or MATH 3355.",
+      "courseCodes": [
+        "CSC 3102",
+        "IE 3302",
+        "EE 3150",
+        "EXST 4050",
+        "MATH 3355"
+      ],
+      "tags": [
+        "mixed-and-or",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 3991",
+      "coid": "229594",
+      "text": "CSC 3102; consent of department; admittance to Upper Division Honors Program.",
+      "courseCodes": [
+        "CSC 3102"
+      ],
+      "tags": [
+        "semicolon-groups",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 3992",
+      "coid": "229595",
+      "text": "CSC 3991; consent of department; admittance to Upper Division Honors Program.",
+      "courseCodes": [
+        "CSC 3991"
+      ],
+      "tags": [
+        "semicolon-groups",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 3999",
+      "coid": "229587",
+      "text": "consent of department chair.",
+      "courseCodes": [],
+      "tags": [
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 4101",
+      "coid": "229592",
+      "text": "CSC 3102.",
+      "courseCodes": [
+        "CSC 3102"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 4103",
+      "coid": "229593",
+      "text": "CSC 3102.",
+      "courseCodes": [
+        "CSC 3102"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 4243",
+      "coid": "229588",
+      "text": "CSC 1253 or CSC 1350 or equivalent programming background.",
+      "courseCodes": [
+        "CSC 1253",
+        "CSC 1350"
+      ],
+      "tags": [
+        "or-list",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 4263",
+      "coid": "232622",
+      "text": "ART 2050 or CSC 3102 or MUS 2732 or permission of instructor.",
+      "courseCodes": [
+        "ART 2050",
+        "CSC 3102",
+        "MUS 2732"
+      ],
+      "tags": [
+        "or-list",
+        "non-course",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 4330",
+      "coid": "232623",
+      "text": "CSC 3102, CSC 3380.",
+      "courseCodes": [
+        "CSC 3102",
+        "CSC 3380"
+      ],
+      "tags": [
+        "and-list"
+      ]
+    },
+    {
+      "code": "CSC 4332",
+      "coid": "233991",
+      "text": "Credit or registration in CSC 4330.",
+      "courseCodes": [
+        "CSC 4330"
+      ],
+      "tags": [
+        "single",
+        "coreq"
+      ]
+    },
+    {
+      "code": "CSC 4343",
+      "coid": "233989",
+      "text": "CSC 3102 and (CSC 2730 or CSC 3730).",
+      "courseCodes": [
+        "CSC 3102",
+        "CSC 2730",
+        "CSC 3730"
+      ],
+      "tags": [
+        "mixed-and-or"
+      ]
+    },
+    {
+      "code": "CSC 4351",
+      "coid": "232624",
+      "text": "CSC 4101 or equivalent.",
+      "courseCodes": [
+        "CSC 4101"
+      ],
+      "tags": [
+        "or-list",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 4356",
+      "coid": "232625",
+      "text": "CSC 3102.",
+      "courseCodes": [
+        "CSC 3102"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 4360",
+      "coid": "233511",
+      "text": "CSC 4103 or equivalent.",
+      "courseCodes": [
+        "CSC 4103"
+      ],
+      "tags": [
+        "or-list",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 4362",
+      "coid": "233745",
+      "text": "CSC 4103 or equivalent.",
+      "courseCodes": [
+        "CSC 4103"
+      ],
+      "tags": [
+        "or-list",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 4370",
+      "coid": "232627",
+      "text": "CSC 4330",
+      "courseCodes": [
+        "CSC 4330"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 4402",
+      "coid": "232628",
+      "text": "CSC 3102.",
+      "courseCodes": [],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 4444",
+      "coid": "232629",
+      "text": "CSC 3102.",
+      "courseCodes": [
+        "CSC 3102"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 4501",
+      "coid": "232630",
+      "text": "CSC 3102.",
+      "courseCodes": [
+        "CSC 3102"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 4512",
+      "coid": "232631",
+      "text": "MATH 2085 or MATH 2090 or permission of instructor.",
+      "courseCodes": [
+        "MATH 2085",
+        "MATH 2090"
+      ],
+      "tags": [
+        "or-list",
+        "non-course",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 4562",
+      "coid": "233775",
+      "text": "CSC 4103 and MATH 2090.",
+      "courseCodes": [
+        "CSC 4103",
+        "MATH 2090"
+      ],
+      "tags": [
+        "and-list",
+        "non-csc"
+      ]
+    },
+    {
+      "code": "CSC 4585",
+      "coid": "233074",
+      "text": "CSC 3102.",
+      "courseCodes": [
+        "CSC 3102"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 4610",
+      "coid": "232987",
+      "text": "CSC 2610, CSC 4103, and credit or registration in CSC 4501.",
+      "courseCodes": [
+        "CSC 2610",
+        "CSC 4103",
+        "CSC 4501"
+      ],
+      "tags": [
+        "and-list",
+        "coreq"
+      ]
+    },
+    {
+      "code": "CSC 4700",
+      "coid": "232632",
+      "text": "CSC 3102 or permission of department.",
+      "courseCodes": [
+        "CSC 3102"
+      ],
+      "tags": [
+        "or-list",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 4740",
+      "coid": "232999",
+      "text": "CSC 2730 and credit or registration in CSC 4402.",
+      "courseCodes": [
+        "CSC 2730",
+        "CSC 4402"
+      ],
+      "tags": [
+        "and-list",
+        "coreq"
+      ]
+    },
+    {
+      "code": "CSC 4762",
+      "coid": "233744",
+      "text": "CSC 3102 or equivalent.",
+      "courseCodes": [
+        "CSC 3102"
+      ],
+      "tags": [
+        "or-list",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 4890",
+      "coid": "232633",
+      "text": "CSC 2259.",
+      "courseCodes": [
+        "CSC 2259"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 4999",
+      "coid": "232634",
+      "text": "consent of department chair.",
+      "courseCodes": [],
+      "tags": [
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 7090",
+      "coid": "233324",
+      "text": "permission of department.",
+      "courseCodes": [],
+      "tags": [
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 7101",
+      "coid": "232636",
+      "text": "CSC 4101.",
+      "courseCodes": [
+        "CSC 4101"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 7103",
+      "coid": "232637",
+      "text": "CSC 4103.",
+      "courseCodes": [
+        "CSC 4103"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 7135",
+      "coid": "233059",
+      "text": "CSC 4330.",
+      "courseCodes": [
+        "CSC 4330"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 7150",
+      "coid": "232730",
+      "text": "CSC 4890 or CSC 7101 or equivalent.",
+      "courseCodes": [
+        "CSC 4890",
+        "CSC 7101"
+      ],
+      "tags": [
+        "or-list",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 7333",
+      "coid": "232639",
+      "text": "CSC 4444.",
+      "courseCodes": [
+        "CSC 4444"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 7351",
+      "coid": "232640",
+      "text": "CSC 4351 or equivalent.",
+      "courseCodes": [
+        "CSC 4351"
+      ],
+      "tags": [
+        "or-list",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 7360",
+      "coid": "233421",
+      "text": "CSC 4103 or equivalent.",
+      "courseCodes": [
+        "CSC 4103"
+      ],
+      "tags": [
+        "or-list",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 7402",
+      "coid": "232641",
+      "text": "CSC 4402.",
+      "courseCodes": [
+        "CSC 4402"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 7442",
+      "coid": "232642",
+      "text": "CSC 7333.",
+      "courseCodes": [
+        "CSC 7333"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 7443",
+      "coid": "232643",
+      "text": "CSC 7300 or equivalent.",
+      "courseCodes": [
+        "CSC 7300"
+      ],
+      "tags": [
+        "or-list",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 7444",
+      "coid": "232644",
+      "text": "CSC 4444.",
+      "courseCodes": [
+        "CSC 4444"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 7481",
+      "coid": "232645",
+      "text": "CSC 3102 or equivalent.",
+      "courseCodes": [
+        "CSC 3102"
+      ],
+      "tags": [
+        "or-list",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 7510",
+      "coid": "233847",
+      "text": "CSC 4103 or equivalent.",
+      "courseCodes": [
+        "CSC 4103"
+      ],
+      "tags": [
+        "or-list",
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 7600",
+      "coid": "232646",
+      "text": "consent of instructor.",
+      "courseCodes": [],
+      "tags": [
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 7601",
+      "coid": "232647",
+      "text": "CSC 4501.",
+      "courseCodes": [
+        "CSC 4501"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 7602",
+      "coid": "232648",
+      "text": "CSC 4501.",
+      "courseCodes": [
+        "CSC 4501"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 7701",
+      "coid": "232650",
+      "text": "CSC 4501.",
+      "courseCodes": [
+        "CSC 4501"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "code": "CSC 7740",
+      "coid": "233848",
+      "text": "CSC 4103 and CSC 4402.",
+      "courseCodes": [
+        "CSC 4103",
+        "CSC 4402"
+      ],
+      "tags": [
+        "and-list"
+      ]
+    },
+    {
+      "code": "CSC 7999",
+      "coid": "232652",
+      "text": "consent of department.",
+      "courseCodes": [],
+      "tags": [
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 8000",
+      "coid": "233340",
+      "text": "Permission of department.",
+      "courseCodes": [],
+      "tags": [
+        "non-course"
+      ]
+    },
+    {
+      "code": "CSC 9000",
+      "coid": "232653",
+      "text": "Permission of department.",
+      "courseCodes": [],
+      "tags": [
+        "non-course"
+      ]
+    }
+  ]
+}
