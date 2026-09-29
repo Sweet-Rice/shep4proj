@@ -102,6 +102,19 @@ describe.skipIf(!getTestDatabaseUrl())("runSectionScrape", () => {
     expect(lectureMeetings).toEqual([{ days: ["Tue", "Thu"], start: 900, end: 980 }]);
   });
 
+  it("doesn't let seeded fixture data hold off a live scrape", async () => {
+    await seedSectionFixtures(db);
+    const result = await runSectionScrape({
+      db,
+      fetcher: createSectionFixtureFetcher(),
+      department: "CSC",
+      periodIds: [SECTION_FIXTURE_PERIOD],
+      now: () => T0,
+    });
+    expect(result.skipped).toEqual([]);
+    expect(result.scraped).toHaveLength(1);
+  });
+
   it("skips a term scraped less than a day ago without fetching it", async () => {
     const opts = { db, department: "CSC", periodIds: [SECTION_FIXTURE_PERIOD] };
     await runSectionScrape({ ...opts, fetcher: createSectionFixtureFetcher(), now: () => T0 });

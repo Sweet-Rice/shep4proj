@@ -31,6 +31,9 @@ export function createSectionFixtureFetcher(fixturePath = SECTION_FIXTURE_PATH):
 /**
  * Seeds the database with the fixture's CSC sections for Fall 2026. Returns the number of
  * sections stored, or throws if the scrape failed.
+ *
+ * The seed is recorded as scraped at the epoch, not now: otherwise a live scrape run after
+ * seeding would treat the fixture term as fresh and keep the fixture data for a day.
  */
 export async function seedSectionFixtures(db: Db): Promise<number> {
   const result = await runSectionScrape({
@@ -39,6 +42,7 @@ export async function seedSectionFixtures(db: Db): Promise<number> {
     department: "CSC",
     periodIds: [SECTION_FIXTURE_PERIOD],
     minIntervalMs: 0,
+    now: () => new Date(0),
   });
   const scraped = result.scraped[0];
   if (result.failed.length > 0 || scraped === undefined) {
