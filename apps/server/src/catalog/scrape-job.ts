@@ -1,4 +1,4 @@
-import { CourseSchema } from "@jevschedule/shared";
+import { CourseSchema, toPrereqRecord } from "@jevschedule/shared";
 import {
   type CatalogFetcher,
   type CourseDetail,
@@ -28,6 +28,7 @@ export function toCourseRow(
     prerequisiteText: detail.prerequisiteText,
   });
   const dept = course.code.split(" ")[0] ?? "";
+  const prereqRecord = toPrereqRecord(detail.prerequisiteText);
   return {
     catalogYear: course.catalogYear,
     code: course.code,
@@ -38,6 +39,10 @@ export function toCourseRow(
     creditsNote: course.credits.note,
     description: course.description,
     prerequisiteText: course.prerequisiteText,
+    prereqTree: prereqRecord.tree,
+    prereqNeedsReview: prereqRecord.needsReview,
+    prereqReviewReason: prereqRecord.reviewReason,
+    prereqNotes: prereqRecord.notes,
     coid: entry.coid,
   };
 }

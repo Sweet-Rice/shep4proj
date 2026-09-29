@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { and, asc, eq, max } from "drizzle-orm";
-import { CatalogYearSchema, type Course } from "@jevschedule/shared";
+import { CatalogYearSchema, type Course, type PrereqNode } from "@jevschedule/shared";
 import type { Db } from "../db/client.js";
 import { courses, type CourseRow } from "../db/schema.js";
 
@@ -32,6 +32,27 @@ function toCourse(row: CourseRow): Course {
     },
     description: row.description,
     prerequisiteText: row.prerequisiteText,
+  };
+}
+
+export type CourseDetailResponse = Course & {
+  prereq: {
+    tree: PrereqNode | null;
+    needsReview: boolean;
+    reviewReason: string | null;
+    notes: string[];
+  };
+};
+
+function toCourseDetail(row: CourseRow): CourseDetailResponse {
+  return {
+    ...toCourse(row),
+    prereq: {
+      tree: row.prereqTree,
+      needsReview: row.prereqNeedsReview,
+      reviewReason: row.prereqReviewReason,
+      notes: row.prereqNotes,
+    },
   };
 }
 
@@ -126,7 +147,7 @@ export function registerCourseRoutes(app: FastifyInstance, deps: { db: Db }): vo
         return reply.status(404).send({ error: "Course not found" });
       }
 
-      return reply.send(toCourse(row));
+      return reply.send(toCourseDetail(row));
     },
   );
 }
