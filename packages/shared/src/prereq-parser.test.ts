@@ -339,6 +339,7 @@ describe("parsePrereqText - Corpus sweep", () => {
   const corpus = JSON.parse(readFileSync(corpusUrl, "utf-8")) as CorpusData;
 
   it("parses all 71 corpus entries without throwing, flags mixed-and-or, and achieves >=90% parse rate", () => {
+    expect(corpus.entries).toHaveLength(71);
     let cleanCount = 0;
 
     for (const entry of corpus.entries) {
@@ -371,5 +372,6 @@ describe("parsePrereqText - Corpus sweep", () => {
 
     expect(cleanCount).toBeGreaterThanOrEqual(64);
     expect(cleanCount).toBe(66);
+    expect(cleanCount / corpus.entries.length).toBeGreaterThanOrEqual(0.9);
   });
 });
