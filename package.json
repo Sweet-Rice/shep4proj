@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "pnpm -r build",
+    "dev": "pnpm --filter @jevschedule/shared build && pnpm --parallel --filter @jevschedule/server --filter @jevschedule/desktop dev",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
