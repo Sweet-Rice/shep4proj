@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { seedCatalogFixtures } from "../catalog/seed.js";
 import { createDb } from "../db/client.js";
+import { seedSectionFixtures } from "../sections/seed.js";
 
 // Scripts run with cwd = apps/server; the repo-root .env is shared with docker compose.
 if (!process.env.DATABASE_URL && existsSync("../../.env")) {
@@ -18,6 +19,8 @@ async function main(databaseUrl: string): Promise<void> {
   try {
     const count = await seedCatalogFixtures(db);
     console.log(`Seeded ${count} courses from fixtures/catalog/2026-2027`);
+    const sectionCount = await seedSectionFixtures(db);
+    console.log(`Seeded ${sectionCount} sections from fixtures/sections/fall-2026`);
   } finally {
     await close();
   }

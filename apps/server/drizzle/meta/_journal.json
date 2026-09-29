@@ -29,6 +29,13 @@
       "when": 1790688582166,
       "tag": "0003_sections",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790689175398,
+      "tag": "0004_section_scrapes",
+      "breakpoints": true
     }
   ]
 }

@@ -5,6 +5,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
@@ -98,3 +99,16 @@ export const meetings = pgTable(
 
 export type MeetingRow = typeof meetings.$inferSelect;
 export type NewMeetingRow = typeof meetings.$inferInsert;
+
+// When each department's sections were last scraped for each term, so the scheduled job
+// (T-403) reads a term at most once a day: the portal only refreshes daily.
+export const sectionScrapes = pgTable(
+  "section_scrapes",
+  {
+    department: text("department").notNull(),
+    term: text("term").notNull(),
+    scrapedAt: timestamp("scraped_at", { withTimezone: true }).notNull(),
+    sectionCount: integer("section_count").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.department, table.term] })],
+);
