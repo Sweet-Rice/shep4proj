@@ -1,8 +1,14 @@
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify";
+import type { Db } from "./db/client.js";
+import { registerCourseRoutes } from "./routes/courses.js";
 
 /** Body returned by `GET /health`. */
 export interface HealthResponse {
   status: "ok";
+}
+
+export interface ServerOptions extends FastifyServerOptions {
+  db?: Db;
 }
 
 /**
@@ -10,8 +16,9 @@ export interface HealthResponse {
  * `app.inject()` and `main.ts` can decide where to listen. Routes are
  * registered here; later tasks add their own (courses, degrees, …).
  */
-export function buildServer(opts: FastifyServerOptions = {}): FastifyInstance {
-  const app = Fastify(opts);
+export function buildServer(opts: ServerOptions = {}): FastifyInstance {
+  const { db, ...fastifyOpts } = opts;
+  const app = Fastify(fastifyOpts);
 
   app.get(
     "/health",
@@ -29,6 +36,10 @@ export function buildServer(opts: FastifyServerOptions = {}): FastifyInstance {
     },
     async (): Promise<HealthResponse> => ({ status: "ok" }),
   );
+
+  if (db) {
+    registerCourseRoutes(app, { db });
+  }
 
   return app;
 }

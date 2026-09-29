@@ -4,8 +4,9 @@ export { CourseSchema, type Course } from "@jevschedule/shared";
 /** Package identifier, used to prove cross-package builds work. */
 export const PACKAGE_NAME = "@jevschedule/server";
 
-export { buildServer, type HealthResponse } from "./app.js";
+export { buildServer, type HealthResponse, type ServerOptions } from "./app.js";
 export { readListenConfig, type ListenConfig } from "./config.js";
+export { registerCourseRoutes } from "./routes/courses.js";
 
 export { createDb, type Db } from "./db/client.js";
 export { courses, type CourseRow, type NewCourseRow } from "./db/schema.js";
