@@ -9,6 +9,8 @@ export function isPlaceholder(): boolean {
   return true;
 }
 
+export { parseCourseDetail } from "./catalog/course-detail.js";
+export type { CourseDetail } from "./catalog/course-detail.js";
 export { parseCourseList } from "./catalog/course-list.js";
 export type { CourseListEntry } from "./catalog/course-list.js";
 export { CatalogShapeError } from "./catalog/errors.js";

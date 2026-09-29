@@ -15,8 +15,11 @@ export interface CourseListEntry {
   department: string;
 }
 
-/** `CSC 1350 Computer Science I for Majors (4)` -> code, title, credits text. */
-const COURSE_ROW_TEXT = /^([A-Z]{2,4} \d{4})\s+(.+?)\s+\(([^)]+)\)$/;
+/**
+ * `CSC 1350 Computer Science I for Majors (4)` -> code, title, credits text.
+ * Shared with the course detail parser, whose page heading uses the same shape.
+ */
+export const COURSE_ROW_TEXT = /^([A-Z]{2,4} \d{4})\s+(.+?)\s+\(([^)]+)\)$/;
 
 /**
  * Parses the catalog course list page (`content.php` with the course filter)
