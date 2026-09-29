@@ -1,0 +1,16 @@
+# Lane A: import & security
+/packages/workday/        @Sweet-Rice
+/fixtures/workday/        @Sweet-Rice
+/fixtures/transcripts/    @Sweet-Rice
+/SECURITY.md              @Sweet-Rice
+# Lane B: data & server
+/apps/server/             @isaachumphries
+/packages/scraper/        @isaachumphries
+/fixtures/catalog/        @isaachumphries
+/fixtures/sections/       @isaachumphries
+/docker-compose.yml       @isaachumphries
+# Lane C: planning logic
+/packages/shared/         @JaKyran
+# Lane D: desktop & platform
+/apps/desktop/            @TheMrBo
+/.github/                 @TheMrBo
