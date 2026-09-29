@@ -12,8 +12,8 @@ Project-specific rules in this repo's docs/wiki take precedence over anything be
   - Subject: imperative mood, ≤72 chars, prefixed with the task ID when one exists (e.g. `T-113: fix off-by-one in pagination`).
   - Body: explain *why*, not just what. Reference context a reviewer won't otherwise have.
 - Each commit should build and pass tests where practical — don't leave intermediate commits in a broken state on shared branches.
-- Don't rewrite shared/pushed history that others may have based work on.
-- Force-push only to your own unmerged branch, and only with `--force-with-lease` (never bare `--force`).
+- Don't rewrite shared/pushed history that others may have based work on. Rebasing an open PR's branch onto `main` before it lands is fine (see section 8).
+- Force-push only with `--force-with-lease` (never bare `--force`), and only to an unmerged branch that is yours or that you're landing as a maintainer (section 8).
 
 ## 2. One branch, one PR, per task
 
@@ -32,7 +32,7 @@ Project-specific rules in this repo's docs/wiki take precedence over anything be
   git rebase origin/main
   ```
 - Never commit directly to `main`.
-- Don't merge your own PR unless the project's workflow explicitly allows it — default to waiting for review.
+- Don't merge a PR until it has passed the pre-merge review in section 8 and required CI is green. After that, a maintainer may merge it with a merge commit, whether it's their own PR or a teammate's.
 
 ## 3. Git worktrees for parallel work
 
@@ -96,3 +96,25 @@ Checklist:
 - [ ] Commit messages follow the format in section 1.
 - [ ] PR description references the issue and includes test notes.
 - [ ] No secrets, `.env` files, or PII in the diff.
+
+## 8. Pre-merge review and landing
+
+A review subagent can do the pre-merge review; you don't have to wait for a human reviewer. The review counts when all of these hold:
+
+- It covers the PR's own diff (`gh pr diff <n>`, which for a stacked PR is the diff against its parent) in separate passes:
+  - correctness against the issue's "Done when";
+  - test strength, including mutation probes. If the suite stays green when the guarded code is removed, that's a blocking finding.
+  - compatibility with current `main`: contracts, merge conflicts, migration numbering;
+  - this file's rules plus safety: secrets, PII, network access in tests, crawl limits.
+- An adversarial pass tries to refute each blocking finding. A finding is dropped only when the refutation cites concrete evidence (code, a test, or a probe) and the review records it. A finding that isn't clearly refuted stays blocking.
+- The review is posted on the PR.
+- Each blocking finding is fixed (failing test first, each fix in its own commit) and re-verified by the reviewer before merging.
+
+Landing a teammate's PR: a maintainer may rebase it onto `origin/main`, resolve conflicts, and push fix commits. When you do:
+
+- comment on the PR first and again at merge, saying what changed;
+- keep the author's commits with their authorship;
+- before rebasing, note the branch's current remote SHA, and push with an explicit lease on it: `git push --force-with-lease=<branch>:<that-sha> origin <branch>`. A bare `--force-with-lease` checks against your remote-tracking ref, which a later fetch can move past the author's newest commit.
+- never drop commits the author pushed in the meantime. If the lease fails, fetch, fold the new commits in, check they're all present, and push again with a lease on the new SHA.
+
+If PRs are stacked (a branch cut from another open PR's branch), land them bottom-up. Retarget each child to `main` before merging it, so its `Closes #N` closes the issue. A human post-merge review is still welcome; file follow-ups as issues.
