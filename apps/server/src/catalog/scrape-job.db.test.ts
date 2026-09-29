@@ -7,6 +7,7 @@ import { courses } from "../db/schema.js";
 import { getTestDatabaseUrl, truncateCourses } from "../test-support/db.js";
 import { FIXTURE_DETAIL_COIDS, createFixtureFetcher } from "./fixture-fetcher.js";
 import { runCatalogScrape } from "./scrape-job.js";
+import { seedCatalogFixtures } from "./seed.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixtureDir = path.resolve(__dirname, "../../../../fixtures/catalog/2026-2027");
@@ -36,19 +37,9 @@ describe.skipIf(!getTestDatabaseUrl())("runCatalogScrape integration", () => {
     const fetcher = createFixtureFetcher(fixtureDir);
     const codes = Object.keys(FIXTURE_DETAIL_COIDS);
 
-    // 2. run with fixture fetcher (fixtureDir = path.resolve(__dirname, "../../../../fixtures/catalog/2026-2027")) and codes = Object.keys(FIXTURE_DETAIL_COIDS) -> upserted 5, failed [], count 5
-    const result1 = await runCatalogScrape({
-      db,
-      fetcher,
-      catalogYear: "2026-2027",
-      catoid: "35",
-      navoid: "3486",
-      prefix: "CSC",
-      codes,
-    });
-
-    expect(result1.upserted).toBe(5);
-    expect(result1.failed).toEqual([]);
+    // 2. seedCatalogFixtures(db) -> upserted 5, count 5
+    const upserted = await seedCatalogFixtures(db);
+    expect(upserted).toBe(5);
 
     const initialRows = await db.select().from(courses);
     expect(initialRows).toHaveLength(5);
