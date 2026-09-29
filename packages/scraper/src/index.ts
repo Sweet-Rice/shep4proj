@@ -32,6 +32,6 @@ export {
 } from "./fetch/robots.js";
 export { PREREQ_PATTERN_TAGS, suggestPrereqTags } from "./prereq-corpus/tags.js";
 export { SectionShapeError } from "./sections/errors.js";
-export { parseSectionListing } from "./sections/section-listing.js";
+export { parseAcademicPeriods, parseSectionListing } from "./sections/section-listing.js";
 export type { AcademicPeriod, SectionListing } from "./sections/section-listing.js";
 export type { PrereqPatternTag } from "./prereq-corpus/tags.js";

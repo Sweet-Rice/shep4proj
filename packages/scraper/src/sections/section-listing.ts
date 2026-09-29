@@ -90,7 +90,8 @@ function isoDate(month: string, day: string, year: string): string {
   return `${year}-${month}-${day}`;
 }
 
-function parsePeriods($: CheerioAPI): { periods: AcademicPeriod[]; selectedPeriodId: string } {
+/** The period picker's options and its selection (`""` on the landing page, where none is). */
+function parsePeriodPicker($: CheerioAPI): { periods: AcademicPeriod[]; selectedId: string } {
   const select = $("select#academicPeriod");
   if (select.length !== 1) throw new SectionShapeError("academic period picker not found");
 
@@ -108,12 +109,16 @@ function parsePeriods($: CheerioAPI): { periods: AcademicPeriod[]; selectedPerio
       return { id, label, startDate: isoDate(sm, sd, sy), endDate: isoDate(em, ed, ey) };
     });
   if (periods.length === 0) throw new SectionShapeError("academic period picker has no options");
+  return { periods, selectedId: select.attr("data-selected-id") ?? "" };
+}
 
-  const selectedPeriodId = select.attr("data-selected-id") ?? "";
-  if (!periods.some((period) => period.id === selectedPeriodId)) {
-    throw new SectionShapeError(`selected academic period "${selectedPeriodId}" is not an option`);
-  }
-  return { periods, selectedPeriodId };
+/**
+ * Parses just the academic period picker, which every Course Offerings page has, including the
+ * landing page that lists no sections (`LSU?University=...&Department=...` with no period).
+ * The scrape job (T-403) reads the current periods from here rather than hardcoding them.
+ */
+export function parseAcademicPeriods(html: string): AcademicPeriod[] {
+  return parsePeriodPicker(load(html)).periods;
 }
 
 /**
@@ -207,7 +212,10 @@ function parseSection(
  */
 export function parseSectionListing(html: string): SectionListing {
   const $ = load(html);
-  const { periods, selectedPeriodId } = parsePeriods($);
+  const { periods, selectedId: selectedPeriodId } = parsePeriodPicker($);
+  if (!periods.some((period) => period.id === selectedPeriodId)) {
+    throw new SectionShapeError(`selected academic period "${selectedPeriodId}" is not an option`);
+  }
 
   const sectionsByCourse = new Map<string, Section[]>();
   $("div.course-accordion").each((_, accordion) => {

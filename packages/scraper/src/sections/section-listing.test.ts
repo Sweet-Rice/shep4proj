@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { SectionShapeError } from "./errors.js";
-import { parseSectionListing } from "./section-listing.js";
+import { parseAcademicPeriods, parseSectionListing } from "./section-listing.js";
 
 const FIXTURE = fileURLToPath(
   new URL("../../../../fixtures/sections/fall-2026/csc.html", import.meta.url),
@@ -206,5 +206,40 @@ describe("parseSectionListing on synthetic pages", () => {
     ],
   ])("throws SectionShapeError for %s", (_label, html) => {
     expect(() => parseSectionListing(html)).toThrow(SectionShapeError);
+  });
+});
+
+describe("parseAcademicPeriods", () => {
+  it("reads the periods from a listing page", () => {
+    expect(parseAcademicPeriods(readFileSync(FIXTURE, "utf8"))).toEqual(listing.periods);
+  });
+
+  it("reads the periods from the landing page, where none is selected and no sections show", () => {
+    const landing = page(
+      "",
+      PERIOD_PICKER.replace('data-selected-id="LSUAM_FALL_2026"', 'data-selected-id=""'),
+    );
+    expect(parseAcademicPeriods(landing)).toEqual([
+      {
+        id: "LSUAM_FALL_2026",
+        label: "Fall Semester 2026",
+        startDate: "2026-08-24",
+        endDate: "2026-12-12",
+      },
+    ]);
+  });
+
+  it.each([
+    ["no period picker", page("", "")],
+    ["an empty picker", page("", '<select id="academicPeriod" data-selected-id=""></select>')],
+    [
+      "an option without dates",
+      page(
+        "",
+        '<select id="academicPeriod"><option value="LSUAM_FALL_2026">Fall</option></select>',
+      ),
+    ],
+  ])("throws SectionShapeError for %s", (_label, html) => {
+    expect(() => parseAcademicPeriods(html)).toThrow(SectionShapeError);
   });
 });
