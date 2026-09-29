@@ -1,3 +1,5 @@
+import { DEPARTMENT_PATTERN } from "./sections/store.js";
+
 /** Where the server listens. */
 export interface ListenConfig {
   host: string;
@@ -27,4 +29,36 @@ export function readListenConfig(env: NodeJS.ProcessEnv = process.env): ListenCo
     throw new Error(`PORT must be an integer from 0 to 65535, got "${rawPort}"`);
   }
   return { host, port };
+}
+
+/** Whether and for which departments the server scrapes sections on a schedule (T-403). */
+export interface SectionScrapeConfig {
+  enabled: boolean;
+  departments: string[];
+}
+
+export const DEFAULT_SECTION_SCRAPE_DEPARTMENTS = ["CSC"];
+
+/**
+ * Reads `SECTION_SCRAPE_ENABLED` (`true` or `false`, default `false`, so a dev server never
+ * scrapes the live portal by accident) and `SECTION_SCRAPE_DEPARTMENTS` (comma-separated
+ * prefixes, default `CSC`). Throws on anything malformed rather than guessing.
+ */
+export function readSectionScrapeConfig(env: NodeJS.ProcessEnv = process.env): SectionScrapeConfig {
+  const rawEnabled = env.SECTION_SCRAPE_ENABLED?.trim() || "false";
+  if (rawEnabled !== "true" && rawEnabled !== "false") {
+    throw new Error(`SECTION_SCRAPE_ENABLED must be "true" or "false", got "${rawEnabled}"`);
+  }
+
+  const rawDepartments = env.SECTION_SCRAPE_DEPARTMENTS?.trim();
+  const departments = rawDepartments
+    ? rawDepartments.split(",").map((department) => department.trim())
+    : DEFAULT_SECTION_SCRAPE_DEPARTMENTS;
+  const invalid = departments.find((department) => !DEPARTMENT_PATTERN.test(department));
+  if (invalid !== undefined) {
+    throw new Error(
+      `SECTION_SCRAPE_DEPARTMENTS must be comma-separated 2-4 letter prefixes, got "${invalid}"`,
+    );
+  }
+  return { enabled: rawEnabled === "true", departments: [...new Set(departments)] };
 }
