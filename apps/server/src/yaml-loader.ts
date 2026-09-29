@@ -10,7 +10,7 @@ import { z } from "zod";
  */
 export async function loadYamlFiles<T>(
   directory: string,
-  schema: z.ZodTypeAny,
+  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
 ): Promise<{ path: string; data: T }[]> {
   const entries = await fs.readdir(directory, { withFileTypes: true });
   const results: { path: string; data: T }[] = [];

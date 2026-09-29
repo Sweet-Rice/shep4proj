@@ -1,6 +1,6 @@
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify";
 
-import { CourseSchema } from "@jevschedule/shared";
+import { CourseSchema, DegreeSchema } from "@jevschedule/shared";
 import { loadYamlFiles } from "./yaml-loader.js";
 
 /** Body returned by `GET /health`. */
@@ -10,6 +10,13 @@ export interface HealthResponse {
 
 export interface ServerOptions extends FastifyServerOptions {
   catalogDataDir?: string;
+  degreesDataDir?: string;
+}
+
+declare module "fastify" {
+  interface FastifyInstance {
+    degrees: Map<string, import("@jevschedule/shared").Degree>;
+  }
 }
 
 /**
@@ -20,12 +27,36 @@ export interface ServerOptions extends FastifyServerOptions {
 export function buildServer(opts: ServerOptions = {}): FastifyInstance {
   const app = Fastify(opts);
 
+  // Decorate so we can inject during tests even without directories
+  app.decorate("degrees", new Map<string, import("@jevschedule/shared").Degree>());
+
   if (opts.catalogDataDir) {
-    app.register(async (instance) => {
+    app.register(async (_instance) => {
       // Validate all YAML files during startup (fails fast on error)
       await loadYamlFiles(opts.catalogDataDir!, CourseSchema);
     });
   }
+
+  if (opts.degreesDataDir) {
+    app.register(async (instance) => {
+      const loaded = await loadYamlFiles(opts.degreesDataDir!, DegreeSchema);
+      for (const item of loaded) {
+        instance.degrees.set(item.data.id, item.data);
+      }
+    });
+  }
+
+  app.get("/degrees", async () => {
+    return Array.from(app.degrees.values());
+  });
+
+  app.get<{ Params: { id: string } }>("/degrees/:id", async (request, reply) => {
+    const degree = app.degrees.get(request.params.id);
+    if (!degree) {
+      return reply.status(404).send({ error: "Not Found" });
+    }
+    return degree;
+  });
 
   app.get(
     "/health",

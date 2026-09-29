@@ -3,6 +3,8 @@ export const PACKAGE_NAME = "@jevschedule/shared";
 
 export { CourseSchema } from "./course.js";
 export type { Course } from "./course.js";
+export { DegreeSchema } from "./degree.js";
+export type { Degree } from "./degree.js";
 
 /**
  * Placeholder for the shared planner types, zod schemas, and prereq /
