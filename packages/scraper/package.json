@@ -19,8 +19,8 @@
     "format": "prettier --write src"
   },
   "devDependencies": {
-    "@types/node": "^26.6.2",
-    "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "@types/node": "^26.6.3",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
   }
 }

@@ -1,8 +1,15 @@
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify";
 
+import { CourseSchema } from "@jevschedule/shared";
+import { loadYamlFiles } from "./yaml-loader.js";
+
 /** Body returned by `GET /health`. */
 export interface HealthResponse {
   status: "ok";
+}
+
+export interface ServerOptions extends FastifyServerOptions {
+  catalogDataDir?: string;
 }
 
 /**
@@ -10,8 +17,15 @@ export interface HealthResponse {
  * `app.inject()` and `main.ts` can decide where to listen. Routes are
  * registered here; later tasks add their own (courses, degrees, …).
  */
-export function buildServer(opts: FastifyServerOptions = {}): FastifyInstance {
+export function buildServer(opts: ServerOptions = {}): FastifyInstance {
   const app = Fastify(opts);
+
+  if (opts.catalogDataDir) {
+    app.register(async (instance) => {
+      // Validate all YAML files during startup (fails fast on error)
+      await loadYamlFiles(opts.catalogDataDir!, CourseSchema);
+    });
+  }
 
   app.get(
     "/health",
