@@ -11,7 +11,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import type { PrereqNode, Weekday } from "@jevschedule/shared";
+import type { PrereqNode, Section, Weekday } from "@jevschedule/shared";
 
 // One row per course per catalog year. Credits are a min/max range because some
 // catalog courses are variable-credit (e.g. "1-12 per sem."); credits_note keeps the
@@ -111,4 +111,19 @@ export const sectionScrapes = pgTable(
     sectionCount: integer("section_count").notNull(),
   },
   (table) => [primaryKey({ columns: [table.department, table.term] })],
+);
+
+// The last full listing captured for each term and department, kept for "when is this course
+// usually offered?" (US-13, T-501). LSU publishes no past terms, so this archive, written on
+// every section scrape, is the only history there is. Rows are never deleted, so a term's
+// offerings stay answerable after the portal stops listing it.
+export const sectionArchive = pgTable(
+  "section_archive",
+  {
+    term: text("term").notNull(),
+    department: text("department").notNull(),
+    capturedAt: timestamp("captured_at", { withTimezone: true }).notNull(),
+    sections: jsonb("sections").$type<Section[]>().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.term, table.department] })],
 );

@@ -1,7 +1,13 @@
 import { and, eq, like, sql } from "drizzle-orm";
 import type { Section } from "@jevschedule/shared";
 import type { Db } from "../db/client.js";
-import { meetings, sections, sectionScrapes, type NewSectionRow } from "../db/schema.js";
+import {
+  meetings,
+  sectionArchive,
+  sections,
+  sectionScrapes,
+  type NewSectionRow,
+} from "../db/schema.js";
 
 /** A department prefix such as `CSC`: letters only, so it's safe inside a LIKE pattern. */
 export const DEPARTMENT_PATTERN = /^[A-Z]{2,4}$/;
@@ -24,8 +30,9 @@ function toSectionRow(section: Section): NewSectionRow {
 }
 
 /**
- * Replaces one department's sections for one term with `termSections` and records the scrape,
- * all in one transaction, so readers see either the old listing or the new one. Replacing
+ * Replaces one department's sections for one term with `termSections`, records the scrape and
+ * writes the term's archive snapshot (T-501), all in one transaction, so readers see either the
+ * old listing or the new one and the archive never disagrees with it. Replacing
  * rather than upserting drops sections the portal no longer lists (cancelled sections).
  * Other departments' sections for the same term are untouched.
  */
@@ -75,6 +82,19 @@ export async function replaceTermSections(
       .onConflictDoUpdate({
         target: [sectionScrapes.department, sectionScrapes.term],
         set: { scrapedAt: o.scrapedAt, sectionCount: sql`excluded.section_count` },
+      });
+
+    await tx
+      .insert(sectionArchive)
+      .values({
+        term: o.term,
+        department: o.department,
+        capturedAt: o.scrapedAt,
+        sections: [...o.sections],
+      })
+      .onConflictDoUpdate({
+        target: [sectionArchive.term, sectionArchive.department],
+        set: { capturedAt: o.scrapedAt, sections: sql`excluded.sections` },
       });
   });
 }
