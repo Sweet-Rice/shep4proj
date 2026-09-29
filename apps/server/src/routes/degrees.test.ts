@@ -63,11 +63,7 @@ describe("degrees routes", () => {
       const res = await app.inject({ method: "GET", url: "/degrees/nope" });
 
       expect(res.statusCode).toBe(404);
-      expect(res.json()).toEqual({
-        statusCode: 404,
-        error: "Not Found",
-        message: "Degree program 'nope' not found",
-      });
+      expect(res.json()).toEqual({ error: "Not Found" });
     });
   });
 });

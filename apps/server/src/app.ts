@@ -2,7 +2,6 @@ import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastif
 
 import { DegreeProgramSchema, type DegreeProgram } from "@jevschedule/shared";
 import { loadYamlFiles } from "./yaml-loader.js";
-import { type Db } from "./db/client.js";
 import { degreesRoutes } from "./routes/degrees.js";
 
 /** Body returned by `GET /health`. */
@@ -12,7 +11,7 @@ export interface HealthResponse {
 
 export interface ServerOptions extends FastifyServerOptions {
   catalogDataDir?: string;
-  db?: Db;
+  db?: unknown;
 }
 
 declare module "fastify" {

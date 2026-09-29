@@ -44,7 +44,7 @@ describe("buildServer", () => {
 
     it("returns a list of loaded degrees", async () => {
       app = buildServer();
-      app.degrees.set("csc-bs", { id: "csc-bs", title: "Computer Science, B.S." });
+      app.degrees.set("csc-bs", { id: "csc-bs", title: "Computer Science, B.S." } as unknown as import("@jevschedule/shared").DegreeProgram);
 
       const res = await app.inject({ method: "GET", url: "/degrees" });
       expect(res.statusCode).toBe(200);
@@ -59,7 +59,7 @@ describe("buildServer", () => {
         id: "csc-bs",
         title: "Computer Science, B.S.",
         requiredCourses: ["CSC 1350"],
-      });
+      } as unknown as import("@jevschedule/shared").DegreeProgram);
 
       const res = await app.inject({ method: "GET", url: "/degrees/csc-bs" });
       expect(res.statusCode).toBe(200);
