@@ -6,6 +6,7 @@
   "main": "./out/main/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
+    "postinstall": "install-electron --no",
     "build": "tsc -b && electron-vite build",
     "dev": "electron-vite dev",
     "lint": "eslint src && prettier --check src",
