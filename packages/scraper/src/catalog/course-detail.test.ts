@@ -151,6 +151,22 @@ describe("parseCourseDetail markup rules", () => {
     });
   });
 
+  it("parses CSC 7999: readings course without narrative body text using notes as description", () => {
+    const html = page(
+      `<em>Prereq.:</em> <em>consent of department.</em>  <em>“S”/”U” grading.</em> <em>May be taken for a max. of 6 sem. hrs. of credit.</em>`,
+      "CSC 7999 Selected Readings in Computer Science (1-3)",
+    );
+    expect(parseCourseDetail(html)).toEqual<CourseDetail>({
+      code: "CSC 7999",
+      title: "Selected Readings in Computer Science",
+      creditsText: "1-3",
+      description: "“S”/”U” grading. May be taken for a max. of 6 sem. hrs. of credit.",
+      prerequisiteText: "consent of department.",
+      prerequisiteCourseCodes: [],
+      notes: ["“S”/”U” grading.", "May be taken for a max. of 6 sem. hrs. of credit."],
+    });
+  });
+
   it("returns a null prerequisite and no codes when there is no Prereq. label", () => {
     const detail = parseCourseDetail(page("<em></em> Plain description."));
     expect(detail.prerequisiteText).toBeNull();

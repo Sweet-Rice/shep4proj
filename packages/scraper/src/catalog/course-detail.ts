@@ -340,8 +340,8 @@ export function parseCourseDetail(html: string): CourseDetail {
     const seeIndex = notes.findIndex((n) => /^See /i.test(n));
     if (seeIndex !== -1) {
       description = notes.splice(seeIndex, 1)[0]!;
-    } else if (notes.length === 1) {
-      description = notes.shift()!;
+    } else {
+      description = notes.join(" ");
     }
   }
   if (description === "") {
