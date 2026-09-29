@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { type Course } from "@jevschedule/shared";
+import type { CourseDetailResponse } from "./routes/courses.js";
 import { buildServer } from "./app.js";
 import { seedCatalogFixtures } from "./catalog/seed.js";
 import { createDb, type Db } from "./db/client.js";
@@ -108,10 +109,58 @@ describe.skipIf(!getTestDatabaseUrl())("courses routes", () => {
       const res = await app.inject({ method: "GET", url: "/courses/CSC-4330" });
 
       expect(res.statusCode).toBe(200);
-      const course = res.json<Course>();
+      const course = res.json<CourseDetailResponse>();
       expect(course.title).toBe("Software Systems Development");
       expect(course.credits).toEqual({ min: 3, max: 3, note: null });
       expect(course.prerequisiteText).toBe("CSC 3102, CSC 3380.");
+      expect(course.prereq.tree).toEqual({
+        type: "AND",
+        children: [
+          { type: "COURSE", code: "CSC 3102", coreq: false, minGrade: null },
+          { type: "COURSE", code: "CSC 3380", coreq: false, minGrade: null },
+        ],
+      });
+      expect(course.prereq.needsReview).toBe(false);
+      expect(course.prereq.notes).toEqual([]);
+    });
+
+    it("returns course details for CSC-3102 with needsReview flag and reviewReason", async () => {
+      const res = await app.inject({ method: "GET", url: "/courses/CSC-3102" });
+
+      expect(res.statusCode).toBe(200);
+      const course = res.json<CourseDetailResponse>();
+      expect(course.code).toBe("CSC 3102");
+      expect(course.prereq.needsReview).toBe(true);
+      expect(course.prereq.tree).toBeNull();
+      expect(course.prereq.reviewReason?.startsWith("ambiguous-and-or")).toBe(true);
+    });
+
+    it("returns course details for CSC-1350 with OR coreq prereq tree", async () => {
+      const res = await app.inject({ method: "GET", url: "/courses/CSC-1350" });
+
+      expect(res.statusCode).toBe(200);
+      const course = res.json<CourseDetailResponse>();
+      expect(course.code).toBe("CSC 1350");
+      expect(course.prereq.tree).toEqual({
+        type: "OR",
+        children: [
+          { type: "COURSE", code: "MATH 1022", coreq: true, minGrade: null },
+          { type: "COURSE", code: "MATH 1023", coreq: true, minGrade: null },
+          { type: "COURSE", code: "MATH 1550", coreq: true, minGrade: null },
+          { type: "COURSE", code: "MATH 1551", coreq: true, minGrade: null },
+          { type: "COURSE", code: "MATH 1552", coreq: true, minGrade: null },
+        ],
+      });
+      expect(course.prereq.tree?.type).toBe("OR");
+      if (course.prereq.tree?.type === "OR") {
+        expect(course.prereq.tree.children).toHaveLength(5);
+        for (const child of course.prereq.tree.children) {
+          expect(child.type).toBe("COURSE");
+          if (child.type === "COURSE") {
+            expect(child.coreq).toBe(true);
+          }
+        }
+      }
     });
 
     it("returns course details for lowercase course id csc-2700", async () => {

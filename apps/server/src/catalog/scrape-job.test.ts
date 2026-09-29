@@ -30,6 +30,16 @@ describe("scrape-job unit tests", () => {
     expect(row.code).toBe("CSC 2700");
     expect(row.catalogYear).toBe("2026-2027");
     expect(row.coid).toBe("229586");
+    expect(row.prereqNeedsReview).toBe(false);
+    expect(row.prereqReviewReason).toBeNull();
+    expect(row.prereqNotes).toEqual(["permission of department"]);
+    expect(row.prereqTree).toEqual({
+      type: "OR",
+      children: [
+        { type: "COURSE", code: "CSC 1254", coreq: false, minGrade: null },
+        { type: "COURSE", code: "CSC 1351", coreq: false, minGrade: null },
+      ],
+    });
   });
 
   it("Detail/entry code mismatch lands in failed: use a fake fetcher returning the 4330 page for the 1350 URL", async () => {
