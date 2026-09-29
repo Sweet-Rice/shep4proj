@@ -9,3 +9,5 @@
 # Saved catalog HTML is a verbatim capture of what LSU served (some pages contain
 # CRLF). Store it byte-for-byte so the checksums in its README stay valid.
 fixtures/catalog/**/*.html -text
+# Saved section-listing HTML is a verbatim capture; keep bytes for the README checksums.
+fixtures/sections/**/*.html -text
