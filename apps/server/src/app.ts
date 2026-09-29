@@ -1,7 +1,9 @@
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify";
 
-import { DegreeProgramSchema } from "@jevschedule/shared";
+import { DegreeProgramSchema, type DegreeProgram } from "@jevschedule/shared";
 import { loadYamlFiles } from "./yaml-loader.js";
+import { type Db } from "./db/client.js";
+import { degreesRoutes } from "./routes/degrees.js";
 
 /** Body returned by `GET /health`. */
 export interface HealthResponse {
@@ -10,6 +12,13 @@ export interface HealthResponse {
 
 export interface ServerOptions extends FastifyServerOptions {
   catalogDataDir?: string;
+  db?: Db;
+}
+
+declare module "fastify" {
+  interface FastifyInstance {
+    degrees: Map<string, DegreeProgram>;
+  }
 }
 
 /**
@@ -20,10 +29,15 @@ export interface ServerOptions extends FastifyServerOptions {
 export function buildServer(opts: ServerOptions = {}): FastifyInstance {
   const app = Fastify(opts);
 
+  app.decorate("degrees", new Map<string, DegreeProgram>());
+
   if (opts.catalogDataDir) {
-    app.register(async () => {
+    app.register(async (instance) => {
       // Validate all YAML files during startup (fails fast on error)
-      await loadYamlFiles(opts.catalogDataDir!, DegreeProgramSchema);
+      const loaded = await loadYamlFiles(opts.catalogDataDir!, DegreeProgramSchema);
+      for (const item of loaded) {
+        instance.degrees.set(item.data.id, item.data);
+      }
     });
   }
 
@@ -43,6 +57,8 @@ export function buildServer(opts: ServerOptions = {}): FastifyInstance {
     },
     async (): Promise<HealthResponse> => ({ status: "ok" }),
   );
+
+  app.register(degreesRoutes);
 
   return app;
 }
