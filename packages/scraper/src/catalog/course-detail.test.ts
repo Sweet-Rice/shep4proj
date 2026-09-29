@@ -17,6 +17,17 @@ function page(body: string, heading = "CSC 1000 Sample Course (3)"): string {
   return `<html><body><table><tr><td><p><h1 id='course_preview_title'>${heading}</h1><hr>${body}</p><br><hr><div>Back to Top</div></td></tr></table></body></html>`;
 }
 
+/** Runs `fn`, asserts it throws a `CatalogShapeError` (not merely an error with a matching message), and returns its message. */
+function shapeErrorMessage(fn: () => unknown): string {
+  try {
+    fn();
+  } catch (error) {
+    expect(error).toBeInstanceOf(CatalogShapeError);
+    return error instanceof Error ? error.message : "";
+  }
+  throw new Error("expected a CatalogShapeError, but nothing was thrown");
+}
+
 describe("parseCourseDetail fixtures", () => {
   it("parses CSC 1350: prerequisite with five linked courses and two notes", () => {
     expect(parseCourseDetail(fixture("1350"))).toEqual<CourseDetail>({
@@ -107,28 +118,49 @@ describe("parseCourseDetail markup rules", () => {
     expect(detail.prerequisiteText).toBeNull();
   });
 
-  it("collapses whitespace and non-breaking spaces and ignores display:none spans", () => {
+  it("collapses whitespace runs and non-breaking spaces", () => {
     const detail = parseCourseDetail(
       page(
-        `<em>Prereq.:</em> <em>MATH&#160;1550\u00a0 or\n  <span style="display: none !important">&#160;</span>MATH 1551.</em> Some&#160; text\n here.`,
+        `<em>Prereq.:</em> <em>MATH&#160;1550\u00a0 or\n  MATH 1551.</em> Some&#160; text\n here.`,
       ),
     );
     expect(detail.prerequisiteText).toBe("MATH 1550 or MATH 1551.");
     expect(detail.description).toBe("Some text here.");
   });
 
+  it("ignores display:none spans so no stray space is left before punctuation", () => {
+    const detail = parseCourseDetail(
+      page(
+        `<em>Prereq.:</em> <em>MATH 1551<span style="display: none !important">&#160;</span>.</em> Text<span style="display:none">&#160;</span>.`,
+      ),
+    );
+    expect(detail.prerequisiteText).toBe("MATH 1551.");
+    expect(detail.description).toBe("Text.");
+  });
+
   it("takes only linked course codes for prerequisiteCourseCodes", () => {
     const link = (code: string) =>
       `<a href="preview_course_nopop.php?catoid=35&coid=1" aria-label="View course details for ${code}">${code}</a>`;
     const detail = parseCourseDetail(
-      page(`<em>Prereq.:</em> <em>${link("CSC 1254")} or permission of department.</em> Text.`),
+      page(
+        `<em>Prereq.:</em> <em>MATH 1550 or ${link("CSC 1254")} or permission of department.</em> Text.`,
+      ),
     );
     expect(detail.prerequisiteCourseCodes).toEqual(["CSC 1254"]);
+    expect(detail.prerequisiteText).toBe("MATH 1550 or CSC 1254 or permission of department.");
   });
 
-  it("stops at the first block element after the heading rule", () => {
-    const html = `<html><body><h1 id='course_preview_title'>CSC 1000 Sample Course (3)</h1><hr>Kept text. <strong>Kept too.</strong><br>Dropped after the break.<div>Dropped.</div></body></html>`;
-    expect(parseCourseDetail(html).description).toBe("Kept text. Kept too.");
+  it.each([
+    ["hr", "<hr>"],
+    ["div", "<div>Drop</div>"],
+    ["table", "<table><tr><td>Drop</td></tr></table>"],
+    ["h2", "<h2>Drop</h2>"],
+    ["br", "<br>"],
+  ])("ends the description at <%s> after the heading rule", (_tag, stop) => {
+    const detail = parseCourseDetail(
+      page(`Kept text. <strong>Kept too.</strong>${stop}Drop after.`),
+    );
+    expect(detail.description).toBe("Kept text. Kept too.");
   });
 
   it("stops at a paragraph that has text but not at an empty one", () => {
@@ -145,21 +177,24 @@ describe("parseCourseDetail shape errors", () => {
   });
 
   it("throws CatalogShapeError naming a heading that is not CODE 0000 Title (credits)", () => {
-    expect(() => parseCourseDetail(page("Description.", "Computer Science I"))).toThrow(
-      /does not match "CODE 0000 Title \(credits\)": "Computer Science I"/,
+    const message = shapeErrorMessage(() =>
+      parseCourseDetail(page("Description.", "Computer Science I")),
     );
+    expect(message).toMatch(/does not match "CODE 0000 Title \(credits\)": "Computer Science I"/);
   });
 
   it("throws CatalogShapeError naming the course when the description is empty", () => {
-    expect(() => parseCourseDetail(page("<em>Prereq.:</em> <em>CSC 1254.</em>"))).toThrow(
-      new CatalogShapeError("CSC 1000: empty description"),
+    const message = shapeErrorMessage(() =>
+      parseCourseDetail(page("<em>Prereq.:</em> <em>CSC 1254.</em>")),
     );
+    expect(message).toBe("CSC 1000: empty description");
   });
 
   it("throws CatalogShapeError when a label has no value", () => {
-    expect(() => parseCourseDetail(page("<em>Prereq.:</em> Description."))).toThrow(
-      new CatalogShapeError('CSC 1000: label "Prereq.:" has no value'),
+    const message = shapeErrorMessage(() =>
+      parseCourseDetail(page("<em>Prereq.:</em> Description.")),
     );
+    expect(message).toBe('CSC 1000: label "Prereq.:" has no value');
   });
 
   it("throws CatalogShapeError when the prerequisite label appears twice", () => {
@@ -174,6 +209,9 @@ describe("parseCourseDetail shape errors", () => {
     const html = page(
       `<em>Prereq.:</em> <em><a aria-label="View course details for Calculus">Calculus</a>.</em> Text.`,
     );
-    expect(() => parseCourseDetail(html)).toThrow(CatalogShapeError);
+    const message = shapeErrorMessage(() => parseCourseDetail(html));
+    expect(message).toBe(
+      'prerequisite link label is not a course code: "View course details for Calculus"',
+    );
   });
 });

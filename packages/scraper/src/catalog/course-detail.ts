@@ -137,8 +137,9 @@ function collectInline(node: DomNode, out: Array<string | DomElement>): void {
  * Whitespace is collapsed everywhere and non-breaking spaces count as spaces.
  *
  * Pure and network-free. Throws {@link CatalogShapeError} when the heading is
- * missing or malformed, the description is empty, a label has no value, or the
- * prerequisite label appears twice, rather than returning a partial course.
+ * missing or malformed, the description is empty, a label has no value, the
+ * prerequisite label appears twice, or a prerequisite link's `aria-label` is
+ * not a course code, rather than returning a partial course.
  */
 export function parseCourseDetail(html: string): CourseDetail {
   const $ = load(html);
