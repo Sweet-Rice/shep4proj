@@ -30,3 +30,5 @@ export {
   DisallowedUrlError,
   assertAllowedCatalogUrl,
 } from "./fetch/robots.js";
+export { PREREQ_PATTERN_TAGS, suggestPrereqTags } from "./prereq-corpus/tags.js";
+export type { PrereqPatternTag } from "./prereq-corpus/tags.js";

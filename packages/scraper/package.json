@@ -17,7 +17,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "format": "prettier --write src scripts",
-    "live-check": "tsc -b && node scripts/live-check.ts"
+    "live-check": "tsc -b && node scripts/live-check.ts",
+    "capture:prereqs": "tsc -b && node scripts/capture-prereq-corpus.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",

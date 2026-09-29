@@ -103,6 +103,83 @@ describe("parseCourseDetail fixtures", () => {
 });
 
 describe("parseCourseDetail markup rules", () => {
+  it("parses CSC 4356: unwrapped prerequisite line with anchor directly following Prereq.", () => {
+    const html = page(
+      `<em><strong></strong></em> <em><strong></strong></em> <strong></strong>  <em>Prereq.:</em> <a href="preview_course_nopop.php?catoid=35&coid=229589" aria-label="View course details for CSC 3102">CSC 3102</a><span style="display: none !important">&#160;</span>.  <em></em>   <em></em> Analytical treatment of computer graphics; graphical display and input devices; computer graphics systems and standards; three-dimensional transformations; geometric modeling; lighting; shading; interaction; basic data structures; realism in 3D graphics; future trends.`,
+      "CSC 4356 Interactive Computer Graphics (3)",
+    );
+    const detail = parseCourseDetail(html);
+    expect(detail.code).toBe("CSC 4356");
+    expect(detail.title).toBe("Interactive Computer Graphics");
+    expect(detail.creditsText).toBe("3");
+    expect(detail.prerequisiteText).toBe("CSC 3102.");
+    expect(detail.prerequisiteCourseCodes).toEqual(["CSC 3102"]);
+    expect(detail.description.startsWith("Analytical treatment of computer graphics;")).toBe(true);
+    expect(detail.description.includes("realism in 3D graphics;")).toBe(true);
+    expect(detail.notes).toEqual([]);
+  });
+
+  it("parses CSC 2259: split em tags in prerequisite line", () => {
+    const html = page(
+      `<em><strong></strong></em> <em><strong></strong></em> <strong></strong>  <em>Prereq.:</em> <em>credit or registration in </em><em><a href="preview_course_nopop.php?catoid=35&coid=229582" aria-label="View course details for CSC 1254">CSC 1254</a><span style="display: none !important">&#160;</span> or <a href="preview_course_nopop.php?catoid=35&coid=229581" aria-label="View course details for CSC 1351">CSC 1351</a><span style="display: none !important">&#160;</span> and <a href="preview_course_nopop.php?catoid=35&coid=228380" aria-label="View course details for MATH 1552">MATH 1552</a><span style="display: none !important">&#160;</span>.</em>  <em>Credit will not be given for this course and <a href="preview_course_nopop.php?catoid=35&coid=230690" aria-label="View course details for MATH 2020">MATH 2020</a>.</em> Set algebra including mappings and relations; algebraic structures including semigroups and groups; elements of the theory of directed and undirected graphs; Boolean algebra and propositional logic; these structures applied to various areas of computer science.`,
+      "CSC 2259 Discrete Structures (3)",
+    );
+    const detail = parseCourseDetail(html);
+    expect(detail.code).toBe("CSC 2259");
+    expect(detail.prerequisiteText).toBe(
+      "credit or registration in CSC 1254 or CSC 1351 and MATH 1552.",
+    );
+    expect(detail.prerequisiteCourseCodes).toEqual(["CSC 1254", "CSC 1351", "MATH 1552"]);
+  });
+
+  it("parses CSC 7080: cross-listed course whose description is in em tags as See <course>", () => {
+    const html = page(
+      `<em>See <a href="preview_course_nopop.php?catoid=35&coid=232114" aria-label="View course details for EE 7720">EE 7720</a><span style="display: none !important">&nbsp;</span>.</em>`,
+      "CSC 7080 Advanced Computer Architecture (3)",
+    );
+    expect(parseCourseDetail(html)).toEqual<CourseDetail>({
+      code: "CSC 7080",
+      title: "Advanced Computer Architecture",
+      creditsText: "3",
+      description: "See EE 7720.",
+      prerequisiteText: null,
+      prerequisiteCourseCodes: [],
+      notes: [],
+    });
+  });
+
+  it("parses CSC 4357: cross-listed course with See in em tags preceding course link", () => {
+    const html = page(
+      `<em>See </em><a href="preview_course_nopop.php?catoid=35&coid=232626" aria-label="View course details for ME 4583">ME 4583</a>.`,
+      "CSC 4357 Applied Computer Graphics (3)",
+    );
+    expect(parseCourseDetail(html)).toEqual<CourseDetail>({
+      code: "CSC 4357",
+      title: "Applied Computer Graphics",
+      creditsText: "3",
+      description: "See ME 4583.",
+      prerequisiteText: null,
+      prerequisiteCourseCodes: [],
+      notes: [],
+    });
+  });
+
+  it("parses CSC 7999: readings course without narrative body text using notes as description", () => {
+    const html = page(
+      `<em>Prereq.:</em> <em>consent of department.</em>  <em>“S”/”U” grading.</em> <em>May be taken for a max. of 6 sem. hrs. of credit.</em>`,
+      "CSC 7999 Selected Readings in Computer Science (1-3)",
+    );
+    expect(parseCourseDetail(html)).toEqual<CourseDetail>({
+      code: "CSC 7999",
+      title: "Selected Readings in Computer Science",
+      creditsText: "1-3",
+      description: "“S”/”U” grading. May be taken for a max. of 6 sem. hrs. of credit.",
+      prerequisiteText: "consent of department.",
+      prerequisiteCourseCodes: [],
+      notes: ["“S”/”U” grading.", "May be taken for a max. of 6 sem. hrs. of credit."],
+    });
+  });
+
   it("returns a null prerequisite and no codes when there is no Prereq. label", () => {
     const detail = parseCourseDetail(page("<em></em> Plain description."));
     expect(detail.prerequisiteText).toBeNull();

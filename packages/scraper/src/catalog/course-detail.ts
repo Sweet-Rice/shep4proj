@@ -90,25 +90,26 @@ function visibleText(node: DomNode): string {
 }
 
 function courseCodesIn($: CheerioAPI, element: DomElement): string[] {
-  return $(element)
+  const anchors = $(element)
     .find(`a[aria-label^='${COURSE_LINK_LABEL_PREFIX}']`)
-    .toArray()
-    .map((anchor) => {
-      const label = anchor.attribs["aria-label"] ?? "";
-      const code = collapse(label.slice(COURSE_LINK_LABEL_PREFIX.length));
-      if (!COURSE_CODE.test(code)) {
-        throw new CatalogShapeError(`prerequisite link label is not a course code: "${label}"`);
-      }
-      return code;
-    });
+    .addBack(`a[aria-label^='${COURSE_LINK_LABEL_PREFIX}']`)
+    .toArray();
+  return anchors.filter(isElement).map((anchor) => {
+    const label = anchor.attribs["aria-label"] ?? "";
+    const code = collapse(label.slice(COURSE_LINK_LABEL_PREFIX.length));
+    if (!COURSE_CODE.test(code)) {
+      throw new CatalogShapeError(`prerequisite link label is not a course code: "${label}"`);
+    }
+    return code;
+  });
 }
 
-/** Flattens `node` into bare text runs and `<em>` elements, in document order. */
+/** Flattens `node` into bare text runs, `<em>` elements, and `<a>` elements, in document order. */
 function collectInline(node: DomNode, out: Array<string | DomElement>): void {
   if (node.type === "text") {
     out.push(node.data);
   } else if (isElement(node) && !isHidden(node)) {
-    if (node.name === "em") {
+    if (node.name === "em" || node.name === "a") {
       out.push(node);
     } else {
       for (const child of node.children) {
@@ -127,10 +128,11 @@ function collectInline(node: DomNode, out: Array<string | DomElement>): void {
  * notes, and the bare text between them is the description:
  *
  * - an empty `<em>` is ignored;
- * - an `<em>` ending in `:` is a label and the next non-empty `<em>` is its
- *   value. `Prereq.:` fills {@link CourseDetail.prerequisiteText} and
- *   {@link CourseDetail.prerequisiteCourseCodes}; any other label becomes a
- *   note reading `<label> <value>`;
+- an `<em>` ending in `:` is a label and the next non-empty `<em>` (or
+  unwrapped inline text/anchors for `Prereq.:`) is its value. `Prereq.:`
+  fills {@link CourseDetail.prerequisiteText} and
+  {@link CourseDetail.prerequisiteCourseCodes}; any other label becomes a
+  note reading `<label> <value>`;
  * - every other `<em>` is a note;
  * - text outside the `<em>` runs is the description.
  *
@@ -184,11 +186,20 @@ export function parseCourseDetail(html: string): CourseDetail {
   const descriptionParts: string[] = [];
   let pendingLabel: string | null = null;
 
-  for (const item of inline) {
+  for (let i = 0; i < inline.length; i++) {
+    const item = inline[i];
+    if (item === undefined) {
+      continue;
+    }
     if (typeof item === "string") {
       descriptionParts.push(item);
       continue;
     }
+    if (item.name !== "em") {
+      descriptionParts.push(visibleText(item));
+      continue;
+    }
+
     const text = collapse(visibleText(item));
     if (text === "") {
       continue;
@@ -196,16 +207,125 @@ export function parseCourseDetail(html: string): CourseDetail {
     if (pendingLabel === null) {
       if (text.endsWith(":")) {
         pendingLabel = text;
+        if (pendingLabel === PREREQUISITE_LABEL) {
+          if (prerequisiteText !== null) {
+            throw new CatalogShapeError(`${code}: more than one "${PREREQUISITE_LABEL}" line`);
+          }
+
+          let nextIdx = i + 1;
+          while (nextIdx < inline.length) {
+            const nextItem = inline[nextIdx];
+            if (nextItem === undefined) {
+              break;
+            }
+            if (typeof nextItem === "string" && collapse(nextItem) === "") {
+              nextIdx++;
+              continue;
+            }
+            if (
+              typeof nextItem !== "string" &&
+              nextItem.name === "em" &&
+              collapse(visibleText(nextItem)) === ""
+            ) {
+              nextIdx++;
+              continue;
+            }
+            break;
+          }
+
+          const firstItem = inline[nextIdx];
+          if (firstItem !== undefined) {
+            const startedWithEm = typeof firstItem !== "string" && firstItem.name === "em";
+            const prereqParts: string[] = [];
+            const prereqElements: DomElement[] = [];
+            let prereqRemainder = "";
+            let k = nextIdx;
+            let endedWithPeriod = false;
+
+            while (k < inline.length) {
+              const cur = inline[k];
+              if (cur === undefined) {
+                break;
+              }
+              if (typeof cur !== "string" && cur.name === "em") {
+                const curText = collapse(visibleText(cur));
+                if (curText === "") {
+                  k++;
+                  continue;
+                }
+                if (curText.endsWith(":")) {
+                  break;
+                }
+                prereqElements.push(cur);
+                const rawText = visibleText(cur);
+                prereqParts.push(rawText);
+                k++;
+                if (curText.endsWith(".")) {
+                  endedWithPeriod = true;
+                  break;
+                }
+                continue;
+              }
+
+              if (typeof cur !== "string") {
+                prereqElements.push(cur);
+                const curText = visibleText(cur);
+                prereqParts.push(curText);
+                k++;
+                if (collapse(curText).endsWith(".")) {
+                  endedWithPeriod = true;
+                  break;
+                }
+                continue;
+              }
+
+              const dotIdx = cur.indexOf(".");
+              if (dotIdx !== -1) {
+                prereqParts.push(cur.slice(0, dotIdx + 1));
+                prereqRemainder = cur.slice(dotIdx + 1);
+                endedWithPeriod = true;
+                k++;
+                break;
+              }
+              prereqParts.push(cur);
+              k++;
+            }
+
+            const candidateText = collapse(prereqParts.join(""));
+            const candidateCodes = prereqElements.flatMap((el) => courseCodesIn($, el));
+            const hasRemainingDescription =
+              collapse(prereqRemainder) !== "" ||
+              inline
+                .slice(k)
+                .some((it) =>
+                  typeof it === "string" ? collapse(it) !== "" : collapse(visibleText(it)) !== "",
+                );
+
+            const nextAfterPrereq = inline[k];
+            const isValidPrereq =
+              candidateText !== "" &&
+              (startedWithEm ||
+                candidateCodes.length > 0 ||
+                (endedWithPeriod && hasRemainingDescription) ||
+                (nextAfterPrereq !== undefined &&
+                  typeof nextAfterPrereq !== "string" &&
+                  nextAfterPrereq.name === "em"));
+
+            if (isValidPrereq) {
+              prerequisiteText = candidateText;
+              prerequisiteCourseCodes = candidateCodes;
+              pendingLabel = null;
+              if (prereqRemainder !== "") {
+                descriptionParts.push(prereqRemainder);
+              }
+              i = k - 1;
+              continue;
+            }
+          }
+        }
       } else {
         notes.push(text);
       }
-    } else if (pendingLabel === PREREQUISITE_LABEL) {
-      if (prerequisiteText !== null) {
-        throw new CatalogShapeError(`${code}: more than one "${PREREQUISITE_LABEL}" line`);
-      }
-      prerequisiteText = text;
-      prerequisiteCourseCodes = courseCodesIn($, item);
-      pendingLabel = null;
     } else {
       notes.push(`${pendingLabel} ${text}`);
       pendingLabel = null;
@@ -215,7 +335,21 @@ export function parseCourseDetail(html: string): CourseDetail {
   if (pendingLabel !== null) {
     throw new CatalogShapeError(`${code}: label "${pendingLabel}" has no value`);
   }
-  const description = collapse(descriptionParts.join(""));
+  let description = collapse(descriptionParts.join(""));
+  if (description !== "") {
+    const seeIndex = notes.findIndex((n) => /^See$/i.test(n));
+    if (seeIndex !== -1) {
+      notes.splice(seeIndex, 1);
+      description = collapse("See " + description);
+    }
+  } else if (notes.length > 0) {
+    const seeIndex = notes.findIndex((n) => /^See /i.test(n));
+    if (seeIndex !== -1) {
+      description = notes.splice(seeIndex, 1)[0]!;
+    } else {
+      description = notes.join(" ");
+    }
+  }
   if (description === "") {
     throw new CatalogShapeError(`${code}: empty description`);
   }
