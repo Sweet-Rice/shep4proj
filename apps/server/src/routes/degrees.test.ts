@@ -71,18 +71,22 @@ describe("degrees routes", () => {
       );
       const originalContent = await fs.readFile(realYamlPath, "utf-8");
 
+      // Write files such that filename sorting (01- vs 02-) is opposite to id sorting
+      // (beta vs alpha), proving GET /degrees actively sorts by id.
       await fs.writeFile(
-        path.join(tempDir, "csc-software-engineering-2026-2027.yaml"),
-        originalContent,
+        path.join(tempDir, "01-beta.yaml"),
+        originalContent.replace(
+          "id: csc-software-engineering-2026-2027",
+          "id: csc-software-engineering-beta-2026-2027",
+        ),
       );
 
-      const copyContent = originalContent.replace(
-        "id: csc-software-engineering-2026-2027",
-        "id: csc-software-engineering-copy-2026-2027",
-      );
       await fs.writeFile(
-        path.join(tempDir, "csc-software-engineering-copy-2026-2027.yaml"),
-        copyContent,
+        path.join(tempDir, "02-alpha.yaml"),
+        originalContent.replace(
+          "id: csc-software-engineering-2026-2027",
+          "id: csc-software-engineering-alpha-2026-2027",
+        ),
       );
 
       app = buildServer({ degreeDataDir: tempDir });
@@ -92,8 +96,8 @@ describe("degrees routes", () => {
       const body = res.json<{ degrees: DegreeSummary[] }>();
       const ids = body.degrees.map((d) => d.id);
       expect(ids).toEqual([
-        "csc-software-engineering-2026-2027",
-        "csc-software-engineering-copy-2026-2027",
+        "csc-software-engineering-alpha-2026-2027",
+        "csc-software-engineering-beta-2026-2027",
       ]);
     } finally {
       await fs.rm(tempDir, { recursive: true, force: true });
