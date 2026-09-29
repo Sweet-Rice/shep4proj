@@ -31,6 +31,36 @@ function fakeBrowser(script: ScriptedResponse[]) {
   const mainFrame = {};
   const otherFrame = {};
   const listeners: Array<(response: unknown) => void> = [];
+  const waitForResponseOptions: Array<{ timeout?: number } | undefined> = [];
+  type RouteHandler = (route: {
+    request: () => { url: () => string };
+    abort: () => Promise<void>;
+    continue: () => Promise<void>;
+  }) => Promise<void> | void;
+  let registeredRoute: { pattern: string; handler: RouteHandler } | undefined;
+
+  async function routeUrl(url: string): Promise<"abort" | "continue"> {
+    if (!registeredRoute) {
+      throw new Error("context.route was not called");
+    }
+    let action: "abort" | "continue" | undefined;
+    await registeredRoute.handler({
+      request: () => ({ url: () => url }),
+      abort: () => {
+        action = "abort";
+        return Promise.resolve();
+      },
+      continue: () => {
+        action = "continue";
+        return Promise.resolve();
+      },
+    });
+    if (!action) {
+      throw new Error(`route handler did not call abort or continue for ${url}`);
+    }
+    return action;
+  }
+
   let pending:
     | {
         predicate: (response: unknown) => boolean;
@@ -45,8 +75,12 @@ function fakeBrowser(script: ScriptedResponse[]) {
       events.push(`on ${event}`);
       listeners.push(listener);
     },
-    waitForResponse: (predicate: (response: unknown) => boolean) => {
+    waitForResponse: (
+      predicate: (response: unknown) => boolean,
+      options?: { timeout?: number },
+    ) => {
       events.push("waitForResponse");
+      waitForResponseOptions.push(options);
       return new Promise((resolve, reject) => {
         pending = { predicate, resolve, reject };
       });
@@ -55,6 +89,13 @@ function fakeBrowser(script: ScriptedResponse[]) {
       events.push(`goto ${url} ${options.waitUntil}`);
       await Promise.resolve();
       for (const step of script) {
+        const stepUrl = step.url ?? url;
+        if (registeredRoute) {
+          const action = await routeUrl(stepUrl);
+          if (action === "abort") {
+            continue;
+          }
+        }
         const response = {
           request: () => ({
             isNavigationRequest: () => step.navigation ?? true,
@@ -81,15 +122,22 @@ function fakeBrowser(script: ScriptedResponse[]) {
       return Promise.resolve();
     },
   };
+  const context = {
+    route: (pattern: string, handler: RouteHandler) => {
+      registeredRoute = { pattern, handler };
+      return Promise.resolve();
+    },
+    newPage: () => Promise.resolve(page),
+  };
   const browser = {
-    newContext: () => Promise.resolve({ newPage: () => Promise.resolve(page) }),
+    newContext: () => Promise.resolve(context),
     close: () => {
       events.push("browser.close");
       return Promise.resolve();
     },
   };
   launch.mockResolvedValue(browser);
-  return { events };
+  return { events, waitForResponseOptions, routeUrl };
 }
 
 beforeEach(() => {
@@ -104,7 +152,7 @@ afterEach(() => {
 
 describe("createCatalogFetcher browser path", () => {
   it("returns the 200 document that follows the WAF challenge's empty 202", async () => {
-    const { events } = fakeBrowser([
+    const { events, waitForResponseOptions } = fakeBrowser([
       { status: 202, body: "" },
       { status: 200, body: "<html>course list</html>" },
     ]);
@@ -118,6 +166,21 @@ describe("createCatalogFetcher browser path", () => {
       `goto ${LIST_URL} load`,
       "page.close",
     ]);
+    expect(waitForResponseOptions).toEqual([{ timeout: 60_000 }]);
+  });
+
+  it("aborts an /ajax/ request to catalog.lsu.edu, and continues allowed catalog and third-party URLs", async () => {
+    const { routeUrl } = fakeBrowser([{ status: 200 }]);
+    const fetcher = createCatalogFetcher();
+    await fetcher.fetchHtml(LIST_URL);
+
+    await expect(
+      routeUrl("https://catalog.lsu.edu/ajax/preview_course.php?catoid=35&coid=1"),
+    ).resolves.toBe("abort");
+    await expect(routeUrl(LIST_URL)).resolves.toBe("continue");
+    await expect(routeUrl("https://challenges.cloudflare.com/turnstile/v0/api.js")).resolves.toBe(
+      "continue",
+    );
   });
 
   it("ignores subresources, subframe documents and other paths", async () => {

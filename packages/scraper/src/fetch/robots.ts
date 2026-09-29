@@ -1,3 +1,5 @@
+import { posix } from "node:path";
+
 /**
  * `catalog.lsu.edu/robots.txt` sets `Crawl-delay: 120`: at most one request
  * every 120 seconds. The fetcher spaces every request by at least this long.
@@ -9,12 +11,8 @@ const CATALOG_HOST = "catalog.lsu.edu";
 /** `robots.txt` disallows everything under this directory (`/ajax/`). */
 const DISALLOWED_DIRECTORY = "/ajax";
 
-/** Pages `robots.txt` disallows, matched exactly. */
-const DISALLOWED_PAGES: Record<string, true> = {
-  "/search_advanced.php": true,
-  "/portfolio.php": true,
-  "/portfolio_nopop.php": true,
-};
+/** Pages `robots.txt` disallows as prefix rules. */
+const DISALLOWED_PAGES = ["/search_advanced.php", "/portfolio.php", "/portfolio_nopop.php"];
 
 /** Thrown for a URL the catalog fetcher must never request. */
 export class DisallowedUrlError extends Error {
@@ -32,7 +30,8 @@ export class DisallowedUrlError extends Error {
  */
 function normalizedPath(pathname: string): string | null {
   try {
-    return decodeURIComponent(pathname)
+    return posix
+      .normalize(decodeURIComponent(pathname))
       .toLowerCase()
       .replace(/\/{2,}/g, "/");
   } catch {
@@ -74,7 +73,10 @@ export function assertAllowedCatalogUrl(url: string): void {
   }
   const underDisallowedDirectory =
     path === DISALLOWED_DIRECTORY || path.startsWith(`${DISALLOWED_DIRECTORY}/`);
-  if (underDisallowedDirectory || Object.hasOwn(DISALLOWED_PAGES, path)) {
+  const underDisallowedPage = DISALLOWED_PAGES.some(
+    (page) => path === page || path.startsWith(`${page}/`),
+  );
+  if (underDisallowedDirectory || underDisallowedPage) {
     throw new DisallowedUrlError(url, "path is disallowed by robots.txt");
   }
 }

@@ -1,9 +1,15 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CATALOG_2026_2027, courseDetailUrl } from "../catalog/urls.js";
 import { createCatalogFetcher } from "./catalog-fetcher.js";
 import { DisallowedUrlError } from "./robots.js";
 
 const DETAIL_URL = courseDetailUrl({ catoid: CATALOG_2026_2027.catoid, coid: "232623" });
+const mockWait = vi.fn().mockResolvedValue(undefined);
+vi.mock("./crawl-delay.js", () => ({
+  createCrawlDelay: vi.fn(() => ({
+    wait: mockWait,
+  })),
+}));
 
 // Every test makes at most one request per fetcher: the crawl delay only
 // sleeps from the second request on, so nothing here ever waits or touches the
@@ -14,21 +20,28 @@ function stubFetch() {
   return fetchMock;
 }
 
+beforeEach(() => {
+  mockWait.mockClear();
+});
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
 describe("createCatalogFetcher", () => {
-  it.each([1000, 119_999, -1, Number.NaN])(
-    "rejects crawlDelayMs %s below the robots.txt floor",
+  it.each([1000, 119_999, -1, Number.NaN, Number.POSITIVE_INFINITY, 3e9])(
+    "rejects crawlDelayMs %s out of range",
     (crawlDelayMs) => {
       expect(() => createCatalogFetcher({ crawlDelayMs })).toThrow(RangeError);
     },
   );
 
-  it.each([undefined, 120_000, 300_000])("accepts crawlDelayMs %s", (crawlDelayMs) => {
-    expect(() => createCatalogFetcher({ crawlDelayMs })).not.toThrow();
-  });
+  it.each([undefined, 120_000, 300_000, 2_147_483_647])(
+    "accepts crawlDelayMs %s",
+    (crawlDelayMs) => {
+      expect(() => createCatalogFetcher({ crawlDelayMs })).not.toThrow();
+    },
+  );
 
   it("rejects a disallowed URL before any network request or log line", async () => {
     const fetchMock = stubFetch();
@@ -55,6 +68,7 @@ describe("createCatalogFetcher", () => {
       headers: {
         "User-Agent": "JevSchedule catalog scraper (+https://github.com/Sweet-Rice/shep4proj)",
       },
+      redirect: "manual",
     });
   });
 
@@ -87,16 +101,51 @@ describe("createCatalogFetcher", () => {
     );
   });
 
-  it("rejects a response whose final URL, after redirects, is disallowed", async () => {
+  it("does not follow redirects and rejects a 3xx response with catalog fetch failed", async () => {
     const fetchMock = stubFetch();
-    const redirected = new Response("<html></html>", { status: 200 });
-    Object.defineProperty(redirected, "url", {
-      value: "https://catalog.lsu.edu/ajax/preview_course.php?catoid=35&coid=1",
-    });
-    fetchMock.mockResolvedValue(redirected);
+    const ajaxUrl = "https://catalog.lsu.edu/ajax/preview_course.php?catoid=35&coid=1";
+    fetchMock.mockResolvedValue(
+      new Response("", {
+        status: 302,
+        headers: { Location: ajaxUrl },
+      }),
+    );
     const fetcher = createCatalogFetcher();
 
-    await expect(fetcher.fetchHtml(DETAIL_URL)).rejects.toThrow(DisallowedUrlError);
+    await expect(fetcher.fetchHtml(DETAIL_URL)).rejects.toThrow(
+      `catalog fetch failed: 302 ${DETAIL_URL}`,
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(DETAIL_URL, {
+      headers: {
+        "User-Agent": "JevSchedule catalog scraper (+https://github.com/Sweet-Rice/shep4proj)",
+      },
+      redirect: "manual",
+    });
+    expect(fetchMock).not.toHaveBeenCalledWith(ajaxUrl, expect.anything());
+  });
+
+  it("runs the crawl delay through the fetcher after the allow check and before fetch", async () => {
+    const events: string[] = [];
+    mockWait.mockImplementation(async () => {
+      events.push("wait");
+    });
+    const fetchMock = stubFetch();
+    fetchMock.mockImplementation(async () => {
+      events.push("fetch");
+      return new Response("<html></html>", { status: 200 });
+    });
+    const fetcher = createCatalogFetcher();
+
+    const disallowedUrl = "https://catalog.lsu.edu/ajax/preview_course.php?catoid=35&coid=1";
+    await expect(fetcher.fetchHtml(disallowedUrl)).rejects.toThrow(DisallowedUrlError);
+    expect(mockWait).not.toHaveBeenCalled();
+    expect(events).toEqual([]);
+
+    await fetcher.fetchHtml(DETAIL_URL);
+    expect(events).toEqual(["wait", "fetch"]);
+    expect(mockWait).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("refuses requests after close and lets close be called again", async () => {

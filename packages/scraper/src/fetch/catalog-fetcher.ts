@@ -1,6 +1,6 @@
 import type { Browser, BrowserContext, Response as PageResponse } from "playwright-core";
 import { createCrawlDelay } from "./crawl-delay.js";
-import { CATALOG_CRAWL_DELAY_MS, assertAllowedCatalogUrl } from "./robots.js";
+import { CATALOG_CRAWL_DELAY_MS, DisallowedUrlError, assertAllowedCatalogUrl } from "./robots.js";
 
 /**
  * The only way the scraper reaches `catalog.lsu.edu`. Every request is
@@ -57,9 +57,13 @@ interface BrowserSession {
  */
 export function createCatalogFetcher(opts: CatalogFetcherOptions = {}): CatalogFetcher {
   const crawlDelayMs = opts.crawlDelayMs ?? CATALOG_CRAWL_DELAY_MS;
-  if (!(crawlDelayMs >= CATALOG_CRAWL_DELAY_MS)) {
+  if (
+    !Number.isFinite(crawlDelayMs) ||
+    crawlDelayMs < CATALOG_CRAWL_DELAY_MS ||
+    crawlDelayMs > 2_147_483_647
+  ) {
     throw new RangeError(
-      `crawlDelayMs must be at least ${CATALOG_CRAWL_DELAY_MS} (robots.txt Crawl-delay), got ${crawlDelayMs}`,
+      `crawlDelayMs must be between ${CATALOG_CRAWL_DELAY_MS} (robots.txt Crawl-delay) and 2147483647, got ${crawlDelayMs}`,
     );
   }
   const log = opts.log ?? (() => undefined);
@@ -137,11 +141,10 @@ export function createCatalogFetcher(opts: CatalogFetcherOptions = {}): CatalogF
   }
 
   async function fetchWithHttp(url: string): Promise<string> {
-    const response = await globalThis.fetch(url, { headers: { "User-Agent": USER_AGENT } });
-    // `url` is empty on a response that did not come from the network.
-    if (response.url !== "") {
-      assertAllowedCatalogUrl(response.url);
-    }
+    const response = await globalThis.fetch(url, {
+      headers: { "User-Agent": USER_AGENT },
+      redirect: "manual",
+    });
     if (response.status !== 200) {
       throw new Error(`catalog fetch failed: ${response.status} ${url}`);
     }
@@ -177,7 +180,31 @@ async function launchSession(opts: CatalogFetcherOptions): Promise<BrowserSessio
   });
   try {
     // One context for the whole crawl, so the WAF cookie earned by the first page is reused.
-    return { browser, context: await browser.newContext() };
+    const context = await browser.newContext();
+    await context.route("**/*", async (route) => {
+      const requestUrl = route.request().url();
+      let isCatalogHost = false;
+      try {
+        const parsed = new URL(requestUrl);
+        isCatalogHost = parsed.hostname.toLowerCase() === "catalog.lsu.edu";
+      } catch {
+        await route.continue();
+        return;
+      }
+      if (isCatalogHost) {
+        try {
+          assertAllowedCatalogUrl(requestUrl);
+        } catch (error) {
+          if (error instanceof DisallowedUrlError) {
+            await route.abort();
+            return;
+          }
+          throw error;
+        }
+      }
+      await route.continue();
+    });
+    return { browser, context };
   } catch (error) {
     await browser.close();
     throw error;
