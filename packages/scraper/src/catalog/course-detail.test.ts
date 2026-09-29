@@ -103,6 +103,22 @@ describe("parseCourseDetail fixtures", () => {
 });
 
 describe("parseCourseDetail markup rules", () => {
+  it("parses CSC 4356: unwrapped prerequisite line with anchor directly following Prereq.", () => {
+    const html = page(
+      `<em><strong></strong></em> <em><strong></strong></em> <strong></strong>  <em>Prereq.:</em> <a href="preview_course_nopop.php?catoid=35&coid=229589" aria-label="View course details for CSC 3102">CSC 3102</a><span style="display: none !important">&#160;</span>.  <em></em>   <em></em> Analytical treatment of computer graphics; graphical display and input devices; computer graphics systems and standards; three-dimensional transformations; geometric modeling; lighting; shading; interaction; basic data structures; realism in 3D graphics; future trends.`,
+      "CSC 4356 Interactive Computer Graphics (3)",
+    );
+    const detail = parseCourseDetail(html);
+    expect(detail.code).toBe("CSC 4356");
+    expect(detail.title).toBe("Interactive Computer Graphics");
+    expect(detail.creditsText).toBe("3");
+    expect(detail.prerequisiteText).toBe("CSC 3102.");
+    expect(detail.prerequisiteCourseCodes).toEqual(["CSC 3102"]);
+    expect(detail.description.startsWith("Analytical treatment of computer graphics;")).toBe(true);
+    expect(detail.description.includes("realism in 3D graphics;")).toBe(true);
+    expect(detail.notes).toEqual([]);
+  });
+
   it("returns a null prerequisite and no codes when there is no Prereq. label", () => {
     const detail = parseCourseDetail(page("<em></em> Plain description."));
     expect(detail.prerequisiteText).toBeNull();
