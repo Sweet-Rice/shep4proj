@@ -21,3 +21,12 @@ export {
   courseDetailUrl,
   courseListUrl,
 } from "./catalog/urls.js";
+export { createCatalogFetcher } from "./fetch/catalog-fetcher.js";
+export type { CatalogFetcher, CatalogFetcherOptions } from "./fetch/catalog-fetcher.js";
+export { createCrawlDelay } from "./fetch/crawl-delay.js";
+export type { CrawlDelay } from "./fetch/crawl-delay.js";
+export {
+  CATALOG_CRAWL_DELAY_MS,
+  DisallowedUrlError,
+  assertAllowedCatalogUrl,
+} from "./fetch/robots.js";

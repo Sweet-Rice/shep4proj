@@ -13,10 +13,11 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "lint": "eslint src && prettier --check src",
+    "lint": "eslint src scripts && prettier --check src scripts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "format": "prettier --write src"
+    "format": "prettier --write src scripts",
+    "live-check": "tsc -b && node scripts/live-check.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
@@ -24,6 +25,7 @@
     "vitest": "^2.1.8"
   },
   "dependencies": {
-    "cheerio": "^1.2.0"
+    "cheerio": "^1.2.0",
+    "playwright-core": "^1.63.0"
   }
 }
