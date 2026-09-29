@@ -10,6 +10,8 @@ export { CourseCodeSchema } from "./course-code.js";
 export type { CourseCode } from "./course-code.js";
 export { LetterGradeSchema } from "./grade.js";
 export type { LetterGrade } from "./grade.js";
+export { PlanSchema, PlanTermSchema, SeasonSchema } from "./plan.js";
+export type { Plan, PlanTerm, Season } from "./plan.js";
 export { PrereqNodeSchema } from "./prereq.js";
 export type { PrereqNode } from "./prereq.js";
 export { parsePrereqText } from "./prereq-parser.js";
