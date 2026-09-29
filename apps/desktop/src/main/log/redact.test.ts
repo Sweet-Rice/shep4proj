@@ -50,6 +50,20 @@ describe("redactLogText", () => {
     expect(output).toContain(REDACTED);
   });
 
+  it("removes a token from a URL path", () => {
+    const pathToken = Buffer.from(`${longSecret}-Path-Segment-42`).toString("base64url");
+    const output = redactLogText(`GET https://www.myworkday.com/lsu/session/${pathToken}/data`);
+    expect(output).not.toContain(pathToken);
+  });
+
+  it.each([
+    "    at createWindow (file:///home/student/projects/jevschedule/apps/desktop/out/main/index.js:30:15)",
+    "    at open (/Users/Student/Library/Application Support/jevschedule/out/main/index.js:12:3)",
+    "wrote /home/student/.config/jevschedule/database/local-planner-store.sqlite",
+  ])("keeps file paths in %j", (line) => {
+    expect(redactLogText(line)).toBe(line);
+  });
+
   it("keeps header and key names so the line still reads", () => {
     expect(redactLogText(`Cookie: sid=${shortSecret}`)).toBe(`Cookie: ${REDACTED}`);
     expect(redactLogText(`token=${shortSecret}`)).toBe(`token=${REDACTED}`);

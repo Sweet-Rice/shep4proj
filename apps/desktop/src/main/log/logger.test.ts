@@ -37,6 +37,14 @@ describe("createLogger", () => {
     expect(lines[0]?.line).toBe("imported 21 courses { withdrawn: 2 }");
   });
 
+  it("keeps an error's stack frames readable", () => {
+    const { sink, lines } = captureSink();
+    createLogger(sink).error(new Error("boom"));
+    expect(lines[0]?.line).toContain("Error: boom");
+    expect(lines[0]?.line).toMatch(/logger\.test\.ts:\d+:\d+/);
+    expect(lines[0]?.line).not.toContain("[REDACTED]");
+  });
+
   it.each<[string, unknown[]]>([
     ["a string", [`Cookie: sid=${secret}`]],
     ["a nested object", [{ request: { headers: { cookie: `sid=${secret}` } } }]],

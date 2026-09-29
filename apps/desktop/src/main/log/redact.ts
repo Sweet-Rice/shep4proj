@@ -11,7 +11,21 @@ const SENSITIVE_KEY =
 
 interface Rule {
   pattern: RegExp;
-  replace: string;
+  replace: string | ((match: string) => string);
+}
+
+/** A path segment that looks like a token rather than a name: long, mixed case, with digits. */
+const TOKEN_SEGMENT = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[\w+-]{20,}={0,2}$/;
+
+/**
+ * Base64's alphabet includes `/`, so the long-run fallback also matches file paths such as the
+ * `/home/.../out/main/index` in a stack frame. A run with slashes is only redacted when one of
+ * its segments looks like a token, so stack traces keep their paths while a token inside a URL
+ * path (`/api/<token>/data`) is still caught.
+ */
+function redactLongRun(run: string): string {
+  if (!run.includes("/")) return REDACTED;
+  return run.split("/").some((segment) => TOKEN_SEGMENT.test(segment)) ? REDACTED : run;
 }
 
 /**
@@ -44,7 +58,7 @@ const RULES: readonly Rule[] = [
   // Shape-based fallbacks: JWTs, long hex strings, long base64/base64url runs.
   { pattern: /\beyJ[\w-]+\.[\w-]+\.[\w-]*/g, replace: REDACTED },
   { pattern: /\b[0-9a-f]{32,}\b/gi, replace: REDACTED },
-  { pattern: /[A-Za-z0-9+/_-]{40,}={0,2}/g, replace: REDACTED },
+  { pattern: /[A-Za-z0-9+/_-]{40,}={0,2}/g, replace: redactLongRun },
 ];
 
 /**
@@ -53,5 +67,9 @@ const RULES: readonly Rule[] = [
  * three during import, so `createLogger` runs every line through this before writing it.
  */
 export function redactLogText(text: string): string {
-  return RULES.reduce((out, { pattern, replace }) => out.replace(pattern, replace), text);
+  return RULES.reduce(
+    (out, { pattern, replace }) =>
+      typeof replace === "string" ? out.replace(pattern, replace) : out.replace(pattern, replace),
+    text,
+  );
 }
