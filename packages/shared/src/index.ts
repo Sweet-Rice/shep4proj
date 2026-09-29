@@ -17,6 +17,14 @@ export type { PrereqFailureReason, PrereqParseResult } from "./prereq-parser.js"
 export { PrereqRecordSchema, toPrereqRecord } from "./prereq-record.js";
 export type { PrereqRecord } from "./prereq-record.js";
 export {
+  AcademicPeriodIdSchema,
+  MeetingSchema,
+  SectionCourseCodeSchema,
+  SectionSchema,
+  WeekdaySchema,
+} from "./section.js";
+export type { AcademicPeriodId, Meeting, Section, SectionCourseCode, Weekday } from "./section.js";
+export {
   ChooseNRequirementSchema,
   CourseRefSchema,
   CreditBucketRequirementSchema,
