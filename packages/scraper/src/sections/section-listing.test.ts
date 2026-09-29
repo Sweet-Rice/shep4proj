@@ -161,6 +161,12 @@ describe("parseSectionListing on synthetic pages", () => {
     ]);
   });
 
+  it("keeps a two-letter course code suffix", () => {
+    // Seen live in the Online Second Fall 2026 period (T-403).
+    const result = parseSectionListing(page(courseHtml("CSC 4890GE", sectionHtml())));
+    expect(result.sections[0]?.courseCode).toBe("CSC 4890GE");
+  });
+
   it("converts 12 AM and 12 PM correctly", () => {
     const html = page(
       courseHtml("CSC 1350", sectionHtml({ meeting: "<span>Friday 12:00 AM - 12:30 PM</span>" })),

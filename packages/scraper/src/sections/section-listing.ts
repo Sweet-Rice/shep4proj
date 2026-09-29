@@ -47,7 +47,7 @@ const WEEKDAYS: Record<string, Weekday> = {
 
 const PERIOD_OPTION_TEXT =
   /^(.+?)\s*\((\d{2})\/(\d{2})\/(\d{4})\s*-\s*(\d{2})\/(\d{2})\/(\d{4})\)$/;
-const COURSE_BUTTON_LABEL = /^Expand course details for ([A-Z]{2,4} \d{4}[A-Z]?)$/;
+const COURSE_BUTTON_LABEL = /^Expand course details for ([A-Z]{2,4} \d{4}[A-Z]{0,2})$/;
 const SECTION_LABEL = /^Section (\d{3})-([A-Z]{3})$/;
 const ENROLLMENT_TEXT = /^Enrollment:\s*(\d+)\s*\/\s*(\d+)$/;
 const CREDIT_HOURS_TEXT = /^(\d+(?:\s*-\s*\d+)?) Credit Hours?$/;
