@@ -12,6 +12,7 @@ export { courses, type CourseRow, type NewCourseRow } from "./db/schema.js";
 export { upsertCourses } from "./catalog/upsert.js";
 export { runCatalogScrape, toCourseRow } from "./catalog/scrape-job.js";
 export { FIXTURE_DETAIL_COIDS, createFixtureFetcher } from "./catalog/fixture-fetcher.js";
+export { CATALOG_FIXTURE_DIR, seedCatalogFixtures } from "./catalog/seed.js";
 export { getTestDatabaseUrl, truncateCourses } from "./test-support/db.js";
 /**
  * Confirms the server package can import from @jevschedule/shared. The

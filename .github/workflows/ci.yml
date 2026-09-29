@@ -58,6 +58,9 @@ jobs:
       - name: Migrate database
         run: pnpm --filter @jevschedule/server db:migrate
 
+      - name: Seed database from fixtures
+        run: pnpm --filter @jevschedule/server db:seed:fixtures
+
       - name: Test
         run: pnpm -r test
 
