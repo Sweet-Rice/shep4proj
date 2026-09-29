@@ -12,6 +12,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed:fixtures": "tsc -b && node dist/scripts/seed-fixtures.js",
+    "db:scrape:sections": "tsc -b && node dist/scripts/scrape-sections.js",
     "dev": "tsx watch src/main.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
