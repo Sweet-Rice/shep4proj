@@ -11,6 +11,7 @@
     "start": "node dist/main.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "dev": "tsx watch src/main.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "format": "prettier --write src"
@@ -24,6 +25,7 @@
   "devDependencies": {
     "@types/node": "^26.6.2",
     "drizzle-kit": "^0.31.11",
+    "tsx": "^4.23.15",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   }
