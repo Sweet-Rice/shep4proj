@@ -22,13 +22,16 @@ const section: Section = {
 };
 
 describe("SectionCourseCodeSchema", () => {
-  it.each(["CSC 4330", "CSC 4330G", "MATH 1550", "EE 2741"])("accepts %s", (code) => {
+  it.each(["CSC 4330", "CSC 4330G", "CSC 4890GE", "MATH 1550", "EE 2741"])("accepts %s", (code) => {
     expect(SectionCourseCodeSchema.safeParse(code).success).toBe(true);
   });
 
-  it.each(["CSC4330", "csc 4330", "CSC 4330GG", "CSC 433", "CSC 4330 "])("rejects %j", (code) => {
-    expect(SectionCourseCodeSchema.safeParse(code).success).toBe(false);
-  });
+  it.each(["CSC4330", "csc 4330", "CSC 4330GGG", "CSC 4330g", "CSC 433", "CSC 4330 "])(
+    "rejects %j",
+    (code) => {
+      expect(SectionCourseCodeSchema.safeParse(code).success).toBe(false);
+    },
+  );
 });
 
 describe("AcademicPeriodIdSchema", () => {

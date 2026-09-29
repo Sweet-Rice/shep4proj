@@ -3,10 +3,11 @@ import { CreditsSchema } from "./course.js";
 
 /**
  * Course code as the Course Offerings portal lists it: like `CourseCodeSchema`, plus an optional
- * one-letter suffix for graduate-credit variants such as `CSC 4330G`. Kept separate until the
- * shared course code decides how to treat suffixes (#196), so those sections aren't dropped.
+ * suffix of up to two letters, as in the graduate-credit `CSC 4330G` and the online-term
+ * `CSC 4890GE`. Kept separate until the shared course code decides how to treat suffixes
+ * (#196), so those sections aren't dropped.
  */
-export const SectionCourseCodeSchema = z.string().regex(/^[A-Z]{2,4} \d{4}[A-Z]?$/);
+export const SectionCourseCodeSchema = z.string().regex(/^[A-Z]{2,4} \d{4}[A-Z]{0,2}$/);
 
 export type SectionCourseCode = z.infer<typeof SectionCourseCodeSchema>;
 
