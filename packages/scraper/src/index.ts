@@ -8,3 +8,14 @@ export const PACKAGE_NAME = "@jevschedule/scraper";
 export function isPlaceholder(): boolean {
   return true;
 }
+
+export { parseCourseList } from "./catalog/course-list.js";
+export type { CourseListEntry } from "./catalog/course-list.js";
+export { CatalogShapeError } from "./catalog/errors.js";
+export {
+  CATALOG_2026_2027,
+  CATALOG_ORIGIN,
+  COURSE_LIST_PAGE_SIZE,
+  courseDetailUrl,
+  courseListUrl,
+} from "./catalog/urls.js";
