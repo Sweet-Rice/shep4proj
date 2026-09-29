@@ -8,6 +8,22 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://jevschedule:jevschedule@localhost:5432/jevschedule
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: jevschedule
+          POSTGRES_PASSWORD: jevschedule
+          POSTGRES_DB: jevschedule
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jevschedule -d jevschedule"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,8 +58,8 @@ jobs:
       - name: Test
         run: pnpm -r test
 
-      # TODO(T-016): add a Postgres service container here for server
-      # integration tests (migrations + seed from fixtures + API routes).
+      - name: Migrate database
+        run: pnpm --filter @jevschedule/server db:migrate
 
       - name: Scan for secrets
         uses: gitleaks/gitleaks-action@v2
