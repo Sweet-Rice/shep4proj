@@ -329,7 +329,21 @@ export function parseCourseDetail(html: string): CourseDetail {
   if (pendingLabel !== null) {
     throw new CatalogShapeError(`${code}: label "${pendingLabel}" has no value`);
   }
-  const description = collapse(descriptionParts.join(""));
+  let description = collapse(descriptionParts.join(""));
+  if (description !== "") {
+    const seeIndex = notes.findIndex((n) => /^See$/i.test(n));
+    if (seeIndex !== -1) {
+      notes.splice(seeIndex, 1);
+      description = collapse("See " + description);
+    }
+  } else if (notes.length > 0) {
+    const seeIndex = notes.findIndex((n) => /^See /i.test(n));
+    if (seeIndex !== -1) {
+      description = notes.splice(seeIndex, 1)[0]!;
+    } else if (notes.length === 1) {
+      description = notes.shift()!;
+    }
+  }
   if (description === "") {
     throw new CatalogShapeError(`${code}: empty description`);
   }

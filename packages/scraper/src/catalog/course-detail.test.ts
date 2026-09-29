@@ -119,6 +119,38 @@ describe("parseCourseDetail markup rules", () => {
     expect(detail.notes).toEqual([]);
   });
 
+  it("parses CSC 7080: cross-listed course whose description is in em tags as See <course>", () => {
+    const html = page(
+      `<em>See <a href="preview_course_nopop.php?catoid=35&coid=232114" aria-label="View course details for EE 7720">EE 7720</a><span style="display: none !important">&nbsp;</span>.</em>`,
+      "CSC 7080 Advanced Computer Architecture (3)",
+    );
+    expect(parseCourseDetail(html)).toEqual<CourseDetail>({
+      code: "CSC 7080",
+      title: "Advanced Computer Architecture",
+      creditsText: "3",
+      description: "See EE 7720.",
+      prerequisiteText: null,
+      prerequisiteCourseCodes: [],
+      notes: [],
+    });
+  });
+
+  it("parses CSC 4357: cross-listed course with See in em tags preceding course link", () => {
+    const html = page(
+      `<em>See </em><a href="preview_course_nopop.php?catoid=35&coid=232626" aria-label="View course details for ME 4583">ME 4583</a>.`,
+      "CSC 4357 Applied Computer Graphics (3)",
+    );
+    expect(parseCourseDetail(html)).toEqual<CourseDetail>({
+      code: "CSC 4357",
+      title: "Applied Computer Graphics",
+      creditsText: "3",
+      description: "See ME 4583.",
+      prerequisiteText: null,
+      prerequisiteCourseCodes: [],
+      notes: [],
+    });
+  });
+
   it("returns a null prerequisite and no codes when there is no Prereq. label", () => {
     const detail = parseCourseDetail(page("<em></em> Plain description."));
     expect(detail.prerequisiteText).toBeNull();
