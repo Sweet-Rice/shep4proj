@@ -4,7 +4,10 @@
 # https://catalog.lsu.edu/preview_program.php?catoid=35&poid=14278
 # (saved as fixtures/catalog/2026-2027/program-computer-science-bs.html). Schema:
 # DegreeProgramSchema in @jevschedule/shared. The semester layout, course order and
-# credit hours below are the catalog's own; nothing is added from other sources.
+# credit hours below are the catalog page's own. Minimum grades combine the page's
+# critical-requirements text with the LSU flowchart PDF for this concentration,
+# https://www.lsu.edu/eng/docs/Flowcharts/2026-2027/csc-seg_flowchart_2026-2027.pdf
+# (Rev. 1/25/2024), whose legend defines the "C" marker; see "Minimum grades" below.
 #
 # Mapping used on this page:
 #   - each semester's named courses            -> one `fixed` requirement (sem-<n>-courses)
@@ -19,12 +22,29 @@
 #   "A grade of “C” or better is required in all CSC prerequisite courses; CSC 3200,
 #    CSC 4101, CSC 4103 and CSC 4330; MATH 1550 and MATH 1552; BIOL 1001 or BIOL 1201
 #    and all science prerequisite courses including laboratory courses."
-# Interpretation: `minGrade: C` on every CSC course in the plan (the named CSC courses
-# plus every other CSC course, since the catalog does not say which CSC courses are
-# prerequisites) and on MATH 1550 and MATH 1552. The same block also lists
-# "SEMESTER 2: “C” or better in ENGL 1001", so ENGL 1001 carries `minGrade: C` too.
-# The science courses in that sentence appear only in the Natural Sciences footnote,
-# never as named semester items, so they are not encoded as courses here.
+# It does not say which CSC courses are prerequisites. The flowchart's legend does:
+#   C  Grade of "C" or better required BEFORE enrolling in next course in the sequence.
+# Where the two sources agree, or the flowchart resolves the catalog's ambiguity, this
+# file follows the flowchart. That deliberately narrows the plan's literal "minGrade C
+# on every CSC course" to the courses the flowchart marks with a C. `minGrade: C` is on:
+#   - CSC 1350, CSC 1351, CSC 2259, CSC 3102, CSC 3380, CSC 4101, CSC 3200, CSC 4103 and
+#     CSC 4330: the CSC courses carrying a C on the flowchart. CSC 3200, CSC 4101,
+#     CSC 4103 and CSC 4330 are also named in the catalog sentence, and CSC 2259 in the
+#     semester 4 line "CRITICAL: “C” or better in CSC 2259". CSC 2262, CSC 3304,
+#     CSC 3501, CSC 4402, CSC 4351 and CSC 4332 carry no C on the flowchart, so they
+#     have no minimum grade.
+#   - MATH 1550 and MATH 1552: named in the catalog sentence and marked on the flowchart.
+#   - ENGL 1001: named in the semester 2 line "CRITICAL: “C” or better in ENGL 1001" and
+#     marked on the flowchart. ENGL 2000 is marked on the flowchart only.
+#   - BIOL 1001 and BIOL 1201: named in the catalog sentence; the flowchart marks the
+#     semester 1 "BIOL Sequence I Requirement (3)" box, which is the Natural Sciences
+#     placeholder sem-1-bucket-1, and footnote 1 names them as its Life Science courses.
+#     They are that bucket's `eligibleCourses`.
+# Not encoded: the flowchart also marks the semester 2 "Science Seq I or II Lab (1)" box
+# with C, and the catalog sentence asks for C in all science prerequisite courses
+# including laboratory courses. The schema has no grade on a bucket and no lab course is
+# enumerated, so that one is not encoded. The physical science list (footnote 1) and the
+# science sequence II boxes carry no C on the flowchart, so those buckets stay empty.
 #
 # "CRITICAL:" lines under the semester headings that are not encoded as requirements:
 #   - "CRITICAL: MATH 1021" (semester 1): MATH 1021 is not one of the semester's listed
@@ -33,7 +53,8 @@
 #   - "CRITICAL: “C” or better in MATH 1550 /MATH 1551" (semester 3): MATH 1550 is
 #     encoded with `minGrade: C`; MATH 1551 is not a listed semester item.
 #
-# Footnotes on placeholder lines (course lists are not enumerated per bucket here):
+# Footnotes on placeholder lines (course lists are not enumerated per bucket here, apart
+# from the BIOL courses of sem-1-bucket-1 described above):
 #   1 (Natural Sciences): 3 cr. Life Science: BIOL 1001 or BIOL 1201; 3 cr. Physical
 #     Science: PHYS 1201, PHYS 2001, CHEM 1001, CHEM 1201, CHEM 1421, ASTR 1101, GEOL 1001
 #     or GEOL 1003; 3 cr. a second course to complete the sequence; 2 cr. of lab, which
@@ -44,8 +65,9 @@
 #     restricted to software engineering topics.
 #   4 (Approved Technical Elective): 3 hours from Group A and 3 hours from Group A or B.
 #   5 (CSC 2259, CSC 3501, IE 3302): credit is not applied for courses with overlapping
-#     content; EE 3740 for CSC 2259, EE 3755 for CSC 3501, and MATH 3355, EE 3150 or
-#     EXST 4050 for IE 3302 may be substituted.
+#     content. "Students who have completed the prerequisites may substitute: EE 3740 for
+#     CSC 2259 but not both; EE 3755 for CSC 3501 but not both; MATH 3355 or EE 3150 or
+#     EXST 4050 for IE 3302."
 
 id: csc-software-engineering-2026-2027
 program: "Computer Science, B.S."
@@ -69,6 +91,9 @@ requirements:
     semester: 1
     credits: 3
     category: "General Education course - Natural Sciences"
+    eligibleCourses:
+      - { code: "BIOL 1001", minGrade: C }
+      - { code: "BIOL 1201", minGrade: C }
 
   # Semester 2 (15 hours)
   - id: sem-2-courses
@@ -131,10 +156,10 @@ requirements:
     label: "Semester 4 courses"
     semester: 4
     courses:
-      - { code: "CSC 2262", minGrade: C }
-      - { code: "CSC 3304", minGrade: C }
-      - { code: "CSC 3501", minGrade: C }
-      - { code: "ENGL 2000" }
+      - { code: "CSC 2262" }
+      - { code: "CSC 3304" }
+      - { code: "CSC 3501" }
+      - { code: "ENGL 2000", minGrade: C }
   - id: sem-4-bucket-1
     kind: creditBucket
     label: "General Education course - Humanities (Communication Studies course)"
@@ -166,8 +191,8 @@ requirements:
     semester: 6
     courses:
       - { code: "CSC 4103", minGrade: C }
-      - { code: "CSC 4402", minGrade: C }
-      - { code: "CSC 4351", minGrade: C }
+      - { code: "CSC 4402" }
+      - { code: "CSC 4351" }
   - id: sem-6-bucket-1
     kind: creditBucket
     label: "General Education course - Social Sciences"
@@ -219,7 +244,7 @@ requirements:
     label: "Semester 8 courses"
     semester: 8
     courses:
-      - { code: "CSC 4332", minGrade: C }
+      - { code: "CSC 4332" }
   - id: sem-8-bucket-1
     kind: creditBucket
     label: "CSC SEG (2000-level or above) Elective"

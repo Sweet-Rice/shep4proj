@@ -151,7 +151,72 @@ describe(SEG_FILE, () => {
   });
 
   it("has the total credits the page states", () => {
-    expect(sectionText).toContain(`${degree.totalCredits} Total Sem. Hrs.`);
+    // The lookbehind keeps `totalCredits: 20` from matching "120 Total Sem. Hrs.".
+    expect(sectionText).toMatch(new RegExp(`(?<!\\d)${degree.totalCredits} Total Sem\\. Hrs\\.`));
+  });
+
+  it("puts minGrade C on exactly the courses the catalog and flowchart mark", () => {
+    // Transcribed by hand from the "C" markers on the LSU flowchart PDF
+    // (https://www.lsu.edu/eng/docs/Flowcharts/2026-2027/csc-seg_flowchart_2026-2027.pdf,
+    // legend: grade of "C" or better before enrolling in the next course in the sequence)
+    // and from the catalog's critical-requirements text (BIOL 1001 or BIOL 1201). The PDF
+    // is not stored in fixtures/, so this list cannot be derived from a file here.
+    const marked = [
+      "CSC 1350",
+      "CSC 1351",
+      "CSC 2259",
+      "CSC 3102",
+      "CSC 3380",
+      "CSC 4101",
+      "CSC 3200",
+      "CSC 4103",
+      "CSC 4330",
+      "MATH 1550",
+      "MATH 1552",
+      "ENGL 1001",
+      "ENGL 2000",
+      "BIOL 1001",
+      "BIOL 1201",
+    ];
+    const graded = degree.requirements
+      .flatMap((requirement) => courseRefs(requirement))
+      .filter((ref) => ref.minGrade === "C")
+      .map((ref) => ref.code);
+    expect([...graded].sort()).toEqual([...marked].sort());
+  });
+
+  it("gives minGrade C to every encoded course the page's critical requirements name", () => {
+    const codeSource = "[A-Z]{2,4} \\d{4}";
+    const anyCode = new RegExp(codeSource, "g");
+
+    const sentence = /is required in all CSC prerequisite courses;[^.]*\./.exec(sectionText);
+    expect(sentence).not.toBeNull();
+    const named = new Set(sentence?.[0].match(anyCode));
+    const criticalLine = new RegExp(`or better in ((?:${codeSource})(?: / ${codeSource})*)`, "g");
+    for (const block of semesterBlocks(section).values()) {
+      for (const line of block.text.matchAll(criticalLine)) {
+        for (const listed of line[1]?.match(anyCode) ?? []) named.add(listed);
+      }
+    }
+
+    const refs = degree.requirements.flatMap((requirement) => courseRefs(requirement));
+    const checked: string[] = [];
+    const notEncoded: string[] = [];
+    for (const code of named) {
+      const matching = refs.filter((ref) => ref.code === code);
+      if (matching.length === 0) {
+        notEncoded.push(code);
+        continue;
+      }
+      for (const ref of matching) {
+        expect(ref.minGrade, code).toBe("C");
+      }
+      checked.push(code);
+    }
+    // ENGL 1001 and CSC 2259 come from semester CRITICAL lines, CSC 3200 from the sentence.
+    expect(checked).toEqual(expect.arrayContaining(["ENGL 1001", "CSC 2259", "CSC 3200"]));
+    // MATH 1551 is the only named course that is not a semester item.
+    expect(notEncoded).toEqual(["MATH 1551"]);
   });
 
   it("puts every credit bucket on a matching placeholder line in its semester", () => {
