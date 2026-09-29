@@ -15,7 +15,7 @@ interface Rule {
 }
 
 /** A path segment that looks like a token rather than a name: long, mixed case, with digits. */
-const TOKEN_SEGMENT = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[\w+-]{20,}={0,2}$/;
+const TOKEN_SEGMENT = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[\w+-]{10,}={0,2}$/;
 
 /**
  * Base64's alphabet includes `/`, which overlaps with Unix file paths. Preserve only runs that

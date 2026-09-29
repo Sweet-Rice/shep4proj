@@ -66,9 +66,21 @@ describe("redactLogText", () => {
     expect(redactLogText(stackLine)).toBe(stackLine);
   });
 
+  it("redacts absolute-looking credentials with short mixed-case segments", () => {
+    const slashToken = [
+      ["abC", "0123456789"].join(""),
+      ["xyZ", "0123456789"].join(""),
+      ["deF", "9876543210"].join(""),
+    ].join("/");
+    const input = `provider returned /${slashToken}`;
+
+    expect(redactLogText(input)).toBe(`provider returned ${REDACTED}`);
+  });
+
   it.each([
     "    at createWindow (file:///home/student/projects/jevschedule/apps/desktop/out/main/index.js:30:15)",
     "    at open (/Users/Student/Library/Application Support/jevschedule/out/main/index.js:12:3)",
+    "    at createWindow (C:\\Users\\Student\\jevschedule\\out\\main\\index.js:30:15)",
     "wrote /home/student/.config/jevschedule/database/local-planner-store.sqlite",
   ])("keeps file paths in %j", (line) => {
     expect(redactLogText(line)).toBe(line);
