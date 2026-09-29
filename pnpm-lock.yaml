@@ -236,6 +236,9 @@ importers:
 
   apps/server:
     dependencies:
+      '@jevschedule/scraper':
+        specifier: workspace:*
+        version: link:../../packages/scraper
       '@jevschedule/shared':
         specifier: workspace:*
         version: link:../../packages/shared
