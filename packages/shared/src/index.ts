@@ -1,8 +1,8 @@
 /** Package identifier, used to prove cross-package builds work. */
 export const PACKAGE_NAME = "@jevschedule/shared";
 
-export { CourseSchema } from "./course.js";
-export type { Course } from "./course.js";
+export { CourseKeySchema, CourseSchema, CreditsSchema, parseCreditsText } from "./course.js";
+export type { Course, CourseKey, Credits } from "./course.js";
 
 export { CatalogYearSchema } from "./catalog-year.js";
 export type { CatalogYear } from "./catalog-year.js";
