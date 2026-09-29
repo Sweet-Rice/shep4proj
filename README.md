@@ -11,8 +11,9 @@ for the full plan, architecture, and backlog.
 - `apps/server` — Fastify API + scheduled scraper jobs
 - `packages/shared` — types, schemas, and planner logic shared by client and server
 - `packages/workday` — Workday response parser + transcript PDF parser (fixture-tested)
-- `packages/scraper` — catalog + section parsers (fixture-tested)
+- `packages/scraper` — catalog + section parsers (fixture-tested) and the rate-limited catalog fetcher (`pnpm --filter @jevschedule/scraper live-check` runs it against the live site)
 - `fixtures` — redacted Workday responses, saved LSU HTML, sample transcripts
+- `data/degrees` — hand-encoded degree requirements (YAML), validated by `DegreeProgramSchema` in `packages/shared`
 
 ## Dev setup
 

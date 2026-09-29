@@ -1,6 +1,6 @@
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify";
 
-import { CourseSchema } from "@jevschedule/shared";
+import { DegreeProgramSchema } from "@jevschedule/shared";
 import { loadYamlFiles } from "./yaml-loader.js";
 
 /** Body returned by `GET /health`. */
@@ -21,9 +21,9 @@ export function buildServer(opts: ServerOptions = {}): FastifyInstance {
   const app = Fastify(opts);
 
   if (opts.catalogDataDir) {
-    app.register(async (instance) => {
+    app.register(async () => {
       // Validate all YAML files during startup (fails fast on error)
-      await loadYamlFiles(opts.catalogDataDir!, CourseSchema);
+      await loadYamlFiles(opts.catalogDataDir!, DegreeProgramSchema);
     });
   }
 

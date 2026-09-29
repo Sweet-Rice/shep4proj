@@ -8,6 +8,20 @@
       "when": 1790650958484,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790660852782,
+      "tag": "0001_courses",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790682148537,
+      "tag": "0002_prereq_tree",
+      "breakpoints": true
     }
   ]
 }

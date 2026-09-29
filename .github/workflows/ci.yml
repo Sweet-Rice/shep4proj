@@ -52,14 +52,20 @@ jobs:
       - name: Build
         run: pnpm -r build
 
+      - name: Prereq coverage report
+        run: pnpm --filter @jevschedule/shared coverage:prereqs
+
       - name: Typecheck
         run: pnpm -r typecheck
 
-      - name: Test
-        run: pnpm -r test
-
       - name: Migrate database
         run: pnpm --filter @jevschedule/server db:migrate
+
+      - name: Seed database from fixtures
+        run: pnpm --filter @jevschedule/server db:seed:fixtures
+
+      - name: Test
+        run: pnpm -r test
 
       - name: Scan for secrets
         uses: gitleaks/gitleaks-action@v2
