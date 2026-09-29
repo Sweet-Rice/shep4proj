@@ -233,16 +233,9 @@ export function parseCourseDetail(html: string): CourseDetail {
             break;
           }
 
-          const nextItem = inline[nextIdx];
-          if (nextItem !== undefined) {
-            if (typeof nextItem !== "string" && nextItem.name === "em") {
-              prerequisiteText = collapse(visibleText(nextItem));
-              prerequisiteCourseCodes = courseCodesIn($, nextItem);
-              pendingLabel = null;
-              i = nextIdx;
-              continue;
-            }
-
+          const firstItem = inline[nextIdx];
+          if (firstItem !== undefined) {
+            const startedWithEm = typeof firstItem !== "string" && firstItem.name === "em";
             const prereqParts: string[] = [];
             const prereqElements: DomElement[] = [];
             let prereqRemainder = "";
@@ -255,22 +248,34 @@ export function parseCourseDetail(html: string): CourseDetail {
                 break;
               }
               if (typeof cur !== "string" && cur.name === "em") {
-                if (collapse(visibleText(cur)) !== "") {
+                const curText = collapse(visibleText(cur));
+                if (curText === "") {
+                  k++;
+                  continue;
+                }
+                if (curText.endsWith(":")) {
                   break;
                 }
+                prereqElements.push(cur);
+                const rawText = visibleText(cur);
+                prereqParts.push(rawText);
                 k++;
+                if (curText.endsWith(".")) {
+                  endedWithPeriod = true;
+                  break;
+                }
                 continue;
               }
+
               if (typeof cur !== "string") {
                 prereqElements.push(cur);
                 const curText = visibleText(cur);
                 prereqParts.push(curText);
-                if (curText.trimEnd().endsWith(".")) {
+                k++;
+                if (collapse(curText).endsWith(".")) {
                   endedWithPeriod = true;
-                  k++;
                   break;
                 }
-                k++;
                 continue;
               }
 
@@ -297,15 +302,16 @@ export function parseCourseDetail(html: string): CourseDetail {
                 );
 
             const nextAfterPrereq = inline[k];
-            const isUnwrappedPrereq =
+            const isValidPrereq =
               candidateText !== "" &&
-              (candidateCodes.length > 0 ||
+              (startedWithEm ||
+                candidateCodes.length > 0 ||
                 (endedWithPeriod && hasRemainingDescription) ||
                 (nextAfterPrereq !== undefined &&
                   typeof nextAfterPrereq !== "string" &&
                   nextAfterPrereq.name === "em"));
 
-            if (isUnwrappedPrereq) {
+            if (isValidPrereq) {
               prerequisiteText = candidateText;
               prerequisiteCourseCodes = candidateCodes;
               pendingLabel = null;

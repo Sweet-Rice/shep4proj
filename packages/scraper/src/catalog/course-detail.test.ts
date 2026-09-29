@@ -119,6 +119,19 @@ describe("parseCourseDetail markup rules", () => {
     expect(detail.notes).toEqual([]);
   });
 
+  it("parses CSC 2259: split em tags in prerequisite line", () => {
+    const html = page(
+      `<em><strong></strong></em> <em><strong></strong></em> <strong></strong>  <em>Prereq.:</em> <em>credit or registration in </em><em><a href="preview_course_nopop.php?catoid=35&coid=229582" aria-label="View course details for CSC 1254">CSC 1254</a><span style="display: none !important">&#160;</span> or <a href="preview_course_nopop.php?catoid=35&coid=229581" aria-label="View course details for CSC 1351">CSC 1351</a><span style="display: none !important">&#160;</span> and <a href="preview_course_nopop.php?catoid=35&coid=228380" aria-label="View course details for MATH 1552">MATH 1552</a><span style="display: none !important">&#160;</span>.</em>  <em>Credit will not be given for this course and <a href="preview_course_nopop.php?catoid=35&coid=230690" aria-label="View course details for MATH 2020">MATH 2020</a>.</em> Set algebra including mappings and relations; algebraic structures including semigroups and groups; elements of the theory of directed and undirected graphs; Boolean algebra and propositional logic; these structures applied to various areas of computer science.`,
+      "CSC 2259 Discrete Structures (3)",
+    );
+    const detail = parseCourseDetail(html);
+    expect(detail.code).toBe("CSC 2259");
+    expect(detail.prerequisiteText).toBe(
+      "credit or registration in CSC 1254 or CSC 1351 and MATH 1552.",
+    );
+    expect(detail.prerequisiteCourseCodes).toEqual(["CSC 1254", "CSC 1351", "MATH 1552"]);
+  });
+
   it("parses CSC 7080: cross-listed course whose description is in em tags as See <course>", () => {
     const html = page(
       `<em>See <a href="preview_course_nopop.php?catoid=35&coid=232114" aria-label="View course details for EE 7720">EE 7720</a><span style="display: none !important">&nbsp;</span>.</em>`,

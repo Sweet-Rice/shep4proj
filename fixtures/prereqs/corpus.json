@@ -2,7 +2,7 @@
   "catalogYear": "2026-2027",
   "catoid": "35",
   "generatedBy": "packages/scraper/scripts/capture-prereq-corpus.ts",
-  "capturedAt": "2026-09-29T10:53:04.462Z",
+  "capturedAt": "2026-09-29T11:05:47.327Z",
   "courseCount": 91,
   "coursesWithoutPrereq": [
     "CSC 1110",
@@ -121,16 +121,22 @@
     {
       "code": "CSC 2259",
       "coid": "229591",
-      "text": "credit or registration in",
-      "courseCodes": [],
+      "text": "credit or registration in CSC 1254 or CSC 1351 and MATH 1552.",
+      "courseCodes": [
+        "CSC 1254",
+        "CSC 1351",
+        "MATH 1552"
+      ],
       "tags": [
-        "coreq"
+        "mixed-and-or",
+        "coreq",
+        "non-csc"
       ]
     },
     {
       "code": "CSC 2262",
       "coid": "229576",
-      "text": "CSC 1254 or CSC 1351, and credit or registration in MATH 2090",
+      "text": "CSC 1254 or CSC 1351, and credit or registration in MATH 2090.",
       "courseCodes": [
         "CSC 1254",
         "CSC 1351",
@@ -506,7 +512,7 @@
     {
       "code": "CSC 4370",
       "coid": "232627",
-      "text": "CSC 4330",
+      "text": "CSC 4330.",
       "courseCodes": [
         "CSC 4330"
       ],
