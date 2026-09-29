@@ -1,12 +1,14 @@
 import type { IpcMain, IpcMainInvokeEvent } from "electron";
-import { CourseCodeSchema } from "@jevschedule/shared";
+import { CourseCodeSchema, PlanSchema } from "@jevschedule/shared";
 import { z } from "zod";
 import { IPC_CHANNELS } from "../shared/ipc.js";
 import type { CompletedStore } from "./store/completed.js";
+import type { PlanStore } from "./store/plan.js";
 
 /** Stores the IPC handlers read and write. */
 export interface IpcStores {
   completed: CompletedStore;
+  plan: PlanStore;
 }
 
 /** Thrown when an IPC call comes from a frame that isn't the app's own renderer. */
@@ -18,6 +20,7 @@ export class UntrustedIpcSenderError extends Error {
 }
 
 const CompletedSetArgsSchema = z.tuple([CourseCodeSchema, z.boolean()]);
+const PlanSaveArgsSchema = z.tuple([PlanSchema]);
 
 /**
  * Whether `frameUrl` is the app's own renderer at `rendererUrl`: the same origin for the dev
@@ -59,5 +62,10 @@ export function registerIpcHandlers(
   handle(IPC_CHANNELS.completedSet, (args) => {
     const [code, completed] = CompletedSetArgsSchema.parse(args);
     stores.completed.setCompleted(code, completed);
+  });
+  handle(IPC_CHANNELS.planGet, () => stores.plan.getPlan());
+  handle(IPC_CHANNELS.planSave, (args) => {
+    const [plan] = PlanSaveArgsSchema.parse(args);
+    stores.plan.savePlan(plan);
   });
 }

@@ -4,6 +4,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { isAppRendererUrl, registerIpcHandlers } from "./ipc.js";
 import { createCompletedStore } from "./store/completed.js";
 import { openLocalDb } from "./store/db.js";
+import { createPlanStore } from "./store/plan.js";
 
 const rendererHtmlPath = fileURLToPath(new URL("../renderer/index.html", import.meta.url));
 const rendererUrl = process.env.ELECTRON_RENDERER_URL ?? pathToFileURL(rendererHtmlPath).href;
@@ -32,8 +33,10 @@ void app.whenReady().then(() => {
   const db = openLocalDb(join(app.getPath("userData"), "jevschedule.sqlite"));
   app.on("will-quit", () => db.close());
 
-  registerIpcHandlers(ipcMain, { completed: createCompletedStore(db) }, (event) =>
-    isAppRendererUrl(event.senderFrame?.url, rendererUrl),
+  registerIpcHandlers(
+    ipcMain,
+    { completed: createCompletedStore(db), plan: createPlanStore(db) },
+    (event) => isAppRendererUrl(event.senderFrame?.url, rendererUrl),
   );
 
   createWindow();
