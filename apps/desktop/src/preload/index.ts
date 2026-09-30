@@ -6,6 +6,10 @@ const api: JevscheduleApi = {
     get: () => ipcRenderer.invoke(IPC_CHANNELS.completedGet),
     set: (code, completed) => ipcRenderer.invoke(IPC_CHANNELS.completedSet, code, completed),
   },
+  plan: {
+    get: () => ipcRenderer.invoke(IPC_CHANNELS.planGet),
+    save: (plan) => ipcRenderer.invoke(IPC_CHANNELS.planSave, plan),
+  },
 };
 
 contextBridge.exposeInMainWorld("jevschedule", api);

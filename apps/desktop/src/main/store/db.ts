@@ -12,6 +12,19 @@ export const MIGRATIONS: readonly string[] = [
   `CREATE TABLE completed_courses (
      code TEXT PRIMARY KEY NOT NULL
    ) STRICT`,
+  `CREATE TABLE plan_terms (
+     id INTEGER PRIMARY KEY,
+     position INTEGER NOT NULL UNIQUE,
+     season TEXT NOT NULL,
+     year INTEGER NOT NULL,
+     UNIQUE (season, year)
+   ) STRICT;
+   CREATE TABLE plan_courses (
+     term_id INTEGER NOT NULL REFERENCES plan_terms (id) ON DELETE CASCADE,
+     position INTEGER NOT NULL,
+     code TEXT NOT NULL UNIQUE,
+     PRIMARY KEY (term_id, position)
+   ) STRICT`,
 ];
 
 /** Thrown when the database was written by a newer app version than this one. */

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { IPC_CHANNELS } from "../shared/ipc.js";
 import { isAppRendererUrl, registerIpcHandlers, UntrustedIpcSenderError } from "./ipc.js";
 import { createCompletedStore } from "./store/completed.js";
+import { createPlanStore } from "./store/plan.js";
 import { openLocalDb, type LocalDb } from "./store/db.js";
 
 type Handler = (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown;
@@ -33,7 +34,11 @@ describe("registerIpcHandlers", () => {
     db = openLocalDb(":memory:");
     ipc = fakeIpcMain();
     trusted = true;
-    registerIpcHandlers(ipc, { completed: createCompletedStore(db) }, () => trusted);
+    registerIpcHandlers(
+      ipc,
+      { completed: createCompletedStore(db), plan: createPlanStore(db) },
+      () => trusted,
+    );
   });
   afterEach(() => db.close());
 
@@ -54,6 +59,21 @@ describe("registerIpcHandlers", () => {
   ])("rejects %s", (_label, args) => {
     expect(() => ipc.invoke(IPC_CHANNELS.completedSet, ...args)).toThrow();
     expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual([]);
+  });
+
+  it("saves and gets the plan", () => {
+    const plan = { terms: [{ season: "Fall", year: 2027, courses: ["CSC 3102"] }] };
+    ipc.invoke(IPC_CHANNELS.planSave, plan);
+    expect(ipc.invoke(IPC_CHANNELS.planGet)).toEqual(plan);
+  });
+
+  it.each([
+    ["no plan", []],
+    ["a plan without terms", [{}]],
+    ["a term with a bad season", [{ terms: [{ season: "Autumn", year: 2027, courses: [] }] }]],
+  ])("rejects saving %s", (_label, args) => {
+    expect(() => ipc.invoke(IPC_CHANNELS.planSave, ...args)).toThrow();
+    expect(ipc.invoke(IPC_CHANNELS.planGet)).toEqual({ terms: [] });
   });
 
   it("rejects calls from untrusted senders before touching the store", () => {

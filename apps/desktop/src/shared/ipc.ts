@@ -1,4 +1,4 @@
-import type { CourseCode } from "@jevschedule/shared";
+import type { CourseCode, Plan } from "@jevschedule/shared";
 
 /**
  * IPC channel names shared by the main process and the preload script. Keeping them in one
@@ -7,6 +7,8 @@ import type { CourseCode } from "@jevschedule/shared";
 export const IPC_CHANNELS = {
   completedGet: "completed:get",
   completedSet: "completed:set",
+  planGet: "plan:get",
+  planSave: "plan:save",
 } as const;
 
 /**
@@ -17,5 +19,9 @@ export interface JevscheduleApi {
   completed: {
     get(): Promise<CourseCode[]>;
     set(code: CourseCode, completed: boolean): Promise<void>;
+  };
+  plan: {
+    get(): Promise<Plan>;
+    save(plan: Plan): Promise<void>;
   };
 }
