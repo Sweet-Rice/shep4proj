@@ -14,3 +14,6 @@ fixtures/workday/redacted/*/
 !fixtures/workday/redacted/.gitkeep
 *.log
 .DS_Store
+
+dist-electron/
+issues.txt
