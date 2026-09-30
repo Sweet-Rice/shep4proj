@@ -94,10 +94,17 @@ describe.skipIf(!getTestDatabaseUrl())("sections routes", () => {
 
   it("keeps lecture and lab sections with the same number apart", async () => {
     const { body } = await get(`/sections?course=CSC-1350&term=${SECTION_FIXTURE_PERIOD}`);
+    expect(body.sections.map(({ sectionNumber, sectionType }) => [sectionNumber, sectionType])).toEqual([
+      ["001", "LAB"],
+      ["001", "LEC"],
+      ["002", "LAB"],
+      ["002", "LEC"],
+    ]);
     const labs = body.sections.filter((s) => s.sectionType === "LAB");
     expect(labs.length).toBeGreaterThan(0);
     expect(labs[0]).toMatchObject({ instructor: null, credits: { min: 0, max: 0, note: null } });
     expect(body.sections.some((s) => s.sectionType === "LEC")).toBe(true);
+
   });
 
   it("returns sections without meeting times with an empty meetings list", async () => {
