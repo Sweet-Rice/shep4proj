@@ -62,18 +62,25 @@ describe("registerIpcHandlers", () => {
   });
 
   it("saves and gets the plan", () => {
-    const plan = { terms: [{ season: "Fall", year: 2027, courses: ["CSC 3102"] }] };
+    const plan = {
+      creditLimit: 15,
+      terms: [{ season: "Fall", year: 2027, courses: ["CSC 3102"] }],
+    };
     ipc.invoke(IPC_CHANNELS.planSave, plan);
     expect(ipc.invoke(IPC_CHANNELS.planGet)).toEqual(plan);
   });
 
   it.each([
     ["no plan", []],
-    ["a plan without terms", [{}]],
-    ["a term with a bad season", [{ terms: [{ season: "Autumn", year: 2027, courses: [] }] }]],
+    ["a plan without terms", [{ creditLimit: 15 }]],
+    ["a plan without a credit limit", [{ terms: [] }]],
+    [
+      "a term with a bad season",
+      [{ creditLimit: 15, terms: [{ season: "Autumn", year: 2027, courses: [] }] }],
+    ],
   ])("rejects saving %s", (_label, args) => {
     expect(() => ipc.invoke(IPC_CHANNELS.planSave, ...args)).toThrow();
-    expect(ipc.invoke(IPC_CHANNELS.planGet)).toEqual({ terms: [] });
+    expect(ipc.invoke(IPC_CHANNELS.planGet)).toEqual({ creditLimit: 19, terms: [] });
   });
 
   it("rejects calls from untrusted senders before touching the store", () => {

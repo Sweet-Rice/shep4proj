@@ -1,12 +1,13 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { Plan } from "@jevschedule/shared";
+import { DEFAULT_CREDIT_LIMIT, type Plan } from "@jevschedule/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { openLocalDb, type LocalDb } from "./db.js";
 import { createPlanStore, type PlanStore } from "./plan.js";
 
 const plan: Plan = {
+  creditLimit: 15,
   terms: [
     { season: "Spring", year: 2028, courses: ["CSC 4330", "CSC 3200"] },
     { season: "Fall", year: 2027, courses: ["CSC 3380", "CSC 3102"] },
@@ -24,8 +25,8 @@ describe("createPlanStore", () => {
   });
   afterEach(() => db.close());
 
-  it("starts with an empty plan", () => {
-    expect(store.getPlan()).toEqual({ terms: [] });
+  it("starts with an empty plan and the default credit limit", () => {
+    expect(store.getPlan()).toEqual({ creditLimit: DEFAULT_CREDIT_LIMIT, terms: [] });
   });
 
   it("keeps terms and courses in the order they were saved", () => {
@@ -35,21 +36,25 @@ describe("createPlanStore", () => {
 
   it("replaces the previous plan on save", () => {
     store.savePlan(plan);
-    const next: Plan = { terms: [{ season: "Fall", year: 2027, courses: ["CSC 3102"] }] };
+    const next: Plan = {
+      creditLimit: 12,
+      terms: [{ season: "Fall", year: 2027, courses: ["CSC 3102"] }],
+    };
     store.savePlan(next);
     expect(store.getPlan()).toEqual(next);
   });
 
   it("clears the plan when saving an empty one", () => {
     store.savePlan(plan);
-    store.savePlan({ terms: [] });
-    expect(store.getPlan()).toEqual({ terms: [] });
+    store.savePlan({ creditLimit: 15, terms: [] });
+    expect(store.getPlan()).toEqual({ creditLimit: 15, terms: [] });
     expect(db.prepare("SELECT count(*) AS n FROM plan_courses").get()).toEqual({ n: 0 });
   });
 
   it("rejects an invalid plan and keeps the saved one", () => {
     store.savePlan(plan);
     const duplicateCourse = {
+      creditLimit: 15,
       terms: [
         { season: "Fall", year: 2027, courses: ["CSC 3102"] },
         { season: "Spring", year: 2028, courses: ["CSC 3102"] },
@@ -57,6 +62,12 @@ describe("createPlanStore", () => {
     } as Plan;
     expect(() => store.savePlan(duplicateCourse)).toThrow();
     expect(store.getPlan()).toEqual(plan);
+  });
+
+  it("rejects an invalid credit limit and keeps the saved one", () => {
+    store.savePlan(plan);
+    expect(() => store.savePlan({ ...plan, creditLimit: 0 })).toThrow();
+    expect(store.getPlan().creditLimit).toBe(plan.creditLimit);
   });
 });
 
