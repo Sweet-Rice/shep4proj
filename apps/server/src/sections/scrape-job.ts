@@ -64,12 +64,7 @@ export async function runSectionScrape(o: {
       const [lastScrape] = await tx
         .select({ scrapedAt: sectionScrapes.scrapedAt })
         .from(sectionScrapes)
-        .where(
-          and(
-            eq(sectionScrapes.department, o.department),
-            eq(sectionScrapes.term, term),
-          ),
-        )
+        .where(and(eq(sectionScrapes.department, o.department), eq(sectionScrapes.term, term)))
         .limit(1);
       if (
         lastScrape !== undefined &&

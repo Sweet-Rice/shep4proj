@@ -157,7 +157,9 @@ describe.skipIf(!getTestDatabaseUrl())("runSectionScrape", () => {
 
     expect(detailFetches).toBe(1);
     expect(results.filter((result) => result.scraped.length === 1)).toHaveLength(1);
-    expect(results.filter((result) => result.skipped.includes(SECTION_FIXTURE_PERIOD))).toHaveLength(1);
+    expect(
+      results.filter((result) => result.skipped.includes(SECTION_FIXTURE_PERIOD)),
+    ).toHaveLength(1);
   });
 
   it("clears old term rows after a valid empty listing", async () => {
@@ -188,7 +190,6 @@ describe.skipIf(!getTestDatabaseUrl())("runSectionScrape", () => {
       },
     ]);
   });
-
 
   it("re-scrapes a term a day later and replaces its sections instead of duplicating them", async () => {
     const opts = { db, department: "CSC", periodIds: [SECTION_FIXTURE_PERIOD] };
