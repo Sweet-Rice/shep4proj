@@ -94,7 +94,9 @@ describe.skipIf(!getTestDatabaseUrl())("sections routes", () => {
 
   it("keeps lecture and lab sections with the same number apart", async () => {
     const { body } = await get(`/sections?course=CSC-1350&term=${SECTION_FIXTURE_PERIOD}`);
-    expect(body.sections.map(({ sectionNumber, sectionType }) => [sectionNumber, sectionType])).toEqual([
+    expect(
+      body.sections.map(({ sectionNumber, sectionType }) => [sectionNumber, sectionType]),
+    ).toEqual([
       ["001", "LAB"],
       ["001", "LEC"],
       ["002", "LAB"],
