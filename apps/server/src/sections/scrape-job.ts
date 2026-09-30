@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import {
   parseAcademicPeriods,
   parseSectionListing,
@@ -55,36 +55,47 @@ export async function runSectionScrape(o: {
     periods = periods.filter((id) => wanted.has(id));
   }
 
-  const lastScrapes = await o.db
-    .select({ term: sectionScrapes.term, scrapedAt: sectionScrapes.scrapedAt })
-    .from(sectionScrapes)
-    .where(eq(sectionScrapes.department, o.department));
-  const lastScrapedAt = new Map(lastScrapes.map((row) => [row.term, row.scrapedAt]));
-
   const result: SectionScrapeResult = { periods, scraped: [], skipped: [], failed: [] };
   for (const term of periods) {
-    const last = lastScrapedAt.get(term);
-    if (last !== undefined && now().getTime() - last.getTime() < minIntervalMs) {
-      result.skipped.push(term);
-      continue;
-    }
-    try {
-      const url = sectionListingUrl({ department: o.department, periodId: term });
-      o.log?.(`Fetching ${o.department} sections for ${term}: ${url}`);
-      const listing = parseSectionListing(await o.fetcher.fetchHtml(url));
-      if (listing.selectedPeriodId !== term) {
-        throw new Error(`asked for ${term} but the page lists ${listing.selectedPeriodId}`);
+    await o.db.transaction(async (tx) => {
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtext(${o.department}), hashtext(${term}))`,
+      );
+      const [lastScrape] = await tx
+        .select({ scrapedAt: sectionScrapes.scrapedAt })
+        .from(sectionScrapes)
+        .where(
+          and(
+            eq(sectionScrapes.department, o.department),
+            eq(sectionScrapes.term, term),
+          ),
+        )
+        .limit(1);
+      if (
+        lastScrape !== undefined &&
+        now().getTime() - lastScrape.scrapedAt.getTime() < minIntervalMs
+      ) {
+        result.skipped.push(term);
+        return;
       }
-      await replaceTermSections(o.db, {
-        department: o.department,
-        term,
-        sections: listing.sections,
-        scrapedAt: now(),
-      });
-      result.scraped.push({ term, sections: listing.sections.length });
-    } catch (error) {
-      result.failed.push({ term, error: error instanceof Error ? error.message : String(error) });
-    }
+      try {
+        const url = sectionListingUrl({ department: o.department, periodId: term });
+        o.log?.(`Fetching ${o.department} sections for ${term}: ${url}`);
+        const listing = parseSectionListing(await o.fetcher.fetchHtml(url));
+        if (listing.selectedPeriodId !== term) {
+          throw new Error(`asked for ${term} but the page lists ${listing.selectedPeriodId}`);
+        }
+        await replaceTermSections(o.db, {
+          department: o.department,
+          term,
+          sections: listing.sections,
+          scrapedAt: now(),
+        });
+        result.scraped.push({ term, sections: listing.sections.length });
+      } catch (error) {
+        result.failed.push({ term, error: error instanceof Error ? error.message : String(error) });
+      }
+    });
   }
   return result;
 }
