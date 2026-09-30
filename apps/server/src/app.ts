@@ -3,6 +3,7 @@ import type { Db } from "./db/client.js";
 import { loadDegreePrograms } from "./degrees/load.js";
 import { registerCourseRoutes } from "./routes/courses.js";
 import { registerDegreeRoutes } from "./routes/degrees.js";
+import { registerSectionRoutes } from "./routes/sections.js";
 
 /** Body returned by `GET /health`. */
 export interface HealthResponse {
@@ -49,6 +50,7 @@ export function buildServer(opts: ServerOptions = {}): FastifyInstance {
 
   if (db) {
     registerCourseRoutes(app, { db });
+    registerSectionRoutes(app, { db });
   }
 
   return app;
