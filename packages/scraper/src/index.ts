@@ -34,4 +34,12 @@ export { PREREQ_PATTERN_TAGS, suggestPrereqTags } from "./prereq-corpus/tags.js"
 export { SectionShapeError } from "./sections/errors.js";
 export { parseAcademicPeriods, parseSectionListing } from "./sections/section-listing.js";
 export type { AcademicPeriod, SectionListing } from "./sections/section-listing.js";
+export { LSU_UNIVERSITY_ID, SECTION_OFFERINGS_ORIGIN, sectionListingUrl } from "./sections/urls.js";
+export {
+  DisallowedSectionUrlError,
+  SECTION_CRAWL_DELAY_MS,
+  assertAllowedSectionUrl,
+  createSectionFetcher,
+} from "./fetch/section-fetcher.js";
+export type { SectionFetcher, SectionFetcherOptions } from "./fetch/section-fetcher.js";
 export type { PrereqPatternTag } from "./prereq-corpus/tags.js";
