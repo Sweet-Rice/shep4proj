@@ -106,7 +106,6 @@ describe.skipIf(!getTestDatabaseUrl())("sections routes", () => {
     expect(labs.length).toBeGreaterThan(0);
     expect(labs[0]).toMatchObject({ instructor: null, credits: { min: 0, max: 0, note: null } });
     expect(body.sections.some((s) => s.sectionType === "LEC")).toBe(true);
-
   });
 
   it("returns sections without meeting times with an empty meetings list", async () => {
