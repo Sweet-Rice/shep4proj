@@ -175,6 +175,7 @@ describe.skipIf(!getTestDatabaseUrl())("runSectionScrape", () => {
       minIntervalMs: 0,
     });
 
+    expect(result.failed).toEqual([]);
     expect(result.scraped).toEqual([{ term: SECTION_FIXTURE_PERIOD, sections: 0 }]);
     expect(await countRows(sections)).toBe(0);
     expect(await countRows(meetings)).toBe(0);

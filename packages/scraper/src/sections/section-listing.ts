@@ -207,8 +207,8 @@ function parseSection(
  * The portal renders every course block twice in a row, so repeated blocks are dropped; a
  * repeat that differs from the first copy throws, since we couldn't tell which one is right.
  *
- * Pure and network-free. Throws {@link SectionShapeError} when the page no longer looks like a
- * listing, rather than returning a partial result.
+ * Pure and network-free. A structurally valid selected-period page with no course blocks returns
+ * an empty `sections` array; malformed pickers or course blocks still throw {@link SectionShapeError}.
  */
 export function parseSectionListing(html: string): SectionListing {
   const $ = load(html);
@@ -244,6 +244,5 @@ export function parseSectionListing(html: string): SectionListing {
   });
 
   const sections = [...sectionsByCourse.values()].flat();
-  if (sections.length === 0) throw new SectionShapeError("no course sections found on the page");
   return { periods, selectedPeriodId, sections };
 }
