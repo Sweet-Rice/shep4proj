@@ -12,3 +12,7 @@ export async function truncateCourses(db: Db): Promise<void> {
 export async function truncateSections(db: Db): Promise<void> {
   await db.execute(sql`TRUNCATE sections, meetings, section_scrapes RESTART IDENTITY`);
 }
+
+export async function truncateSectionArchive(db: Db): Promise<void> {
+  await db.execute(sql`TRUNCATE section_archive`);
+}
