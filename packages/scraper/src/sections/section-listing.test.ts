@@ -151,6 +151,10 @@ function courseHtml(code: string, sections: string): string {
 const page = (body: string, picker = PERIOD_PICKER) => `<html><body>${picker}${body}</body></html>`;
 
 describe("parseSectionListing on synthetic pages", () => {
+  it("accepts a valid selected-period page with no course blocks", () => {
+    expect(parseSectionListing(page("")).sections).toEqual([]);
+  });
+
   it("parses a minimal page", () => {
     const result = parseSectionListing(page(courseHtml("CSC 1350", sectionHtml())));
     expect(result.sections).toEqual([
@@ -185,7 +189,6 @@ describe("parseSectionListing on synthetic pages", () => {
         PERIOD_PICKER.replace('data-selected-id="LSUAM_FALL_2026"', 'data-selected-id="X_2027"'),
       ),
     ],
-    ["no courses", page("")],
     ["a course with no sections", page(courseHtml("CSC 1350", ""))],
     ["an unrecognized course heading", page(courseHtml("Computer Science I", sectionHtml()))],
     [
@@ -214,7 +217,6 @@ describe("parseSectionListing on synthetic pages", () => {
     expect(() => parseSectionListing(html)).toThrow(SectionShapeError);
   });
 });
-
 describe("parseAcademicPeriods", () => {
   it("reads the periods from a listing page", () => {
     expect(parseAcademicPeriods(readFileSync(FIXTURE, "utf8"))).toEqual(listing.periods);
