@@ -126,6 +126,68 @@ describe.skipIf(!getTestDatabaseUrl())("runSectionScrape", () => {
     expect(result.scraped).toEqual([]);
     expect(fetcher.fetchHtml).toHaveBeenCalledOnce(); // the landing page only
   });
+  it("serializes concurrent scrapes of a missing term and rechecks freshness under the lock", async () => {
+    let detailFetches = 0;
+    let landingFetches = 0;
+    let releaseLandings: () => void = () => {};
+    const bothLandings = new Promise<void>((resolve) => {
+      releaseLandings = resolve;
+    });
+    const fetcher: SectionFetcher = {
+      fetchHtml: async (url) => {
+        if (!new URL(url).searchParams.has("AcademicPeriod")) {
+          landingFetches += 1;
+          if (landingFetches === 2) releaseLandings();
+          await bothLandings;
+          return FIXTURE_HTML;
+        }
+        detailFetches += 1;
+        return FIXTURE_HTML;
+      },
+    };
+    const opts = {
+      db,
+      fetcher,
+      department: "CSC",
+      periodIds: [SECTION_FIXTURE_PERIOD],
+      now: () => T0,
+    };
+
+    const results = await Promise.all([runSectionScrape(opts), runSectionScrape(opts)]);
+
+    expect(detailFetches).toBe(1);
+    expect(results.filter((result) => result.scraped.length === 1)).toHaveLength(1);
+    expect(results.filter((result) => result.skipped.includes(SECTION_FIXTURE_PERIOD))).toHaveLength(1);
+  });
+
+  it("clears old term rows after a valid empty listing", async () => {
+    await seedSectionFixtures(db);
+    const emptyListing = FIXTURE_HTML.replace(
+      /<div class="accordion mb-4 course-accordion"[\s\S]*?(?=<\/body>)/g,
+      "",
+    );
+
+    const result = await runSectionScrape({
+      db,
+      fetcher: listingFetcher(emptyListing),
+      department: "CSC",
+      periodIds: [SECTION_FIXTURE_PERIOD],
+      minIntervalMs: 0,
+    });
+
+    expect(result.scraped).toEqual([{ term: SECTION_FIXTURE_PERIOD, sections: 0 }]);
+    expect(await countRows(sections)).toBe(0);
+    expect(await countRows(meetings)).toBe(0);
+    expect(await db.select().from(sectionScrapes)).toEqual([
+      {
+        department: "CSC",
+        term: SECTION_FIXTURE_PERIOD,
+        scrapedAt: expect.any(Date),
+        sectionCount: 0,
+      },
+    ]);
+  });
+
 
   it("re-scrapes a term a day later and replaces its sections instead of duplicating them", async () => {
     const opts = { db, department: "CSC", periodIds: [SECTION_FIXTURE_PERIOD] };
