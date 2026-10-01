@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createPlannerTools } from "./planner-tools.js";
+import type { Course } from "./course.js";
 import type { DegreeProgram } from "./requirements.js";
 import type { ValidationPlan } from "./validate-plan.js";
 
@@ -86,6 +87,25 @@ describe("createPlannerTools", () => {
 
     expect(tools.getEligible([course], [])[0]?.result.status).toBe("ineligible");
     expect(tools.getEligible([course], [], ["CSC 2259"])[0]?.result.status).toBe("eligible");
+  });
+
+  it("evaluates requirement credits from the supplied catalog", () => {
+    const tools = createPlannerTools();
+    const catalog: Course[] = [
+      {
+        catalogYear: "2026-2027",
+        code: "CSC 1350",
+        title: "Computer Science I for Majors",
+        credits: { min: 4, max: 4, note: null },
+        description: "Fundamentals of programming.",
+        prerequisiteText: null,
+      },
+    ];
+
+    expect(tools.getRemainingRequirements(degree, ["CSC 1350"]).totalCreditsFulfilled).toBe(3);
+    expect(
+      tools.getRemainingRequirements(degree, ["CSC 1350"], catalog).totalCreditsFulfilled,
+    ).toBe(4);
   });
 
   it("rejects unconfigured data sources instead of returning empty data", async () => {
