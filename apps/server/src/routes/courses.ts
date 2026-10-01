@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { and, asc, eq, max } from "drizzle-orm";
 import { CatalogYearSchema, type Course, type PrereqNode } from "@jevschedule/shared";
 import type { Db } from "../db/client.js";
-import { courses, type CourseRow } from "../db/schema.js";
+import { courses, sectionArchive, type CourseRow } from "../db/schema.js";
 
 const DEPT_REGEX = /^[A-Z]{2,4}$/;
 const COURSE_ID_REGEX = /^[A-Z]{2,4}-\d{4}$/;
@@ -43,6 +43,11 @@ export type CourseDetailResponse = Course & {
     notes: string[];
   };
 };
+
+/** Archived terms where a course had at least one offered section. */
+export interface CourseHistoryResponse {
+  history: { term: string; sectionCount: number; capturedAt: string }[];
+}
 
 function toCourseDetail(row: CourseRow): CourseDetailResponse {
   return {
@@ -150,4 +155,33 @@ export function registerCourseRoutes(app: FastifyInstance, deps: { db: Db }): vo
       return reply.send(toCourseDetail(row));
     },
   );
+
+  app.get<{ Params: CourseParams }>("/courses/:id/history", async (request, reply) => {
+    const rawId = request.params.id;
+    if (typeof rawId !== "string" || !COURSE_ID_REGEX.test(rawId.toUpperCase())) {
+      return reply.status(400).send({ error: "invalid course id" });
+    }
+
+    const code = rawId.toUpperCase().replace("-", " ");
+    const department = code.split(" ")[0]!;
+    const snapshots = await db
+      .select({
+        term: sectionArchive.term,
+        capturedAt: sectionArchive.capturedAt,
+        sections: sectionArchive.sections,
+      })
+      .from(sectionArchive)
+      .where(eq(sectionArchive.department, department))
+      .orderBy(asc(sectionArchive.term));
+
+    const history = snapshots.flatMap((snapshot) => {
+      const sectionCount = snapshot.sections.filter(
+        (section) => section.courseCode === code,
+      ).length;
+      return sectionCount === 0
+        ? []
+        : [{ term: snapshot.term, sectionCount, capturedAt: snapshot.capturedAt.toISOString() }];
+    });
+    return reply.send({ history } satisfies CourseHistoryResponse);
+  });
 }
