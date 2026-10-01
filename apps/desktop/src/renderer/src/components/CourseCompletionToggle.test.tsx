@@ -1,61 +1,39 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import { CourseCompletionToggle } from "./CourseCompletionToggle.js";
 
-describe("CourseCompletionToggle", () => {
-  afterEach(() => {
-    cleanup();
-  });
-  it("renders unchecked by default", () => {
-    render(<CourseCompletionToggle courseId="CSC 1350" isCompleted={false} onToggle={() => {}} />);
-    const checkbox = screen.getByRole("checkbox");
-    expect(checkbox).not.toBeChecked();
-  });
+afterEach(cleanup);
 
-  it("renders checked when isCompleted is true", () => {
-    render(<CourseCompletionToggle courseId="CSC 1350" isCompleted={true} onToggle={() => {}} />);
-    const checkbox = screen.getByRole("checkbox");
-    expect(checkbox).toBeChecked();
-  });
+it("follows saved state and rollback instead of retaining the user's unchecked prop change", async () => {
+  const user = userEvent.setup();
+  const props = { courseId: "CSC 1350", onToggle: () => {} };
+  const { rerender } = render(<CourseCompletionToggle {...props} isCompleted={false} />);
+  const checkbox = screen.getByRole("checkbox");
+  await user.click(checkbox);
+  expect(checkbox).not.toBeChecked();
+  rerender(<CourseCompletionToggle {...props} isCompleted={true} />);
+  expect(checkbox).toBeChecked();
+  rerender(<CourseCompletionToggle {...props} isCompleted={false} />);
+  expect(checkbox).not.toBeChecked();
+});
 
-  it("calls onToggle with the courseId when clicked", async () => {
-    const user = userEvent.setup();
-    const handleToggle = vi.fn();
-    render(
-      <CourseCompletionToggle courseId="CSC 1350" isCompleted={false} onToggle={handleToggle} />,
-    );
-    const checkbox = screen.getByRole("checkbox");
-    await user.click(checkbox);
-    expect(handleToggle).toHaveBeenCalledTimes(1);
-    expect(handleToggle).toHaveBeenCalledWith("CSC 1350");
-  });
-
-  it("shows the optional label", () => {
-    render(
-      <CourseCompletionToggle
-        courseId="CSC 1350"
-        isCompleted={false}
-        onToggle={() => {}}
-        label="Completed?"
-      />,
-    );
-    expect(screen.getByText("Completed?")).toBeInTheDocument();
-  });
-
-  it("does not call onToggle when disabled", async () => {
-    const handleToggle = vi.fn();
-    render(
-      <CourseCompletionToggle
-        courseId="CSC 1350"
-        isCompleted={false}
-        onToggle={handleToggle}
-        disabled
-      />,
-    );
-    const checkbox = screen.getByRole("checkbox");
-    expect(checkbox).toBeDisabled();
-  });
+it("does not change completion through a disabled checkbox or its label", async () => {
+  const user = userEvent.setup();
+  const onToggle = vi.fn();
+  render(
+    <CourseCompletionToggle
+      courseId="CSC 1350"
+      isCompleted={false}
+      onToggle={onToggle}
+      label="CSC 1350 completed"
+      disabled
+    />,
+  );
+  await user.click(screen.getByRole("checkbox"));
+  await user.click(screen.getByText("CSC 1350 completed"));
+  expect(onToggle).not.toHaveBeenCalled();
+  expect(screen.getByRole("checkbox")).not.toBeChecked();
 });
