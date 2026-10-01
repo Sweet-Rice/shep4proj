@@ -10,6 +10,11 @@ export { usePlan } from "./renderer/src/hooks/usePlan.js";
 export { WeeklyCalendar, formatMinuteToTime } from "./renderer/src/components/WeeklyCalendar.js";
 export { ImportReviewScreen } from "./renderer/src/components/ImportReviewScreen.js";
 export { ImportProgressFlow } from "./renderer/src/components/ImportProgressFlow.js";
+export {
+  useScheduleBuilder,
+  findScheduleConflicts,
+  getSectionKey,
+} from "./renderer/src/hooks/useScheduleBuilder.js";
 
 /** Package identifier, used to prove cross-package builds work. */
 export const PACKAGE_NAME = "@jevschedule/desktop";
