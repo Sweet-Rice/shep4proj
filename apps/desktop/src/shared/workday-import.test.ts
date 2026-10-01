@@ -187,6 +187,18 @@ describe("mapTranscript", () => {
 
     expect(result.inProgress).toEqual([{ season: "Fall", year: 2026, courses: ["CSC 3102"] }]);
   });
+
+  it("lists a repeated in-progress row once in its term", () => {
+    const result = mapTranscript({
+      courses: [
+        { code: "CSC 3102", term: { season: "Fall", year: 2026 }, grade: "IP" },
+        { code: "CSC 3102", term: { season: "Fall", year: 2026 }, grade: "IP" },
+      ],
+      unrecognizedLines: [],
+    });
+
+    expect(result.inProgress).toEqual([{ season: "Fall", year: 2026, courses: ["CSC 3102"] }]);
+  });
 });
 
 describe("mapCurrentRegistrations", () => {
