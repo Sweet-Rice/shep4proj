@@ -48,3 +48,31 @@ main {
 [role="alert"] {
   color: light-dark(#a31515, #ffaaaa);
 }
+
+.section-list-items,
+.section-list-meetings {
+  list-style: none;
+  padding: 0;
+}
+
+.section-list-items {
+  display: grid;
+  gap: 1rem;
+}
+
+.section-list-item {
+  border: 1px solid light-dark(#bbb, #666);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.section-list-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.section-list-heading h3 {
+  margin: 0;
+}
