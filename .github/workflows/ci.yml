@@ -100,11 +100,11 @@ jobs:
       - name: Test
         run: pnpm -r test
 
-      # Checks the production image serves /health against the CI database. The port is
-      # published rather than shared with --network host, so a server that only listens on
-      # the container's loopback fails here as it would in production. The container
-      # reaches the Postgres service through the runner's published 5432. The section
-      # scrape stays off so CI never hits live LSU.
+      # Checks the production image serves /health, reads courses from the CI database and
+      # loads its baked-in degree data. The port is published rather than shared with
+      # --network host, so a server that only listens on the container's loopback fails
+      # here as it would in production. The container reaches the Postgres service through
+      # the runner's published 5432. The section scrape stays off so CI never hits live LSU.
       - name: Smoke-test server image
         run: |
           docker run -d --name api -p 127.0.0.1:3999:3000 \
@@ -132,6 +132,9 @@ jobs:
           done
           [ "$health" = healthy ] || fail "server image wasn't healthy within 60s ($health)"
           curl -fsS http://127.0.0.1:3999/health || fail "/health failed on the published port"
+          for path in /courses /degrees; do
+            curl -fsS -o /dev/null "http://127.0.0.1:3999$path" || fail "$path failed"
+          done
 
       - name: Scan for secrets
         uses: gitleaks/gitleaks-action@v2
