@@ -199,6 +199,24 @@ describe("mapTranscript", () => {
 
     expect(result.inProgress).toEqual([{ season: "Fall", year: 2026, courses: ["CSC 3102"] }]);
   });
+
+  it("groups in-progress rows by season and year", () => {
+    const result = mapTranscript({
+      courses: [
+        { code: "CSC 3102", term: { season: "Summer", year: 2026 }, grade: "IP" },
+        { code: "CSC 3380", term: { season: "Fall", year: 2026 }, grade: "IP" },
+        { code: "CSC 4330", term: { season: "Spring", year: 2027 }, grade: "IP" },
+        { code: "CSC 4101", term: { season: "Fall", year: 2026 }, grade: "IP" },
+      ],
+      unrecognizedLines: [],
+    });
+
+    expect(result.inProgress).toEqual([
+      { season: "Summer", year: 2026, courses: ["CSC 3102"] },
+      { season: "Fall", year: 2026, courses: ["CSC 3380", "CSC 4101"] },
+      { season: "Spring", year: 2027, courses: ["CSC 4330"] },
+    ]);
+  });
 });
 
 describe("mapCurrentRegistrations", () => {
