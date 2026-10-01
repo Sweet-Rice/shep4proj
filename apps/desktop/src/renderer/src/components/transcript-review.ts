@@ -1,8 +1,7 @@
 import { CourseCodeSchema } from "@jevschedule/shared";
 import type { TranscriptParseResult as PdfParseResult } from "@jevschedule/workday";
+import { isCompletedGrade } from "../../../shared/workday-import.js";
 import type { TranscriptParseResult } from "./ImportReviewScreen.js";
-
-const COMPLETED_GRADE = /^(?:[ABCD][+-]?|P|Pass)$/i;
 
 /** Only completed, catalog-compatible courses can enter the completed store. */
 export function toTranscriptReview(result: PdfParseResult): TranscriptParseResult {
@@ -12,7 +11,7 @@ export function toTranscriptReview(result: PdfParseResult): TranscriptParseResul
   );
   const seen = new Set<string>();
   for (const course of result.courses) {
-    if (!COMPLETED_GRADE.test(course.grade)) continue;
+    if (!isCompletedGrade(course.grade)) continue;
     const code = CourseCodeSchema.safeParse(course.code);
     if (!code.success) {
       unrecognizedLines.push(`${course.code} (catalog course code not supported)`);
