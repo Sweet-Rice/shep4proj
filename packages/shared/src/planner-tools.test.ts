@@ -108,6 +108,14 @@ describe("createPlannerTools", () => {
     ).toBe(4);
   });
 
+  it("asks the history source for the requested course", async () => {
+    const history = vi.fn().mockResolvedValue([]);
+    const tools = createPlannerTools({ getHistory: history });
+
+    await tools.getHistory("CSC 3102");
+    expect(history).toHaveBeenCalledWith("CSC 3102");
+  });
+
   it("rejects unconfigured data sources instead of returning empty data", async () => {
     const tools = createPlannerTools();
     await expect(tools.getCompleted()).rejects.toThrow("completed-course source is not configured");
