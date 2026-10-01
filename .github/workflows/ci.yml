@@ -112,13 +112,26 @@ jobs:
             -e DATABASE_URL=postgres://jevschedule:jevschedule@host.docker.internal:5432/jevschedule \
             -e SECTION_SCRAPE_ENABLED=false \
             jevschedule-server:ci
-          for _ in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:3999/health; then exit 0; fi
+          fail() {
+            echo "$1" >&2
+            docker logs api
+            exit 1
+          }
+          user=$(docker inspect -f '{{.Config.User}}' api)
+          [ "$user" = node ] || fail "server image runs as '${user:-root}', not node"
+          # During the HEALTHCHECK's start period Docker 25+ probes every 5s, so this takes
+          # seconds; 60s still covers an older daemon that waits the full 30s interval.
+          for _ in $(seq 1 60); do
+            health=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' api)
+            case "$health" in
+              healthy) break ;;
+              none) fail "server image has no HEALTHCHECK" ;;
+              unhealthy) fail "server image reported unhealthy" ;;
+            esac
             sleep 1
           done
-          echo "server image did not answer /health within 30s" >&2
-          docker logs api
-          exit 1
+          [ "$health" = healthy ] || fail "server image wasn't healthy within 60s ($health)"
+          curl -fsS http://127.0.0.1:3999/health || fail "/health failed on the published port"
 
       - name: Scan for secrets
         uses: gitleaks/gitleaks-action@v2
