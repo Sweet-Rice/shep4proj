@@ -240,4 +240,16 @@ describe("mapCurrentRegistrations", () => {
     expect(result.inProgress).toEqual([{ season: "Fall", year: 2026, courses: ["CSC 4330"] }]);
     expect(result.skipped).toEqual([{ code: "CSC 4001", reason: "in-progress term unknown" }]);
   });
+
+  it("skips enrolled-grid courses whose status is not Registered", () => {
+    const result = mapCurrentRegistrations(
+      registrations([registered("CSC 4330", "Enrolled"), registered("CSC 4001", "Pending")]),
+    );
+
+    expect(result.inProgress).toEqual([]);
+    expect(result.skipped).toEqual([
+      { code: "CSC 4330", reason: "registration not confirmed" },
+      { code: "CSC 4001", reason: "registration not confirmed" },
+    ]);
+  });
 });
