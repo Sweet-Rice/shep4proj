@@ -62,6 +62,26 @@ jobs:
       - name: Build server image
         run: docker build -f apps/server/Dockerfile -t jevschedule-server:ci .
 
+      # migrate.mjs must never print DATABASE_URL, which holds the password. An unencoded
+      # `#` in the password makes the URL unparsable, and the parser's error carries it.
+      - name: Check production migrator hides DATABASE_URL
+        run: |
+          if out=$(docker run --rm --network none \
+            -e DATABASE_URL='postgres://u:SENTINEL#x@h:5432/db' \
+            jevschedule-server:ci node docker/migrate.mjs 2>&1); then
+            echo "migrate.mjs exited 0 with an invalid DATABASE_URL" >&2
+            exit 1
+          fi
+          echo "$out"
+          if grep -q SENTINEL <<<"$out"; then
+            echo "migrate.mjs printed DATABASE_URL" >&2
+            exit 1
+          fi
+          if ! grep -q ERR_INVALID_URL <<<"$out"; then
+            echo "migrate.mjs didn't report ERR_INVALID_URL" >&2
+            exit 1
+          fi
+
       # The production image migrates with migrate.mjs (no drizzle-kit). Running it from
       # the image checks the script, the migrations and their dependencies all ship in it.
       # Running it first makes the drizzle-kit step below a compatibility check: if the two
