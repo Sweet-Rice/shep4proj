@@ -91,4 +91,73 @@ describe("useCompletedCourses", () => {
     });
     expect(settled).toBe(true);
   });
+  it("ignores same-course clicks until the pending write settles", async () => {
+    const write = deferred<void>();
+    window.jevschedule.completed.set = () => write.promise;
+    const { result } = renderHook(() => useCompletedCourses());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => {
+      void result.current.toggleCourse("CSC 1350");
+    });
+    await act(async () => {
+      void result.current.toggleCourse("CSC 1350");
+    });
+    expect(result.current.completed.has("CSC 1350")).toBe(true);
+    await act(async () => {
+      write.reject(new Error("write failed"));
+    });
+    expect(result.current.completed.has("CSC 1350")).toBe(false);
+    expect(store.getCompleted()).toEqual([]);
+    expect(result.current.error?.message).toBe("write failed");
+  });
+
+  it("does not write before the initial store snapshot is available", async () => {
+    const load = deferred<string[]>();
+    window.jevschedule.completed.get = () => load.promise;
+    const { result } = renderHook(() => useCompletedCourses());
+    await act(async () => {
+      await result.current.toggleCourse("CSC 1350");
+    });
+    expect(store.getCompleted()).toEqual([]);
+    await act(async () => {
+      load.resolve([]);
+    });
+    await act(async () => {
+      await result.current.toggleCourse("CSC 1350");
+    });
+    expect(store.getCompleted()).toEqual(["CSC 1350"]);
+    expect([...result.current.completed]).toEqual(["CSC 1350"]);
+  });
+
+  it.each([false, true])(
+    "restores the saved state after a failed toggle from %s",
+    async (initial) => {
+      store.setCompleted("CSC 1350", initial);
+      window.jevschedule.completed.set = async () => {
+        throw new Error("cannot save");
+      };
+      const { result } = renderHook(() => useCompletedCourses());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      await act(async () => {
+        await result.current.toggleCourse("CSC 1350");
+      });
+      expect(result.current.completed.has("CSC 1350")).toBe(initial);
+      expect(store.getCompleted()).toEqual(initial ? ["CSC 1350"] : []);
+      expect(result.current.error?.message).toBe("cannot save");
+    },
+  );
+
+  it("reports a failed initial load and does not overwrite unknown saved state", async () => {
+    store.setCompleted("CSC 1350", true);
+    window.jevschedule.completed.get = async () => {
+      throw new Error("cannot load");
+    };
+    const { result } = renderHook(() => useCompletedCourses());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error?.message).toBe("cannot load");
+    await act(async () => {
+      await result.current.toggleCourse("CSC 1350");
+    });
+    expect(store.getCompleted()).toEqual(["CSC 1350"]);
+  });
 });
