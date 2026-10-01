@@ -179,6 +179,23 @@ describe.skipIf(!getTestDatabaseUrl())("pollWatchedSeats", () => {
     expect(await db.select().from(watches)).toHaveLength(1);
   });
 
+  it("compares a section that drops out of its listing and comes back with its last counts", async () => {
+    const id = await watch(OPEN, { lastEnrollment: 40, lastCapacity: 40 });
+    // The first listing renames the course, so the watched section is missing from it.
+    const withoutSection = FIXTURE_HTML.replaceAll("CSC 1110", "CSC 1119");
+
+    const gone = await poll({ fetchHtml: async () => withoutSection });
+    expect(gone.result).toMatchObject({ opened: 0, failed: [], missingSections: 1 });
+    expect(await db.select().from(watches)).toMatchObject([
+      { id, lastEnrollment: 40, lastCapacity: 40 },
+    ]);
+
+    const back = await poll();
+    expect(back.openings).toEqual([
+      { watchId: id, term: SECTION_FIXTURE_PERIOD, ...OPEN, enrollment: 38, capacity: 40 },
+    ]);
+  });
+
   it("passes a throwing listener's error to onError and reports the remaining openings", async () => {
     await watch(OPEN, { lastEnrollment: 40, lastCapacity: 40 });
     await watch(OPEN, { lastEnrollment: 40, lastCapacity: 40 });
