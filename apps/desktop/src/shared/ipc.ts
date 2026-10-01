@@ -1,4 +1,11 @@
-import type { CourseCode, Plan } from "@jevschedule/shared";
+import type {
+  Course,
+  CourseCode,
+  CourseDetail,
+  DegreeProgram,
+  DegreeSummary,
+  Plan,
+} from "@jevschedule/shared";
 import type { TranscriptParseResult } from "@jevschedule/workday";
 
 /**
@@ -11,6 +18,10 @@ export const IPC_CHANNELS = {
   planGet: "plan:get",
   planSave: "plan:save",
   transcriptSelect: "transcript:select",
+  catalogCourses: "catalog:courses",
+  catalogCourseDetails: "catalog:course-details",
+  catalogDegrees: "catalog:degrees",
+  catalogDegree: "catalog:degree",
 } as const;
 
 /**
@@ -29,5 +40,11 @@ export interface JevscheduleApi {
   transcript: {
     /** Opens the native PDF picker; null means the user cancelled. */
     select(): Promise<TranscriptParseResult | null>;
+  };
+  catalog: {
+    listCourses(): Promise<Course[]>;
+    getCourseDetails(codes: CourseCode[]): Promise<Record<CourseCode, CourseDetail>>;
+    listDegrees(): Promise<DegreeSummary[]>;
+    getDegree(id: string): Promise<DegreeProgram>;
   };
 }
