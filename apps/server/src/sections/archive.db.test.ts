@@ -1,6 +1,7 @@
 import { asc } from "drizzle-orm";
 import type { Section } from "@jevschedule/shared";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { buildServer } from "../app.js";
 import { createDb, type Db } from "../db/client.js";
 import { sectionArchive } from "../db/schema.js";
 import {
@@ -156,5 +157,42 @@ describe.skipIf(!getTestDatabaseUrl())("section archive", () => {
     await scrapeFall(T0);
     await truncateSections(db);
     expect(await archiveRows()).toHaveLength(1);
+  });
+
+  it("serves only the requested course's archived offering terms", async () => {
+    await replaceTermSections(db, {
+      department: "CSC",
+      term: SECTION_FIXTURE_PERIOD,
+      sections: [
+        { ...springSection, term: SECTION_FIXTURE_PERIOD },
+        { ...springSection, term: SECTION_FIXTURE_PERIOD, sectionNumber: "002" },
+        { ...springSection, term: SECTION_FIXTURE_PERIOD, courseCode: "CSC 1350" },
+      ],
+      scrapedAt: T0,
+    });
+    await replaceTermSections(db, {
+      department: "CSC",
+      term: SPRING,
+      sections: [springSection],
+      scrapedAt: T1,
+    });
+
+    const app = buildServer({ db });
+    try {
+      const response = await app.inject({ method: "GET", url: "/courses/csc-4330/history" });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({
+        history: [
+          { term: SECTION_FIXTURE_PERIOD, sectionCount: 2, capturedAt: T0.toISOString() },
+          { term: SPRING, sectionCount: 1, capturedAt: T1.toISOString() },
+        ],
+      });
+      expect((await app.inject("/courses/CSC-9999/history")).json()).toEqual({ history: [] });
+      const invalid = await app.inject("/courses/CSC-99/history");
+      expect(invalid.statusCode).toBe(400);
+      expect(invalid.json()).toEqual({ error: "invalid course id" });
+    } finally {
+      await app.close();
+    }
   });
 });
