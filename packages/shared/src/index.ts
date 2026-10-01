@@ -38,6 +38,8 @@ export {
 export type { AcademicPeriodId, Meeting, Section, SectionCourseCode, Weekday } from "./section.js";
 export { typicalTerms } from "./typical-terms.js";
 export type { CourseOfferingHistory, TypicalTerm } from "./typical-terms.js";
+export { findConflicts } from "./find-conflicts.js";
+export type { SectionConflict } from "./find-conflicts.js";
 export {
   ChooseNRequirementSchema,
   CourseRefSchema,
