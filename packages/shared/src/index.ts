@@ -41,6 +41,8 @@ export type { AcademicPeriodId, Meeting, Section, SectionCourseCode, Weekday } f
 export { typicalTerms } from "./typical-terms.js";
 export type { CourseOfferingHistory, TypicalTerm } from "./typical-terms.js";
 export { createPlannerTools } from "./planner-tools.js";
+export { createRuleBasedAdvisorProvider } from "./advisor-provider.js";
+export type { AdvisorContext, AdvisorProvider, AdvisorSuggestion } from "./advisor-provider.js";
 export type {
   EligibleCourse,
   PlannerTools,
