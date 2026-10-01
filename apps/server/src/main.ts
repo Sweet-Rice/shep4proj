@@ -22,6 +22,11 @@ if (!database) {
   app.log.warn("DATABASE_URL is not set; /courses routes are disabled (see .env.example)");
 }
 
+// One fetcher for every job that reads the Course Offerings portal, so they share its crawl
+// delay instead of each keeping its own and multiplying the request rate.
+const fetcherLog = app.log.child({ component: "section-fetcher" });
+const sectionFetcher = createSectionFetcher({ log: (message) => fetcherLog.info(message) });
+
 let schedule: Schedule | undefined;
 
 /** Starts the daily section scrape (T-403) when enabled; it needs the database. */
@@ -33,11 +38,10 @@ function startSectionScrape(): void {
   }
   const { db } = database;
   const log = app.log.child({ job: "section-scrape" });
-  const fetcher = createSectionFetcher({ log: (message) => log.info(message) });
   schedule = startSectionScrapeSchedule({
     async run() {
       for (const department of sectionScrape.departments) {
-        const result = await runSectionScrape({ db, fetcher, department });
+        const result = await runSectionScrape({ db, fetcher: sectionFetcher, department });
         const summary = { department, scraped: result.scraped, skipped: result.skipped };
         if (result.failed.length > 0) {
           log.warn({ ...summary, failed: result.failed }, "section scrape finished with failures");
