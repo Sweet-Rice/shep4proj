@@ -4,6 +4,7 @@ import {
   DegreeProgressScreen,
   DegreeProgressView,
   MarkPrereqsDialog,
+  CourseSearch,
 } from "./index.js";
 
 describe("desktop", () => {
@@ -11,9 +12,10 @@ describe("desktop", () => {
     expect(describeDesktop()).toContain("@jevschedule/shared");
   });
 
-  it("exports degree progress components", () => {
+  it("exports degree progress and course search components", () => {
     expect(DegreeProgressScreen).toBeDefined();
     expect(DegreeProgressView).toBeDefined();
     expect(MarkPrereqsDialog).toBeDefined();
+    expect(CourseSearch).toBeDefined();
   });
 });
