@@ -18,7 +18,8 @@
   ],
   "win": {
     "target": ["nsis"],
-    "icon": "build/icon.ico"
+    "icon": "build/icon.ico",
+    "publisherName": "JevSchedule"
   },
   "nsis": {
     "oneClick": false,
@@ -27,7 +28,14 @@
   "mac": {
     "target": ["dmg", "zip"],
     "icon": "build/icon.icns",
-    "category": "public.app-category.education"
+    "category": "public.app-category.education",
+    "hardenedRuntime": true,
+    "gatekeeperAssess": false,
+    "entitlements": "build/entitlements.mac.plist",
+    "entitlementsInherit": "build/entitlements.mac.plist",
+    "notarize": {
+      "teamId": "${env.APPLE_TEAM_ID}"
+    }
   },
   "linux": {
     "target": ["AppImage"],
