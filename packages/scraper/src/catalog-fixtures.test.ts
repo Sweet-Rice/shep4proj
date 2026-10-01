@@ -46,6 +46,12 @@ const fixtureDirs: FixtureDirectory[] = FIXTURE_ROOTS.flatMap((root) => {
 });
 
 describe("fixture checksums", () => {
+  it("scans the catalog and section fixture directories", () => {
+    expect(fixtureDirs.map(({ root, subdir }) => `${root}/${subdir}`)).toEqual(
+      expect.arrayContaining(["catalog/2026-2027", "sections/fall-2026"]),
+    );
+  });
+
   for (const { root, subdir, dirPath, rows } of fixtureDirs) {
     describe(`${root}/${subdir}`, () => {
       it("has at least one fixture row recorded in README.md", () => {
