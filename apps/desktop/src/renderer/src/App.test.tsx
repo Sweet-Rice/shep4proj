@@ -1,0 +1,56 @@
+// @vitest-environment jsdom
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { userEvent } from "@testing-library/user-event";
+import "@testing-library/jest-dom/vitest";
+import type { JevscheduleApi } from "../../shared/ipc.js";
+import { App } from "./App.js";
+
+beforeEach(() => {
+  Object.assign(window, {
+    jevschedule: {
+      completed: { get: async () => [], set: async () => {} },
+      plan: {
+        get: async () => ({ creditLimit: 19, terms: [] }),
+        save: async () => {},
+      },
+      transcript: { select: async () => null },
+      catalog: {
+        listCourses: async () => [],
+        getCourseDetails: async () => ({}),
+        listDegrees: async () => [],
+        getDegree: async () => {
+          throw new Error("none");
+        },
+      },
+    } as unknown as JevscheduleApi,
+  });
+});
+
+afterEach(() => {
+  cleanup();
+  Reflect.deleteProperty(window, "jevschedule");
+});
+
+describe("App tabs", () => {
+  it("selects Courses by default", () => {
+    render(<App />);
+
+    expect(screen.getByRole("tab", { name: "Courses" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("heading", { name: "Completed courses" })).toBeInTheDocument();
+  });
+
+  it("shows only the selected Degree progress screen", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("tab", { name: "Degree progress" }));
+
+    expect(screen.getByRole("tab", { name: "Degree progress" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByRole("heading", { name: "Degree Progress" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Completed courses" })).not.toBeInTheDocument();
+  });
+});
