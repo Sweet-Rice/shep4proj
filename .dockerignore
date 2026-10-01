@@ -1,0 +1,21 @@
+# Allowlist: the server image (apps/server/Dockerfile) only needs these. Everything else,
+# including .env files, HAR captures, fixtures and the desktop app, stays out of the context.
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tsconfig.base.json
+!apps/server
+!packages/shared
+!packages/scraper
+!data/degrees
+
+# Never sent, even from inside the allowlisted directories. Stale tsbuildinfo without dist
+# would make `tsc -b` think it's up to date and emit nothing.
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+**/.env*
+**/*.har
+**/*.log
+**/coverage
