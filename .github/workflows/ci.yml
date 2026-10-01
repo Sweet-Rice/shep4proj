@@ -58,6 +58,39 @@ jobs:
       - name: Typecheck
         run: pnpm -r typecheck
 
+      # Built before the migrate steps so the database is migrated from the image itself.
+      - name: Build server image
+        run: docker build -f apps/server/Dockerfile -t jevschedule-server:ci .
+
+      # migrate.mjs must never print DATABASE_URL, which holds the password. An unencoded
+      # `#` in the password makes the URL unparsable, and the parser's error carries it.
+      - name: Check production migrator hides DATABASE_URL
+        run: |
+          if out=$(docker run --rm --network none \
+            -e DATABASE_URL='postgres://u:SENTINEL#x@h:5432/db' \
+            jevschedule-server:ci node docker/migrate.mjs 2>&1); then
+            echo "migrate.mjs exited 0 with an invalid DATABASE_URL" >&2
+            exit 1
+          fi
+          echo "$out"
+          if grep -q SENTINEL <<<"$out"; then
+            echo "migrate.mjs printed DATABASE_URL" >&2
+            exit 1
+          fi
+          if ! grep -q ERR_INVALID_URL <<<"$out"; then
+            echo "migrate.mjs didn't report ERR_INVALID_URL" >&2
+            exit 1
+          fi
+
+      # The production image migrates with migrate.mjs (no drizzle-kit). Running it from
+      # the image checks the script, the migrations and their dependencies all ship in it.
+      # Running it first makes the drizzle-kit step below a compatibility check: if the two
+      # disagreed on the migrations table, drizzle-kit would re-run the migrations and fail.
+      - name: Migrate database (production migrator)
+        run: >-
+          docker run --rm --network host -e DATABASE_URL="$DATABASE_URL"
+          jevschedule-server:ci node docker/migrate.mjs
+
       - name: Migrate database
         run: pnpm --filter @jevschedule/server db:migrate
 
@@ -67,7 +100,46 @@ jobs:
       - name: Test
         run: pnpm -r test
 
+      # Checks the production image serves /health, reads courses from the CI database and
+      # loads its baked-in degree data. The port is published rather than shared with
+      # --network host, so a server that only listens on the container's loopback fails
+      # here as it would in production. The container reaches the Postgres service through
+      # the runner's published 5432. The section scrape and the seat poller stay off so CI
+      # never hits live LSU.
+      - name: Smoke-test server image
+        run: |
+          docker run -d --name api -p 127.0.0.1:3999:3000 \
+            --add-host=host.docker.internal:host-gateway \
+            -e DATABASE_URL=postgres://jevschedule:jevschedule@host.docker.internal:5432/jevschedule \
+            -e SECTION_SCRAPE_ENABLED=false -e SEAT_POLL_ENABLED=false \
+            jevschedule-server:ci
+          fail() {
+            echo "$1" >&2
+            docker logs api
+            exit 1
+          }
+          user=$(docker inspect -f '{{.Config.User}}' api)
+          [ "$user" = node ] || fail "server image runs as '${user:-root}', not node"
+          # During the HEALTHCHECK's start period Docker 25+ probes every 5s, so this takes
+          # seconds; 60s still covers an older daemon that waits the full 30s interval.
+          for _ in $(seq 1 60); do
+            health=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' api)
+            case "$health" in
+              healthy) break ;;
+              none) fail "server image has no HEALTHCHECK" ;;
+              unhealthy) fail "server image reported unhealthy" ;;
+            esac
+            sleep 1
+          done
+          [ "$health" = healthy ] || fail "server image wasn't healthy within 60s ($health)"
+          curl -fsS http://127.0.0.1:3999/health || fail "/health failed on the published port"
+          for path in /courses /degrees; do
+            curl -fsS -o /dev/null "http://127.0.0.1:3999$path" || fail "$path failed"
+          done
+
+      # Runs even when an earlier step fails, so a failing build never skips the scan.
       - name: Scan for secrets
+        if: always()
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
