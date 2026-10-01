@@ -183,6 +183,27 @@ describe("PlanScreen", () => {
   });
 
 
+  it("rolls back a failed plan save and shows the persistence error", async () => {
+    const user = userEvent.setup();
+    mockPlanGet.mockResolvedValueOnce({
+      creditLimit: 19,
+      terms: [{ season: "Fall", year: 2026, courses: [] }],
+    });
+    mockPlanSave.mockRejectedValueOnce(new Error("disk full"));
+    render(<PlanScreen />);
+
+    const limit = await screen.findByLabelText("Credit limit per semester");
+    await user.clear(limit);
+    await user.type(limit, "12");
+    await user.tab();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Could not save the plan: disk full",
+    );
+    await waitFor(() => expect(limit).toHaveValue(19));
+    expect(screen.getByText("Credit limit per semester:")).toBeInTheDocument();
+    expect(screen.getByText("19 hrs")).toBeInTheDocument();
+  });
   it("shows an inline missing-prerequisite error for a course planned too early", async () => {
     mockPlanGet.mockResolvedValueOnce({
       creditLimit: 19,
