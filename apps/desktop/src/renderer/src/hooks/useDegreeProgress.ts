@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import {
-  evaluateRequirements,
   type CourseCode,
   type DegreeEvaluation,
   type DegreeProgram,
   type Course,
 } from "@jevschedule/shared";
+import { plannerTools } from "../services/plannerTools.js";
 
 /**
  * Custom hook that evaluates degree requirements against completed courses.
@@ -18,6 +18,6 @@ export function useDegreeProgress(
 ): DegreeEvaluation | null {
   return useMemo(() => {
     if (!degree) return null;
-    return evaluateRequirements(degree, completed, catalog);
+    return plannerTools.getRemainingRequirements(degree, completed, catalog);
   }, [degree, completed, catalog]);
 }
