@@ -1,0 +1,31 @@
+{
+  "id": "02-after-first-semester",
+  "description": "A student completes the introductory programming course and its mathematics corequisite.",
+  "completed": [
+    { "code": "CSC 1350", "grade": "B" },
+    { "code": "MATH 1550", "grade": "B" }
+  ],
+  "plannedSameTerm": [],
+  "cases": [
+    {
+      "course": "CSC 1351",
+      "reason": "The catalog requires CSC 1350 and credit or registration in MATH 1550; both courses are completed.",
+      "expected": { "status": "eligible", "missingPrerequisites": [] }
+    },
+    {
+      "course": "CSC 4330",
+      "reason": "The catalog requires both CSC 3102 and CSC 3380; neither is completed, so both AND leaves remain missing.",
+      "expected": { "status": "ineligible", "missingPrerequisites": ["CSC 3102 completed", "CSC 3380 completed"] }
+    },
+    {
+      "course": "CSC 3380",
+      "reason": "The catalog offers CSC 1254 or CSC 1351; CSC 1350 does not satisfy either listed alternative.",
+      "expected": { "status": "ineligible", "missingPrerequisites": ["One of: CSC 1254 completed; or CSC 1351 completed"] }
+    },
+    {
+      "course": "CSC 1110",
+      "reason": "CSC 1110 has no prerequisite entry in the catalog corpus.",
+      "expected": { "status": "eligible", "missingPrerequisites": [] }
+    }
+  ]
+}

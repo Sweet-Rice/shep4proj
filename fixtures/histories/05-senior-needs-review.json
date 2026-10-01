@@ -1,0 +1,32 @@
+{
+  "id": "05-senior-needs-review",
+  "description": "A senior has varied prior coursework, including one course whose prerequisite text needs review.",
+  "completed": [
+    { "code": "CSC 3102", "grade": "B" },
+    { "code": "CSC 3380", "grade": "B" },
+    { "code": "CSC 1350", "grade": "B" }
+  ],
+  "plannedSameTerm": [],
+  "cases": [
+    {
+      "course": "CSC 3102",
+      "reason": "The database flags this mixed-and-or catalog prerequisite text for manual review; needsReview yields needs_review rather than treating the parsed tree as authoritative.",
+      "expected": { "status": "needs_review", "missingPrerequisites": [] }
+    },
+    {
+      "course": "CSC 4330",
+      "reason": "The catalog requires both CSC 3102 and CSC 3380; both are completed.",
+      "expected": { "status": "eligible", "missingPrerequisites": [] }
+    },
+    {
+      "course": "CSC 3380",
+      "reason": "The catalog allows CSC 1254 or CSC 1351; CSC 1350 is not one of those alternatives.",
+      "expected": { "status": "ineligible", "missingPrerequisites": ["One of: CSC 1254 completed; or CSC 1351 completed"] }
+    },
+    {
+      "course": "CSC 4357",
+      "reason": "CSC 4357 appears in coursesWithoutPrereq, so it has no prerequisite requirement.",
+      "expected": { "status": "eligible", "missingPrerequisites": [] }
+    }
+  ]
+}

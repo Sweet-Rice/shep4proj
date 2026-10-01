@@ -1,0 +1,31 @@
+{
+  "id": "03-alternate-intro-path",
+  "description": "A student uses the alternate CSC introductory course to satisfy later options.",
+  "completed": [
+    { "code": "CSC 1351", "grade": "B" },
+    { "code": "MATH 1551", "grade": "B" }
+  ],
+  "plannedSameTerm": [],
+  "cases": [
+    {
+      "course": "CSC 3380",
+      "reason": "The catalog allows CSC 1254 or CSC 1351; the completed CSC 1351 satisfies one OR alternative.",
+      "expected": { "status": "eligible", "missingPrerequisites": [] }
+    },
+    {
+      "course": "CSC 2700",
+      "reason": "The catalog allows CSC 1254 or CSC 1351 (or department permission); completed CSC 1351 satisfies a listed course alternative.",
+      "expected": { "status": "eligible", "missingPrerequisites": [] }
+    },
+    {
+      "course": "CSC 1350",
+      "reason": "The catalog's credit-or-registration alternatives include MATH 1551, which is completed.",
+      "expected": { "status": "eligible", "missingPrerequisites": [] }
+    },
+    {
+      "course": "CSC 4330",
+      "reason": "The catalog requires CSC 3102 and CSC 3380; having CSC 1351 does not satisfy either required course.",
+      "expected": { "status": "ineligible", "missingPrerequisites": ["CSC 3102 completed", "CSC 3380 completed"] }
+    }
+  ]
+}

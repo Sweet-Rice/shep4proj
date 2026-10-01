@@ -1,0 +1,31 @@
+{
+  "id": "04-junior-with-coreq-plan",
+  "description": "A junior has completed core courses and plans corequisites in the same term.",
+  "completed": [
+    { "code": "CSC 2610", "grade": "B" },
+    { "code": "CSC 4103", "grade": "B" }
+  ],
+  "plannedSameTerm": ["CSC 3102", "CSC 4501", "CSC 4330"],
+  "cases": [
+    {
+      "course": "CSC 3304",
+      "reason": "The catalog says credit or registration in CSC 3102; it is planned in the same term and is a corequisite leaf.",
+      "expected": { "status": "eligible", "missingPrerequisites": [] }
+    },
+    {
+      "course": "CSC 4332",
+      "reason": "The catalog says credit or registration in CSC 4330; it is planned in the same term and is a corequisite leaf.",
+      "expected": { "status": "eligible", "missingPrerequisites": [] }
+    },
+    {
+      "course": "CSC 4610",
+      "reason": "The catalog requires CSC 2610 and CSC 4103 plus credit or registration in CSC 4501; the first two are completed and the corequisite is planned.",
+      "expected": { "status": "eligible", "missingPrerequisites": [] }
+    },
+    {
+      "course": "CSC 4330",
+      "reason": "The catalog requires CSC 3102 and CSC 3380; CSC 3102 is planned but is not a corequisite, and neither course is completed.",
+      "expected": { "status": "ineligible", "missingPrerequisites": ["CSC 3102 completed", "CSC 3380 completed"] }
+    }
+  ]
+}
