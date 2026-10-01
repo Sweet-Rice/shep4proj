@@ -1,5 +1,11 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { createRuleBasedAdvisorProvider, type AdvisorContext } from "./advisor-provider.js";
+import type { CompletedInput } from "./evaluate-requirements.js";
+import { isEligible } from "./is-eligible.js";
+import { toPrereqRecord } from "./prereq-record.js";
 import type { DegreeProgram } from "./requirements.js";
 import { validatePlan, type PlanCourse } from "./validate-plan.js";
 
@@ -110,5 +116,75 @@ describe("rule-based advisor", () => {
     expect((await advisor.suggest(context({ courses: cautiousCourses }))).courses).toEqual([
       "CSC 2200",
     ]);
+  });
+});
+
+interface StudentHistory {
+  id: string;
+  completed: CompletedInput[];
+  cases: { course: string; expected: { status: string } }[];
+}
+
+const historyDir = fileURLToPath(new URL("../../../fixtures/histories/", import.meta.url));
+const corpusPath = fileURLToPath(new URL("../../../fixtures/prereqs/corpus.json", import.meta.url));
+const histories = readdirSync(historyDir)
+  .filter((file) => file.endsWith(".json"))
+  .map((file) => JSON.parse(readFileSync(join(historyDir, file), "utf8")) as StudentHistory);
+const corpus = JSON.parse(readFileSync(corpusPath, "utf8")) as {
+  entries: { code: string; text: string }[];
+};
+
+describe("rule-based advisor on hand-checked student histories", () => {
+  it("uses all five fixtures", () => {
+    expect(histories).toHaveLength(5);
+  });
+
+  it.each(histories)("$id suggests a valid plan", async (history) => {
+    const codes = [...new Set([...history.cases.map((item) => item.course), "CSC 1110"])];
+    const fixtureCourses = codes.map((code) => {
+      const entry = corpus.entries.find((item) => item.code === code);
+      const prereq = toPrereqRecord(entry?.text ?? null);
+      return {
+        code,
+        credits: { min: 3, max: 3, note: null },
+        prereq: { tree: prereq.tree, needsReview: prereq.needsReview },
+      };
+    });
+    const fixtureDegree: DegreeProgram = {
+      ...degree,
+      requirements: [
+        {
+          kind: "fixed",
+          id: "sample-courses",
+          label: "Sample program courses",
+          semester: 1,
+          courses: codes.map((code) => ({ code, minGrade: null })),
+        },
+      ],
+    };
+    const input = context({
+      degree: fixtureDegree,
+      completed: history.completed,
+      courses: fixtureCourses,
+      creditLimit: 19,
+    });
+    const suggestion = await createRuleBasedAdvisorProvider().suggest(input);
+    expect(suggestion.courses.length).toBeGreaterThan(0);
+    for (const code of suggestion.courses) {
+      const course = fixtureCourses.find((item) => item.code === code)!;
+      expect(isEligible(course, history.completed, []).status).toBe("eligible");
+      const expectedCase = history.cases.find((item) => item.course === code);
+      if (expectedCase) expect(expectedCase.expected.status).toBe("eligible");
+    }
+    expect(
+      validatePlan(
+        {
+          creditLimit: input.creditLimit,
+          terms: [{ ...input.term, courses: suggestion.courses }],
+          courseDetails: Object.fromEntries(fixtureCourses.map((item) => [item.code, item])),
+        },
+        history.completed,
+      ).valid,
+    ).toBe(true);
   });
 });
