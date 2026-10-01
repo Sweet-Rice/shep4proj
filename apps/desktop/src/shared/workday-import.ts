@@ -26,6 +26,13 @@ export interface SkippedCourse {
  *   as prior for later terms. A retake can appear here and in `completed`, since both hold.
  *   Whoever persists these into the plan store must dedupe against courses already planned:
  *   `plan_courses.code` is unique across the whole plan.
+ *
+ * For the import pipeline (#153):
+ * - The academic record and current registrations can both return the current term, and
+ *   `PlanSchema` rejects a repeated term or course, so merge their `inProgress` terms before
+ *   saving.
+ * - A record row with a null grade in a past term also lands in `inProgress`. There it means the
+ *   grade hasn't been posted yet, not that the student is still taking the course.
  */
 export interface StoreImport {
   completed: CourseCode[];
