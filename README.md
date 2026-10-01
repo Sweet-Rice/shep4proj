@@ -57,6 +57,9 @@ pending. A failed write restores its previous state and displays an error. Compl
 stays in the local SQLite store, not on the server. This screen accepts manual codes;
 catalog search and the desktop API client remain separate tasks (#60 and #59).
 
+The desktop renderer opens to the **Courses** screen; use the **Degree progress** tab to view
+degree requirements. Only the selected planner screen is mounted.
+
 ### Windows (PowerShell)
 
 ```powershell
