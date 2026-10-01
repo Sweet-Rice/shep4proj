@@ -121,6 +121,23 @@ describe("mapAcademicRecord", () => {
     expect(result.completed).toEqual(["CSC 1351"]);
   });
 
+  it("keeps ungraded courses from the same season of different years in separate terms", () => {
+    const result = mapAcademicRecord(
+      record([
+        {
+          ...recordCourse("CSC 2259", null, "in-progress"),
+          term: { season: "Fall", year: 2025, label: "Fall Semester 2025" },
+        },
+        recordCourse("CSC 3102", null, "in-progress"),
+      ]),
+    );
+
+    expect(result.inProgress).toEqual([
+      { season: "Fall", year: 2025, courses: ["CSC 2259"] },
+      { season: "Fall", year: 2026, courses: ["CSC 3102"] },
+    ]);
+  });
+
   it("counts transfer credit only when its grade earns credit", () => {
     const transfer = (code: string, grade: string | null): TransferCredit => {
       const [subject = "", number = ""] = code.split(" ");
