@@ -218,7 +218,9 @@ describe.skipIf(!getTestDatabaseUrl())("pollWatchedSeats", () => {
     const id = await watch(OPEN, { lastEnrollment: 40, lastCapacity: 40 });
     const fetcher: SectionFetcher = {
       async fetchHtml(url) {
-        // Makes the update to the fixture's 38 enrolled fail in Postgres.
+        // Makes the update to the fixture's 38 enrolled fail in Postgres. A run killed before
+        // its cleanup leaves the constraint behind, so replace it rather than fail to add it.
+        await db.execute(sql`ALTER TABLE watches DROP CONSTRAINT IF EXISTS t512_reject`);
         await db.execute(
           sql`ALTER TABLE watches ADD CONSTRAINT t512_reject CHECK (last_enrollment <> 38) NOT VALID`,
         );
