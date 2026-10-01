@@ -85,6 +85,31 @@ describe("evaluateRequirements", () => {
     expect(fixed.fulfilledCourses).toHaveLength(2);
     expect(fixed.missingCourses).toHaveLength(0);
   });
+  it("reports fixed requirements as partial when some required courses are completed", () => {
+    const oneCourse = evaluateRequirements(sampleDegree, ["CSC 1350"]);
+    expect(oneCourse.requirements[0]).toMatchObject({
+      status: "partially_satisfied",
+      isSatisfied: false,
+      fulfilledCourses: [{ code: "CSC 1350" }],
+      missingCourses: [{ code: "MATH 1550", minGrade: "C" }],
+    });
+
+    const allCourses = evaluateRequirements(sampleDegree, ["CSC 1350", "MATH 1550"]);
+    expect(allCourses.requirements[0]).toMatchObject({
+      status: "satisfied",
+      isSatisfied: true,
+      missingCourses: [],
+    });
+
+    const noCourses = evaluateRequirements(sampleDegree, []);
+    expect(noCourses.requirements[0]).toMatchObject({
+      status: "unsatisfied",
+      isSatisfied: false,
+      fulfilledCourses: [],
+      missingCourses: [{ code: "CSC 1350" }, { code: "MATH 1550", minGrade: "C" }],
+    });
+  });
+
 
   it("enforces minimum letter grade on fixed requirements", () => {
     // MATH 1550 requires minGrade "C". A grade of "D" should fail.
@@ -95,7 +120,7 @@ describe("evaluateRequirements", () => {
 
     const fixedFailed = failedResult.requirements[0]! as EvaluatedFixedRequirement;
     expect(fixedFailed.isSatisfied).toBe(false);
-    expect(fixedFailed.status).toBe("unsatisfied");
+    expect(fixedFailed.status).toBe("partially_satisfied");
     expect(fixedFailed.missingCourses).toEqual([{ code: "MATH 1550", minGrade: "C" }]);
 
     // A grade of "B" should pass.

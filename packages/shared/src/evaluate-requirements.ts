@@ -147,7 +147,11 @@ export function evaluateRequirements(
         evaluatedRequirements.push({
           ...requirement,
           isSatisfied,
-          status: isSatisfied ? "satisfied" : "unsatisfied",
+          status: isSatisfied
+            ? "satisfied"
+            : fulfilledCourses.length > 0
+              ? "partially_satisfied"
+              : "unsatisfied",
           fulfilledCourses,
           missingCourses,
         });
