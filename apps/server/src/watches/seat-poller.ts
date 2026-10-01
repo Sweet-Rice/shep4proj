@@ -3,7 +3,6 @@ import { parseSectionListing, sectionListingUrl, type SectionFetcher } from "@je
 import type { Db } from "../db/client.js";
 import { watches, type WatchRow } from "../db/schema.js";
 import type { Schedule } from "../sections/scheduler.js";
-import { DEPARTMENT_PATTERN } from "../sections/store.js";
 
 /** Seat counts for one section at one point in time. */
 export interface SeatCounts {
@@ -73,9 +72,6 @@ export async function pollWatchedSeats(o: {
   for (const [key, { department, term, rows }] of groups) {
     let listing;
     try {
-      if (!DEPARTMENT_PATTERN.test(department)) {
-        throw new Error(`department must be 2-4 capital letters, got "${department}"`);
-      }
       const url = sectionListingUrl({ department, periodId: term });
       listing = parseSectionListing(await o.fetcher.fetchHtml(url));
     } catch (error) {
