@@ -13,6 +13,7 @@ import {
   JevProviderService,
   SuggestionView,
   ModelProviderSettingsView,
+  HarnessSettingsView,
 } from "./index.js";
 
 describe("desktop", () => {
@@ -20,7 +21,7 @@ describe("desktop", () => {
     expect(describeDesktop()).toContain("@jevschedule/shared");
   });
 
-  it("exports degree progress, course search, semester board, import review, section watch, suggestion view, and model provider components", () => {
+  it("exports degree progress, course search, semester board, import review, section watch, suggestion view, and harness settings components", () => {
     expect(DegreeProgressScreen).toBeDefined();
     expect(DegreeProgressView).toBeDefined();
     expect(MarkPrereqsDialog).toBeDefined();
@@ -33,5 +34,6 @@ describe("desktop", () => {
     expect(JevProviderService).toBeDefined();
     expect(SuggestionView).toBeDefined();
     expect(ModelProviderSettingsView).toBeDefined();
+    expect(HarnessSettingsView).toBeDefined();
   });
 });
