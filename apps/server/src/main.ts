@@ -6,7 +6,8 @@ import { createDb } from "./db/client.js";
 import { DEFAULT_DEGREE_DATA_DIR } from "./degrees/load.js";
 import { startSectionScrapeSchedule, type Schedule } from "./sections/scheduler.js";
 import { runSectionScrape } from "./sections/scrape-job.js";
-import { pollWatchedSeats, startSeatPoller } from "./watches/seat-poller.js";
+import { shutdown } from "./shutdown.js";
+import { startSeatPollJob } from "./watches/seat-poll-job.js";
 
 if (!process.env["DATABASE_URL"] && existsSync("../../.env")) {
   process.loadEnvFile("../../.env");
@@ -57,50 +58,11 @@ function startSectionScrape(): void {
   });
 }
 
-/**
- * Starts the seat poller (T-512) when enabled; it needs the database. Openings are only logged
- * until notification delivery (T-513) subscribes. Logs name the section, never the watch ID:
- * that's the student's bearer token.
- */
-function startSeatPolling(): void {
-  if (!seatPoll.enabled) return;
-  if (!database) {
-    app.log.warn("SEAT_POLL_ENABLED is true but DATABASE_URL is not set; not polling seats");
-    return;
-  }
-  const { db } = database;
-  const log = app.log.child({ job: "seat-poll" });
-  const onError = (error: unknown) => log.error(error, "seat poll failed");
-  seatPoller = startSeatPoller({
-    intervalMs: seatPoll.intervalMs,
-    onError,
-    async poll() {
-      const result = await pollWatchedSeats({
-        db,
-        fetcher: sectionFetcher,
-        onSeatsOpened: ({ watchId: _watchId, ...opening }) => log.info(opening, "seats opened"),
-        onError,
-      });
-      if (result.failed.length > 0) {
-        log.warn(result, "seat poll finished with failures");
-      } else {
-        log.info(result, "seat poll finished");
-      }
-      return result;
-    },
-  });
-}
-
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.once(signal, () => {
     app.log.info({ signal }, "shutting down");
-    app
-      .close()
-      .then(async () => {
-        await Promise.all([schedule?.stop(), seatPoller?.stop()]);
-        await database?.close();
-        process.exit(0);
-      })
+    shutdown({ app, schedules: [schedule, seatPoller], database })
+      .then(() => process.exit(0))
       .catch((error: unknown) => {
         app.log.error(error, "error during shutdown");
         process.exit(1);
@@ -111,7 +73,12 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 try {
   await app.listen({ host, port });
   startSectionScrape();
-  startSeatPolling();
+  seatPoller = startSeatPollJob({
+    config: seatPoll,
+    db: database?.db,
+    fetcher: sectionFetcher,
+    log: app.log,
+  });
 } catch (error) {
   app.log.error(error, "failed to start");
   process.exit(1);
