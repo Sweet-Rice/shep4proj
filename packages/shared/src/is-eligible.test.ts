@@ -1,6 +1,46 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
+import { toPrereqRecord } from "./prereq-record.js";
 import { isEligible, type EligibilityCourse } from "./is-eligible.js";
 import type { PrereqNode } from "./prereq.js";
+
+const HISTORY_DIRECTORY = fileURLToPath(new URL("../../../fixtures/histories/", import.meta.url));
+const CORPUS_PATH = fileURLToPath(new URL("../../../fixtures/prereqs/corpus.json", import.meta.url));
+
+const HistorySchema = z.object({
+  id: z.string(),
+  description: z.string(),
+  completed: z.array(z.object({ code: z.string(), grade: z.enum(["A", "B", "C", "D"]).optional() })),
+  plannedSameTerm: z.array(z.string()),
+  cases: z.array(
+    z.object({
+      course: z.string(),
+      reason: z.string(),
+      expected: z.object({
+        status: z.enum(["eligible", "ineligible", "needs_review"]),
+        missingPrerequisites: z.array(z.string()),
+      }),
+    }),
+  ),
+});
+
+const CorpusSchema = z.object({
+  coursesWithoutPrereq: z.array(z.string()),
+  entries: z.array(z.object({ code: z.string(), text: z.string() })),
+});
+
+const historyFiles = readdirSync(HISTORY_DIRECTORY).filter((file) => file.endsWith(".json"));
+const histories = historyFiles.map((file) =>
+  HistorySchema.parse(JSON.parse(readFileSync(join(HISTORY_DIRECTORY, file), "utf8"))),
+);
+const corpus = CorpusSchema.parse(JSON.parse(readFileSync(CORPUS_PATH, "utf8")));
+const historyCases = histories.flatMap((history) =>
+  history.cases.map((testCase) => ({ history, testCase })),
+);
+
 
 const leaf = (code: string, coreq = false, minGrade: "C" | null = null): PrereqNode => ({
   type: "COURSE",
@@ -87,5 +127,36 @@ describe("isEligible", () => {
       missingPrerequisites: [],
       warning: "Prerequisites need manual review; check the catalog before enrolling.",
     });
+  });
+});
+
+describe("isEligible on hand-checked student histories", () => {
+  it("loads exactly five history fixtures", () => {
+    expect(historyFiles).toHaveLength(5);
+  });
+
+  it.each(historyCases)("$history.id / $testCase.course", ({ history, testCase }) => {
+    const entry = corpus.entries.find(({ code }) => code === testCase.course);
+    expect(
+      entry !== undefined || corpus.coursesWithoutPrereq.includes(testCase.course),
+      `Unknown course in history: ${testCase.course}`,
+    ).toBe(true);
+
+    const prereq = toPrereqRecord(entry?.text ?? null);
+    const result = isEligible(
+      { code: testCase.course, prereq: { tree: prereq.tree, needsReview: prereq.needsReview } },
+      history.completed,
+      history.plannedSameTerm,
+    );
+    const expectedEligible =
+      testCase.expected.status === "eligible"
+        ? true
+        : testCase.expected.status === "ineligible"
+          ? false
+          : null;
+
+    expect(result.status).toBe(testCase.expected.status);
+    expect(result.missingPrerequisites).toEqual(testCase.expected.missingPrerequisites);
+    expect(result.eligible).toBe(expectedEligible);
   });
 });
