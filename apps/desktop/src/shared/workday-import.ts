@@ -45,7 +45,7 @@ const NO_CREDIT = { skip: "grade does not earn credit" };
 
 /** A null grade (academic record) or "IP" (transcript) means the course is still under way. */
 function gradeOutcome(grade: string | null): Outcome {
-  if (grade === null || grade === "IP") return "in-progress";
+  if (grade === null || grade.toUpperCase() === "IP") return "in-progress";
   return isCompletedGrade(grade) ? "completed" : NO_CREDIT;
 }
 

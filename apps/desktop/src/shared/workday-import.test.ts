@@ -178,6 +178,15 @@ describe("mapTranscript", () => {
       ],
     });
   });
+
+  it("matches IP case-insensitively, like the transcript parser", () => {
+    const result = mapTranscript({
+      courses: [{ code: "CSC 3102", term: { season: "Fall", year: 2026 }, grade: "ip" }],
+      unrecognizedLines: [],
+    });
+
+    expect(result.inProgress).toEqual([{ season: "Fall", year: 2026, courses: ["CSC 3102"] }]);
+  });
 });
 
 describe("mapCurrentRegistrations", () => {
