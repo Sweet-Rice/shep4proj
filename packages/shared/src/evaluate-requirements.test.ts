@@ -224,6 +224,56 @@ describe("evaluateRequirements", () => {
     });
   });
 
+  it("allocates completed courses to explicit requirements before open buckets", () => {
+    const degree = DegreeProgramSchema.parse({
+      ...sampleDegree,
+      requirements: [
+        {
+          kind: "creditBucket",
+          id: "open-first",
+          label: "Open Electives",
+          semester: 1,
+          credits: 3,
+          category: "Electives",
+          eligibleCourses: [],
+        },
+        {
+          kind: "fixed",
+          id: "fixed-after",
+          label: "Required Course",
+          semester: 2,
+          courses: [{ code: "CSC 1350" }],
+        },
+      ],
+    });
+
+    const result = evaluateRequirements(degree, [
+      { code: "CSC 1350", credits: 4 },
+      { code: "OTHER 1000", credits: 3 },
+    ]);
+    expect(result.requirements.map((requirement) => requirement.id)).toEqual([
+      "open-first",
+      "fixed-after",
+    ]);
+    expect(result.requirements[0]).toMatchObject({
+      status: "satisfied",
+      fulfilledCourses: [{ code: "OTHER 1000" }],
+    });
+    expect(result.requirements[1]).toMatchObject({
+      status: "satisfied",
+      fulfilledCourses: [{ code: "CSC 1350" }],
+    });
+    const assigned = result.requirements.flatMap((requirement) =>
+      requirement.kind === "fixed" ? requirement.fulfilledCourses.map(({ code }) => code) :
+      requirement.kind === "chooseN" ? requirement.fulfilledOptions.map(({ code }) => code) :
+      requirement.fulfilledCourses.map(({ code }) => code),
+    );
+    expect(assigned).toHaveLength(2);
+    expect(new Set(assigned).size).toBe(2);
+    expect(result.totalCreditsFulfilled).toBe(7);
+    expect(result.unusedCompletedCourses).toEqual([]);
+  });
+
   it("evaluates credit buckets with custom credits and open categories", () => {
     const result = evaluateRequirements(degreeWithOpenBucket(), [
       { code: "BIOL 1001", credits: 3 },
