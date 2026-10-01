@@ -155,10 +155,13 @@ export function createCatalogFetcher(opts: CatalogFetcherOptions = {}): CatalogF
     async fetchHtml(url: string): Promise<string> {
       assertOpen();
       assertAllowedCatalogUrl(url);
-      await delay.wait();
-      assertOpen();
-      log(`fetch ${new Date().toISOString()} ${url}`);
-      return new URL(url).pathname === PLAIN_HTTP_PATH ? fetchWithHttp(url) : fetchWithBrowser(url);
+      return delay.run(async () => {
+        assertOpen();
+        log(`fetch ${new Date().toISOString()} ${url}`);
+        return new URL(url).pathname === PLAIN_HTTP_PATH
+          ? fetchWithHttp(url)
+          : fetchWithBrowser(url);
+      });
     },
 
     close(): Promise<void> {

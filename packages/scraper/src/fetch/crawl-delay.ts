@@ -1,8 +1,10 @@
 import { setTimeout as sleepFor } from "node:timers/promises";
 
-/** Spaces out requests: each `wait()` resolves at least `minIntervalMs` after the previous one did. */
+/** Spaces calls by their completion time; `run()` also serializes the request body. */
 export interface CrawlDelay {
   wait(): Promise<void>;
+  /** Runs one request at a time and spaces the next from this one's completion. */
+  run<T>(task: () => Promise<T>): Promise<T>;
 }
 
 /**
@@ -11,9 +13,9 @@ export interface CrawlDelay {
  * `wait()` resolved. Concurrent calls are queued, so each one gets its own
  * interval instead of resolving together.
  *
- * `sleep` is called once per `wait()` with the milliseconds still to wait
- * (`0` when the interval has already passed). `now` and `sleep` are injectable
- * so tests need neither a real clock nor real waiting.
+ * `run()` holds the queue until its task settles, then starts the interval for
+ * the next call. Use it when work may continue after a request begins (such as
+ * a browser challenge). `now` and `sleep` are injectable for fake-clock tests.
  */
 export function createCrawlDelay(opts: {
   minIntervalMs: number;
@@ -37,6 +39,25 @@ export function createCrawlDelay(opts: {
       });
       // A failing sleep must not wedge every later caller.
       queue = turn.catch(() => undefined);
+      return turn;
+    },
+    run<T>(task: () => Promise<T>): Promise<T> {
+      const turn = queue.then(async () => {
+        const remainingMs =
+          lastResolvedAt === undefined
+            ? 0
+            : Math.max(0, lastResolvedAt + opts.minIntervalMs - now());
+        await sleep(remainingMs);
+        try {
+          return await task();
+        } finally {
+          lastResolvedAt = now();
+        }
+      });
+      queue = turn.then(
+        () => undefined,
+        () => undefined,
+      );
       return turn;
     },
   };

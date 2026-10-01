@@ -8,6 +8,10 @@ const mockWait = vi.fn().mockResolvedValue(undefined);
 vi.mock("./crawl-delay.js", () => ({
   createCrawlDelay: vi.fn(() => ({
     wait: mockWait,
+    run: async (task: () => Promise<unknown>) => {
+      await mockWait();
+      return task();
+    },
   })),
 }));
 

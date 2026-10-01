@@ -93,6 +93,44 @@ describe("createCrawlDelay", () => {
     expect(third - second).toBe(120_000);
   });
 
+  it("spaces a second request from the end of a slow first request", async () => {
+    const clock = fakeClock();
+    const delay = createCrawlDelay({ minIntervalMs: INTERVAL_MS, ...clock });
+    let firstFinishedAt = 0;
+    let secondStartedAt = 0;
+
+    const first = delay.run(async () => {
+      clock.advance(30_000);
+      firstFinishedAt = clock.now();
+    });
+    const second = delay.run(async () => {
+      secondStartedAt = clock.now();
+    });
+    await Promise.all([first, second]);
+
+    expect(clock.sleeps).toEqual([0, INTERVAL_MS]);
+    expect(secondStartedAt - firstFinishedAt).toBe(INTERVAL_MS);
+  });
+
+  it("keeps the interval and queue after a request fails", async () => {
+    const clock = fakeClock();
+    const delay = createCrawlDelay({ minIntervalMs: INTERVAL_MS, ...clock });
+
+    await expect(
+      delay.run(async () => {
+        clock.advance(30_000);
+        throw new Error("request failed");
+      }),
+    ).rejects.toThrow("request failed");
+    const finishedAt = clock.now();
+    let nextStartedAt = 0;
+    await delay.run(async () => {
+      nextStartedAt = clock.now();
+    });
+
+    expect(nextStartedAt - finishedAt).toBe(INTERVAL_MS);
+  });
+
   it("keeps later callers working after a sleep fails", async () => {
     const clock = fakeClock();
     let calls = 0;
