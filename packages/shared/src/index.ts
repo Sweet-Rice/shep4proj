@@ -36,6 +36,8 @@ export {
   WeekdaySchema,
 } from "./section.js";
 export type { AcademicPeriodId, Meeting, Section, SectionCourseCode, Weekday } from "./section.js";
+export { typicalTerms } from "./typical-terms.js";
+export type { CourseOfferingHistory, TypicalTerm } from "./typical-terms.js";
 export {
   ChooseNRequirementSchema,
   CourseRefSchema,
