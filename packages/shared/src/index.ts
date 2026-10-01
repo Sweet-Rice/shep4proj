@@ -36,6 +36,8 @@ export {
   WeekdaySchema,
 } from "./section.js";
 export type { AcademicPeriodId, Meeting, Section, SectionCourseCode, Weekday } from "./section.js";
+export { findConflicts } from "./find-conflicts.js";
+export type { SectionConflict } from "./find-conflicts.js";
 export {
   ChooseNRequirementSchema,
   CourseRefSchema,
