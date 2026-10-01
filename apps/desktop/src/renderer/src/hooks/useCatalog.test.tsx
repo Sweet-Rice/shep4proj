@@ -44,19 +44,37 @@ describe("catalog hooks", () => {
     expect(result.current.loading).toBe(false);
   });
 
-  it("refetches details when the normalized course codes change", async () => {
-    const getCourseDetails = vi.fn(async (codes: CourseCode[]) =>
-      codes.includes("CSC 1350") ? { "CSC 1350": detail } : {},
+  it("refetches details when normalized course codes change and awaits the new result", async () => {
+    let resolveNewDetails!: (details: Record<CourseCode, CourseDetail>) => void;
+    const newDetails = new Promise<Record<CourseCode, CourseDetail>>((resolve) => {
+      resolveNewDetails = resolve;
+    });
+    const updatedDetail: CourseDetail = {
+      ...detail,
+      code: "CSC 1351",
+      title: "Computer Science II",
+    };
+    const getCourseDetails = vi.fn((codes: CourseCode[]) =>
+      codes.includes("CSC 1350") ? Promise.resolve({ "CSC 1350": detail }) : newDetails,
     );
     Object.assign(window, { jevschedule: { catalog: { getCourseDetails } } });
     const { result, rerender } = renderHook(({ codes }) => useCourseDetails(codes), {
       initialProps: { codes: ["CSC 1350", "CSC 1350"] as CourseCode[] },
     });
-    await waitFor(() => expect(result.current.details["CSC 1350"]).toEqual(detail));
+    await waitFor(() => {
+      expect(result.current.details["CSC 1350"]).toEqual(detail);
+      expect(result.current.loading).toBe(false);
+    });
     expect(getCourseDetails).toHaveBeenCalledWith(["CSC 1350"]);
 
     rerender({ codes: ["CSC 1351"] });
     await waitFor(() => expect(getCourseDetails).toHaveBeenLastCalledWith(["CSC 1351"]));
-    expect(result.current.loading).toBe(false);
+    expect(result.current.loading).toBe(true);
+
+    resolveNewDetails({ "CSC 1351": updatedDetail });
+    await waitFor(() => {
+      expect(result.current.details["CSC 1351"]).toEqual(updatedDetail);
+      expect(result.current.loading).toBe(false);
+    });
   });
 });
