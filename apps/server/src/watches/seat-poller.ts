@@ -83,7 +83,8 @@ export async function pollWatchedSeats(o: {
       result.failed.push({ department, term, error: message });
       continue;
     }
-    // The portal answers a period it no longer lists with another period's page.
+    // A page for another period means the portal no longer serves this one. That's assumed, not
+    // observed (CI can't reach the live portal), so it's reported as unlisted, not dropped.
     if (listing.selectedPeriodId !== term) {
       result.unlistedTerms.push(key);
       continue;
