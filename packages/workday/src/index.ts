@@ -9,3 +9,5 @@ export const PACKAGE_NAME = "@jevschedule/workday";
 export function isPlaceholder(): boolean {
   return true;
 }
+export { extractPdfText } from "./transcript-pdf.js";
+export type { ExtractedPdfPage, ExtractedPdfText } from "./transcript-pdf.js";
