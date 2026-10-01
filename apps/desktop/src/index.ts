@@ -8,6 +8,7 @@ export { useCourseSearch, filterCourses } from "./renderer/src/hooks/useCourseSe
 export { SemesterBoard } from "./renderer/src/components/SemesterBoard.js";
 export { usePlan } from "./renderer/src/hooks/usePlan.js";
 export { WeeklyCalendar, formatMinuteToTime } from "./renderer/src/components/WeeklyCalendar.js";
+export { ImportReviewScreen } from "./renderer/src/components/ImportReviewScreen.js";
 
 /** Package identifier, used to prove cross-package builds work. */
 export const PACKAGE_NAME = "@jevschedule/desktop";

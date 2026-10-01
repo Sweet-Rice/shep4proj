@@ -7,6 +7,7 @@ import {
   CourseSearch,
   SemesterBoard,
   WeeklyCalendar,
+  ImportReviewScreen,
 } from "./index.js";
 
 describe("desktop", () => {
@@ -14,12 +15,13 @@ describe("desktop", () => {
     expect(describeDesktop()).toContain("@jevschedule/shared");
   });
 
-  it("exports degree progress, course search, semester board, and weekly calendar components", () => {
+  it("exports degree progress, course search, semester board, and import review components", () => {
     expect(DegreeProgressScreen).toBeDefined();
     expect(DegreeProgressView).toBeDefined();
     expect(MarkPrereqsDialog).toBeDefined();
     expect(CourseSearch).toBeDefined();
     expect(SemesterBoard).toBeDefined();
     expect(WeeklyCalendar).toBeDefined();
+    expect(ImportReviewScreen).toBeDefined();
   });
 });
