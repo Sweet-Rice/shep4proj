@@ -138,6 +138,10 @@ describe("mapAcademicRecord", () => {
 
     expect(result.completed).toEqual(["MATH 1550"]);
     expect(result.inProgress).toEqual([]);
+    expect(result.skipped).toEqual([
+      { code: "CHEM 1201", reason: "grade does not earn credit" },
+      { code: "BIOL 1201", reason: "transfer credit has no grade" },
+    ]);
   });
 
   it("never copies names, IDs or row text into the result", () => {

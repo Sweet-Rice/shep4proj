@@ -94,7 +94,12 @@ export function mapAcademicRecord(record: AcademicRecordResult): StoreImport {
     ...record.transferCredits.map(({ code, grade }) => ({
       code,
       term: null,
-      outcome: grade !== null && isCompletedGrade(grade) ? ("completed" as const) : NO_CREDIT,
+      outcome:
+        grade === null
+          ? { skip: "transfer credit has no grade" }
+          : isCompletedGrade(grade)
+            ? ("completed" as const)
+            : NO_CREDIT,
     })),
   ]);
 }
