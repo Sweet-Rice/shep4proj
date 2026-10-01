@@ -12,6 +12,7 @@ import {
   SectionWatchToggle,
   JevProviderService,
   SuggestionView,
+  ModelProviderSettingsView,
 } from "./index.js";
 
 describe("desktop", () => {
@@ -19,7 +20,7 @@ describe("desktop", () => {
     expect(describeDesktop()).toContain("@jevschedule/shared");
   });
 
-  it("exports degree progress, course search, semester board, import review, section watch, and suggestion view components", () => {
+  it("exports degree progress, course search, semester board, import review, section watch, suggestion view, and model provider components", () => {
     expect(DegreeProgressScreen).toBeDefined();
     expect(DegreeProgressView).toBeDefined();
     expect(MarkPrereqsDialog).toBeDefined();
@@ -31,5 +32,6 @@ describe("desktop", () => {
     expect(SectionWatchToggle).toBeDefined();
     expect(JevProviderService).toBeDefined();
     expect(SuggestionView).toBeDefined();
+    expect(ModelProviderSettingsView).toBeDefined();
   });
 });
