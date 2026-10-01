@@ -22,6 +22,7 @@ export { SuggestionView } from "./renderer/src/components/SuggestionView.js";
 export { ModelProviderSettingsView } from "./renderer/src/components/ModelProviderSettingsView.js";
 export { useModelProviders } from "./renderer/src/hooks/useModelProviders.js";
 export { validateProviderSettings } from "./renderer/src/services/modelProviders.js";
+export { HarnessSettingsView } from "./renderer/src/components/HarnessSettingsView.js";
 
 /** Package identifier, used to prove cross-package builds work. */
 export const PACKAGE_NAME = "@jevschedule/desktop";
