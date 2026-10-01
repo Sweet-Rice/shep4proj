@@ -110,7 +110,6 @@ describe("evaluateRequirements", () => {
     });
   });
 
-
   it("enforces minimum letter grade on fixed requirements", () => {
     // MATH 1550 requires minGrade "C". A grade of "D" should fail.
     const failedResult = evaluateRequirements(sampleDegree, [
@@ -264,9 +263,11 @@ describe("evaluateRequirements", () => {
       fulfilledCourses: [{ code: "CSC 1350" }],
     });
     const assigned = result.requirements.flatMap((requirement) =>
-      requirement.kind === "fixed" ? requirement.fulfilledCourses.map(({ code }) => code) :
-      requirement.kind === "chooseN" ? requirement.fulfilledOptions.map(({ code }) => code) :
-      requirement.fulfilledCourses.map(({ code }) => code),
+      requirement.kind === "fixed"
+        ? requirement.fulfilledCourses.map(({ code }) => code)
+        : requirement.kind === "chooseN"
+          ? requirement.fulfilledOptions.map(({ code }) => code)
+          : requirement.fulfilledCourses.map(({ code }) => code),
     );
     expect(assigned).toHaveLength(2);
     expect(new Set(assigned).size).toBe(2);

@@ -19,7 +19,7 @@ export type CompletedInput = CourseCode | CompletedCourseInput;
 
 export interface EvaluatedFixedRequirement extends FixedRequirement {
   isSatisfied: boolean;
-  status: "satisfied" | "unsatisfied";
+  status: "satisfied" | "partially_satisfied" | "unsatisfied";
   fulfilledCourses: CourseRef[];
   missingCourses: CourseRef[];
 }
@@ -120,8 +120,10 @@ export function evaluateRequirements(
   const processingOrder = degree.requirements
     .map((requirement, index) => ({ requirement, index }))
     .sort((a, b) => {
-      const aIsOpenBucket = a.requirement.kind === "creditBucket" && a.requirement.eligibleCourses.length === 0;
-      const bIsOpenBucket = b.requirement.kind === "creditBucket" && b.requirement.eligibleCourses.length === 0;
+      const aIsOpenBucket =
+        a.requirement.kind === "creditBucket" && a.requirement.eligibleCourses.length === 0;
+      const bIsOpenBucket =
+        b.requirement.kind === "creditBucket" && b.requirement.eligibleCourses.length === 0;
       return Number(aIsOpenBucket) - Number(bIsOpenBucket) || a.index - b.index;
     });
   let totalCreditsFulfilled = 0;
