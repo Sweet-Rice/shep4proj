@@ -1,11 +1,13 @@
 import { existsSync } from "node:fs";
 import { createSectionFetcher } from "@jevschedule/scraper";
 import { buildServer } from "./app.js";
-import { readListenConfig, readSectionScrapeConfig } from "./config.js";
+import { readListenConfig, readSeatPollConfig, readSectionScrapeConfig } from "./config.js";
 import { createDb } from "./db/client.js";
 import { DEFAULT_DEGREE_DATA_DIR } from "./degrees/load.js";
 import { startSectionScrapeSchedule, type Schedule } from "./sections/scheduler.js";
 import { runSectionScrape } from "./sections/scrape-job.js";
+import { shutdown } from "./shutdown.js";
+import { startSeatPollJob } from "./watches/seat-poll-job.js";
 
 if (!process.env["DATABASE_URL"] && existsSync("../../.env")) {
   process.loadEnvFile("../../.env");
@@ -13,6 +15,7 @@ if (!process.env["DATABASE_URL"] && existsSync("../../.env")) {
 
 const { host, port } = readListenConfig();
 const sectionScrape = readSectionScrapeConfig();
+const seatPoll = readSeatPollConfig();
 
 const databaseUrl = process.env["DATABASE_URL"];
 const database = databaseUrl ? createDb(databaseUrl) : undefined;
@@ -22,7 +25,13 @@ if (!database) {
   app.log.warn("DATABASE_URL is not set; /courses routes are disabled (see .env.example)");
 }
 
+// One fetcher for every job that reads the Course Offerings portal, so they share its crawl
+// delay instead of each keeping its own and multiplying the request rate.
+const fetcherLog = app.log.child({ component: "section-fetcher" });
+const sectionFetcher = createSectionFetcher({ log: (message) => fetcherLog.info(message) });
+
 let schedule: Schedule | undefined;
+let seatPoller: Schedule | undefined;
 
 /** Starts the daily section scrape (T-403) when enabled; it needs the database. */
 function startSectionScrape(): void {
@@ -33,11 +42,10 @@ function startSectionScrape(): void {
   }
   const { db } = database;
   const log = app.log.child({ job: "section-scrape" });
-  const fetcher = createSectionFetcher({ log: (message) => log.info(message) });
   schedule = startSectionScrapeSchedule({
     async run() {
       for (const department of sectionScrape.departments) {
-        const result = await runSectionScrape({ db, fetcher, department });
+        const result = await runSectionScrape({ db, fetcher: sectionFetcher, department });
         const summary = { department, scraped: result.scraped, skipped: result.skipped };
         if (result.failed.length > 0) {
           log.warn({ ...summary, failed: result.failed }, "section scrape finished with failures");
@@ -53,13 +61,8 @@ function startSectionScrape(): void {
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.once(signal, () => {
     app.log.info({ signal }, "shutting down");
-    app
-      .close()
-      .then(async () => {
-        await schedule?.stop();
-        await database?.close();
-        process.exit(0);
-      })
+    shutdown({ app, schedules: [schedule, seatPoller], database })
+      .then(() => process.exit(0))
       .catch((error: unknown) => {
         app.log.error(error, "error during shutdown");
         process.exit(1);
@@ -70,6 +73,12 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 try {
   await app.listen({ host, port });
   startSectionScrape();
+  seatPoller = startSeatPollJob({
+    config: seatPoll,
+    db: database?.db,
+    fetcher: sectionFetcher,
+    log: app.log,
+  });
 } catch (error) {
   app.log.error(error, "failed to start");
   process.exit(1);

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_HOST, DEFAULT_PORT, readListenConfig, readSectionScrapeConfig } from "./config.js";
+import {
+  DEFAULT_HOST,
+  DEFAULT_PORT,
+  readListenConfig,
+  readSeatPollConfig,
+  readSectionScrapeConfig,
+} from "./config.js";
+
+const HOUR = 60 * 60 * 1000;
 
 describe("readListenConfig", () => {
   it("defaults to localhost:3000", () => {
@@ -56,6 +64,37 @@ describe("readSectionScrapeConfig", () => {
     (value) => {
       expect(() => readSectionScrapeConfig({ SECTION_SCRAPE_DEPARTMENTS: value })).toThrow(
         /SECTION_SCRAPE_DEPARTMENTS must be/,
+      );
+    },
+  );
+});
+
+describe("readSeatPollConfig", () => {
+  it("is off and daily by default", () => {
+    expect(readSeatPollConfig({})).toEqual({ enabled: false, intervalMs: 24 * HOUR });
+    expect(readSeatPollConfig({ SEAT_POLL_ENABLED: " ", SEAT_POLL_INTERVAL_MINUTES: "" })).toEqual({
+      enabled: false,
+      intervalMs: 24 * HOUR,
+    });
+  });
+
+  it("reads the flag and an interval in minutes", () => {
+    expect(
+      readSeatPollConfig({ SEAT_POLL_ENABLED: "true", SEAT_POLL_INTERVAL_MINUTES: "60" }),
+    ).toEqual({ enabled: true, intervalMs: HOUR });
+  });
+
+  it.each(["yes", "1", "TRUE"])("rejects SEAT_POLL_ENABLED=%s", (value) => {
+    expect(() => readSeatPollConfig({ SEAT_POLL_ENABLED: value })).toThrow(
+      /SEAT_POLL_ENABLED must be/,
+    );
+  });
+
+  it.each(["59", "0", "-60", "90.5", "1h", "35001"])(
+    "rejects SEAT_POLL_INTERVAL_MINUTES=%s",
+    (value) => {
+      expect(() => readSeatPollConfig({ SEAT_POLL_INTERVAL_MINUTES: value })).toThrow(
+        /SEAT_POLL_INTERVAL_MINUTES must be/,
       );
     },
   );
