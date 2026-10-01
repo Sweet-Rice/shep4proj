@@ -253,6 +253,23 @@ describe("mapCurrentRegistrations", () => {
     expect(result.skipped).toEqual([{ code: "CSC 4001", reason: "in-progress term unknown" }]);
   });
 
+  it("skips in-progress courses whose code the catalog can't store", () => {
+    const unsupported = { code: "CSC 4103G", reason: "catalog course code not supported" };
+
+    const fromRegistrations = mapCurrentRegistrations(
+      registrations([registered("CSC 4103G", "Registered")]),
+    );
+    const fromTranscript = mapTranscript({
+      courses: [{ code: "CSC 4103G", term: { season: "Fall", year: 2026 }, grade: "IP" }],
+      unrecognizedLines: [],
+    });
+
+    for (const result of [fromRegistrations, fromTranscript]) {
+      expect(result.inProgress).toEqual([]);
+      expect(result.skipped).toEqual([unsupported]);
+    }
+  });
+
   it("skips enrolled-grid courses whose status is not Registered", () => {
     const result = mapCurrentRegistrations(
       registrations([registered("CSC 4330", "Enrolled"), registered("CSC 4001", "Pending")]),
