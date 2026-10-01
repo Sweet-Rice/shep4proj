@@ -8,12 +8,16 @@ import { isEligible, type EligibilityCourse } from "./is-eligible.js";
 import type { PrereqNode } from "./prereq.js";
 
 const HISTORY_DIRECTORY = fileURLToPath(new URL("../../../fixtures/histories/", import.meta.url));
-const CORPUS_PATH = fileURLToPath(new URL("../../../fixtures/prereqs/corpus.json", import.meta.url));
+const CORPUS_PATH = fileURLToPath(
+  new URL("../../../fixtures/prereqs/corpus.json", import.meta.url),
+);
 
 const HistorySchema = z.object({
   id: z.string(),
   description: z.string(),
-  completed: z.array(z.object({ code: z.string(), grade: z.enum(["A", "B", "C", "D"]).optional() })),
+  completed: z.array(
+    z.object({ code: z.string(), grade: z.enum(["A", "B", "C", "D"]).optional() }),
+  ),
   plannedSameTerm: z.array(z.string()),
   cases: z.array(
     z.object({
@@ -40,7 +44,6 @@ const corpus = CorpusSchema.parse(JSON.parse(readFileSync(CORPUS_PATH, "utf8")))
 const historyCases = histories.flatMap((history) =>
   history.cases.map((testCase) => ({ history, testCase })),
 );
-
 
 const leaf = (code: string, coreq = false, minGrade: "C" | null = null): PrereqNode => ({
   type: "COURSE",
