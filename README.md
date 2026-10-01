@@ -45,6 +45,18 @@ for the full plan, architecture, and backlog.
 
 Other useful root scripts: `pnpm lint`, `pnpm typecheck`, `pnpm format`.
 
+### Manual course completion
+
+Run `pnpm --filter @jevschedule/desktop dev` after building. Enter a course code such as
+`CSC 1350`, choose **Show course**, then check or uncheck its completion toggle. Saved
+completions appear automatically on launch; both additions and removals survive quitting
+and restarting the app. Codes use the shared format: 2–4 letters, a space, and 4 digits.
+
+Controls wait for the initial local-store read and disable a course while its write is
+pending. A failed write restores its previous state and displays an error. Completion data
+stays in the local SQLite store, not on the server. This screen accepts manual codes;
+catalog search and the desktop API client remain separate tasks (#60 and #59).
+
 ### Windows (PowerShell)
 
 ```powershell

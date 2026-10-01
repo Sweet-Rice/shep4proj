@@ -1,0 +1,50 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  color: CanvasText;
+  background: Canvas;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  max-width: 42rem;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+}
+
+.course-entry {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.course-entry input,
+.course-entry button {
+  font: inherit;
+  padding: 0.5rem;
+}
+
+.completed-courses {
+  padding: 0;
+  list-style: none;
+}
+
+.completion-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  cursor: pointer;
+}
+
+.completion-toggle:has(input:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+[role="alert"] {
+  color: light-dark(#a31515, #ffaaaa);
+}
