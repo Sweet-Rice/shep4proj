@@ -74,6 +74,20 @@ describe("createPlannerTools", () => {
     expect(tools.validatePlan(plan, []).valid).toBe(true);
   });
 
+  it("counts a corequisite planned for the same term toward eligibility", () => {
+    const tools = createPlannerTools();
+    const course = {
+      code: "CSC 3102",
+      prereq: {
+        tree: { type: "COURSE", code: "CSC 2259", coreq: true, minGrade: null },
+        needsReview: false,
+      },
+    } as const;
+
+    expect(tools.getEligible([course], [])[0]?.result.status).toBe("ineligible");
+    expect(tools.getEligible([course], [], ["CSC 2259"])[0]?.result.status).toBe("eligible");
+  });
+
   it("rejects unconfigured data sources instead of returning empty data", async () => {
     const tools = createPlannerTools();
     await expect(tools.getCompleted()).rejects.toThrow("completed-course source is not configured");
