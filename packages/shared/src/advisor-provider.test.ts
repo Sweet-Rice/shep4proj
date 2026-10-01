@@ -117,6 +117,35 @@ describe("rule-based advisor", () => {
       "CSC 2200",
     ]);
   });
+
+  it("suggests a retake when the recorded grade misses a required minimum", async () => {
+    const retakeDegree: DegreeProgram = {
+      ...degree,
+      requirements: [
+        {
+          kind: "fixed",
+          id: "retake",
+          label: "Minimum C",
+          semester: 1,
+          courses: [{ code: "CSC 1350", minGrade: "C" }],
+        },
+      ],
+    };
+    const input = context({
+      degree: retakeDegree,
+      completed: [{ code: "CSC 1350", grade: "D" }],
+      courses: [course("CSC 1350", 4)],
+    });
+    expect((await advisor.suggest(input)).courses).toEqual(["CSC 1350"]);
+    expect(
+      (
+        await advisor.suggest({
+          ...input,
+          completed: [{ code: "CSC 1350", grade: "C" }],
+        })
+      ).courses,
+    ).toEqual([]);
+  });
 });
 
 interface StudentHistory {
@@ -135,6 +164,14 @@ const corpus = JSON.parse(readFileSync(corpusPath, "utf8")) as {
 };
 
 describe("rule-based advisor on hand-checked student histories", () => {
+  const expectedSuggestions: Record<string, string> = {
+    "01-incoming-freshman": "CSC 1350",
+    "02-after-first-semester": "CSC 1351",
+    "03-alternate-intro-path": "CSC 3380",
+    "04-junior-with-coreq-plan": "CSC 1110",
+    "05-senior-needs-review": "CSC 4330",
+  };
+
   it("uses all five fixtures", () => {
     expect(histories).toHaveLength(5);
   });
@@ -170,6 +207,12 @@ describe("rule-based advisor on hand-checked student histories", () => {
     });
     const suggestion = await createRuleBasedAdvisorProvider().suggest(input);
     expect(suggestion.courses.length).toBeGreaterThan(0);
+    expect(suggestion.courses).toContain(expectedSuggestions[history.id]);
+    for (const testCase of history.cases) {
+      if (testCase.expected.status !== "eligible") {
+        expect(suggestion.courses).not.toContain(testCase.course);
+      }
+    }
     for (const code of suggestion.courses) {
       const course = fixtureCourses.find((item) => item.code === code)!;
       expect(isEligible(course, history.completed, []).status).toBe("eligible");
