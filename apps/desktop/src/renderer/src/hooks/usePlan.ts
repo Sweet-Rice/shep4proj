@@ -7,12 +7,9 @@ import {
   type Season,
 } from "@jevschedule/shared";
 
-const DEFAULT_PLAN: Plan = {
+const EMPTY_PLAN: Plan = {
   creditLimit: DEFAULT_CREDIT_LIMIT,
-  terms: [
-    { season: "Fall", year: 2026, courses: ["CSC 1350", "MATH 1550", "ENGL 1001"] },
-    { season: "Spring", year: 2027, courses: ["CSC 1351", "MATH 1552"] },
-  ],
+  terms: [],
 };
 
 interface JevScheduleGlobal {
@@ -31,7 +28,7 @@ function getPlanApi() {
   return globalWin.window?.jevschedule?.plan ?? null;
 }
 
-export function usePlan(initialPlan: Plan = DEFAULT_PLAN) {
+export function usePlan(initialPlan: Plan = EMPTY_PLAN) {
   const [plan, setPlan] = useState<Plan>(initialPlan);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -50,7 +47,7 @@ export function usePlan(initialPlan: Plan = DEFAULT_PLAN) {
       .get()
       .then((savedPlan) => {
         if (!cancelled) {
-          if (savedPlan && savedPlan.terms.length > 0) {
+          if (savedPlan) {
             setPlan(savedPlan);
           }
           setLoaded(true);

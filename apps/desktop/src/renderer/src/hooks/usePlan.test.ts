@@ -54,6 +54,24 @@ describe("usePlan", () => {
     expect(result.current.plan).toEqual(savedPlan);
   });
 
+  it("keeps a saved credit limit when the saved plan has no terms", async () => {
+    const savedPlan: Plan = { creditLimit: 12, terms: [] };
+    mockGet.mockResolvedValueOnce(savedPlan);
+
+    const { result } = renderHook(() => usePlan());
+
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    expect(result.current.plan).toEqual(savedPlan);
+  });
+
+  it("uses an empty plan when no plan is saved", async () => {
+    mockGet.mockResolvedValueOnce(null);
+    const { result } = renderHook(() => usePlan());
+
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    expect(result.current.plan.terms).toEqual([]);
+  });
+
   it("moves courses between terms and persists to store", async () => {
     const initialPlan: Plan = {
       creditLimit: 18,
