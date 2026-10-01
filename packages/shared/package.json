@@ -9,10 +9,11 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    }
+    },
+    "./planner-tool-schemas.json": "./dist/planner-tool-schemas.json"
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && node dist/generate-planner-tool-schemas.js",
     "lint": "eslint src scripts && prettier --check src scripts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -25,6 +26,7 @@
     "yaml": "^2.9.1"
   },
   "dependencies": {
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "3.25.2"
   }
 }

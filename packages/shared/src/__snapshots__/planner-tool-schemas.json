@@ -1,0 +1,155 @@
+[
+  {
+    "name": "getCompleted",
+    "description": "List completed course codes from the student's local store.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  {
+    "name": "getRemainingRequirements",
+    "description": "Show requirements remaining in the student's current degree.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  {
+    "name": "getEligible",
+    "description": "Check eligibility for catalog courses, optionally limited to course codes.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "courseCodes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z]{2,4} \\d{4}$"
+          },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  {
+    "name": "getHistory",
+    "description": "Show archived offering history for a course.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z]{2,4} \\d{4}$"
+        }
+      },
+      "required": ["code"],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  {
+    "name": "validatePlan",
+    "description": "Validate a candidate semester plan without changing the saved plan.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "plan": {
+          "type": "object",
+          "properties": {
+            "creditLimit": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "terms": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "season": {
+                    "type": "string",
+                    "enum": ["Spring", "Summer", "Fall", "Winter"]
+                  },
+                  "year": {
+                    "type": "integer",
+                    "minimum": 2000,
+                    "maximum": 2100
+                  },
+                  "courses": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Z]{2,4} \\d{4}$"
+                    }
+                  }
+                },
+                "required": ["season", "year", "courses"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["creditLimit", "terms"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["plan"],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  {
+    "name": "proposePlan",
+    "description": "Return a validated plan proposal for student review; never save it.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "plan": {
+          "type": "object",
+          "properties": {
+            "creditLimit": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "terms": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "season": {
+                    "type": "string",
+                    "enum": ["Spring", "Summer", "Fall", "Winter"]
+                  },
+                  "year": {
+                    "type": "integer",
+                    "minimum": 2000,
+                    "maximum": 2100
+                  },
+                  "courses": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Z]{2,4} \\d{4}$"
+                    }
+                  }
+                },
+                "required": ["season", "year", "courses"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["creditLimit", "terms"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["plan"],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  }
+]
