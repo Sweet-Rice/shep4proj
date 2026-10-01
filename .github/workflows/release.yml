@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    name: Build & Upload (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            build_script: dist:linux
+          - os: windows-latest
+            build_script: dist:win
+          - os: macos-latest
+            build_script: dist:mac
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm -r build
+
+      - name: Build Desktop Installer
+        run: pnpm --filter @jevschedule/desktop run ${{ matrix.build_script }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Artifacts to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            apps/desktop/dist/*.exe
+            apps/desktop/dist/*.dmg
+            apps/desktop/dist/*.zip
+            apps/desktop/dist/*.AppImage
+            apps/desktop/dist/*.blockmap
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
