@@ -1,13 +1,5 @@
-import type { DegreeProgram } from "@jevschedule/shared";
+import { type DegreeProgram, type DegreeSummary } from "@jevschedule/shared";
 import type { FastifyInstance } from "fastify";
-
-export interface DegreeSummary {
-  id: string;
-  program: string;
-  concentration: string;
-  catalogYear: string;
-  totalCredits: number;
-}
 
 interface DegreeParams {
   id: string;

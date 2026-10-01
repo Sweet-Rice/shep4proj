@@ -1,0 +1,78 @@
+import { useEffect, useMemo, useState } from "react";
+import type { Course, CourseCode, CourseDetail } from "@jevschedule/shared";
+
+function asError(error: unknown): Error {
+  return error instanceof Error ? error : new Error(String(error));
+}
+
+export function useCatalogCourses(): { courses: Course[]; loading: boolean; error: Error | null } {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    window.jevschedule.catalog.listCourses().then(
+      (result) => {
+        if (cancelled) return;
+        setCourses(result);
+        setLoading(false);
+      },
+      (reason: unknown) => {
+        if (cancelled) return;
+        setError(asError(reason));
+        setLoading(false);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return { courses, loading, error };
+}
+
+export function useCourseDetails(codes: readonly CourseCode[]): {
+  details: Record<CourseCode, CourseDetail>;
+  loading: boolean;
+  error: Error | null;
+} {
+  const codesKey = useMemo(() => [...new Set(codes)].sort().join("|"), [codes]);
+  const normalizedCodes = useMemo(
+    () => (codesKey ? (codesKey.split("|") as CourseCode[]) : []),
+    [codesKey],
+  );
+  const [details, setDetails] = useState<Record<CourseCode, CourseDetail>>({});
+  const [loading, setLoading] = useState(normalizedCodes.length > 0);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setDetails({});
+    setError(null);
+    if (normalizedCodes.length === 0) {
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+    setLoading(true);
+    window.jevschedule.catalog.getCourseDetails(normalizedCodes).then(
+      (result) => {
+        if (cancelled) return;
+        setDetails(result);
+        setLoading(false);
+      },
+      (reason: unknown) => {
+        if (cancelled) return;
+        setError(asError(reason));
+        setLoading(false);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [codesKey, normalizedCodes]);
+
+  return { details, loading, error };
+}

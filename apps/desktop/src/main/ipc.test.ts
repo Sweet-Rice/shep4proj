@@ -1,5 +1,5 @@
 import type { IpcMainInvokeEvent } from "electron";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IPC_CHANNELS } from "../shared/ipc.js";
 import { isAppRendererUrl, registerIpcHandlers, UntrustedIpcSenderError } from "./ipc.js";
 import { createCompletedStore } from "./store/completed.js";
@@ -30,15 +30,55 @@ describe("registerIpcHandlers", () => {
   let ipc: ReturnType<typeof fakeIpcMain>;
   let trusted: boolean;
 
+  let catalog: {
+    listCourses: ReturnType<typeof vi.fn>;
+    getCourseDetails: ReturnType<typeof vi.fn>;
+    listDegrees: ReturnType<typeof vi.fn>;
+    getDegree: ReturnType<typeof vi.fn>;
+  };
   beforeEach(() => {
     db = openLocalDb(":memory:");
     ipc = fakeIpcMain();
     trusted = true;
+    catalog = {
+      listCourses: vi.fn().mockResolvedValue([]),
+      getCourseDetails: vi.fn().mockResolvedValue({}),
+      listDegrees: vi.fn().mockResolvedValue([]),
+      getDegree: vi.fn().mockResolvedValue({}),
+    };
     registerIpcHandlers(
       ipc,
-      { completed: createCompletedStore(db), plan: createPlanStore(db) },
+      { completed: createCompletedStore(db), plan: createPlanStore(db), catalog },
       () => trusted,
     );
+  });
+  it("forwards validated catalog calls", () => {
+    const codes = ["CSC 1350"];
+    ipc.invoke(IPC_CHANNELS.catalogCourses);
+    ipc.invoke(IPC_CHANNELS.catalogCourseDetails, codes);
+    ipc.invoke(IPC_CHANNELS.catalogDegrees);
+    ipc.invoke(IPC_CHANNELS.catalogDegree, "csc-software-engineering-2026-2027");
+    expect(catalog.listCourses).toHaveBeenCalledOnce();
+    expect(catalog.getCourseDetails).toHaveBeenCalledWith(codes);
+    expect(catalog.listDegrees).toHaveBeenCalledOnce();
+    expect(catalog.getDegree).toHaveBeenCalledWith("csc-software-engineering-2026-2027");
+  });
+
+  it.each([
+    [IPC_CHANNELS.catalogCourses, ["extra"]],
+    [IPC_CHANNELS.catalogCourseDetails, ["csc1350"]],
+    [IPC_CHANNELS.catalogCourseDetails, ["not-an-array"]],
+    [IPC_CHANNELS.catalogDegrees, ["extra"]],
+    [IPC_CHANNELS.catalogDegree, ["CSC-degree"]],
+    [IPC_CHANNELS.catalogDegree, ["csc degree"]],
+  ])("rejects invalid catalog arguments for %s", (channel, args) => {
+    expect(() => ipc.invoke(channel, ...args)).toThrow();
+  });
+
+  it("rejects an untrusted catalog call before contacting the client", () => {
+    trusted = false;
+    expect(() => ipc.invoke(IPC_CHANNELS.catalogCourses)).toThrow(UntrustedIpcSenderError);
+    expect(catalog.listCourses).not.toHaveBeenCalled();
   });
   afterEach(() => db.close());
 

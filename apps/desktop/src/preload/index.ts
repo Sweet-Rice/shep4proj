@@ -13,6 +13,12 @@ const api: JevscheduleApi = {
   transcript: {
     select: () => ipcRenderer.invoke(IPC_CHANNELS.transcriptSelect),
   },
+  catalog: {
+    listCourses: () => ipcRenderer.invoke(IPC_CHANNELS.catalogCourses),
+    getCourseDetails: (codes) => ipcRenderer.invoke(IPC_CHANNELS.catalogCourseDetails, codes),
+    listDegrees: () => ipcRenderer.invoke(IPC_CHANNELS.catalogDegrees),
+    getDegree: (id) => ipcRenderer.invoke(IPC_CHANNELS.catalogDegree, id),
+  },
 };
 
 contextBridge.exposeInMainWorld("jevschedule", api);

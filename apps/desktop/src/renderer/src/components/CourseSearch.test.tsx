@@ -3,7 +3,28 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
+import type { Course } from "@jevschedule/shared";
 import { CourseSearch } from "./CourseSearch.js";
+
+const TEST_CATALOG: Course[] = [
+  ["CSC 1350", "Computer Science I for Majors"],
+  ["CSC 1351", "Computer Science II for Majors"],
+  ["CSC 2250", "Discrete Structures"],
+  ["CSC 3102", "Advanced Data Structures and Algorithm Analysis"],
+  ["MATH 1550", "Differential and Integral Calculus"],
+  ["MATH 1552", "Analytic Geometry and Calculus II"],
+  ["ENGL 1001", "English Composition"],
+  ["ENGL 2000", "English Composition II"],
+  ["BIOL 1001", "General Biology I"],
+  ["CHEM 1201", "Basic Chemistry I"],
+].map(([code, title]) => ({
+  catalogYear: "2026-2027",
+  code: code!,
+  title: title!,
+  credits: { min: 3, max: 3, note: null },
+  description: title!,
+  prerequisiteText: null,
+}));
 
 describe("CourseSearch", () => {
   afterEach(() => {
@@ -11,7 +32,7 @@ describe("CourseSearch", () => {
   });
 
   it("renders search input and initial course list", () => {
-    render(<CourseSearch />);
+    render(<CourseSearch courses={TEST_CATALOG} />);
 
     expect(screen.getByLabelText("Search Courses")).toBeInTheDocument();
     expect(screen.getByTestId("course-results-list")).toBeInTheDocument();
@@ -20,7 +41,7 @@ describe("CourseSearch", () => {
 
   it("filters courses matching query as user types", async () => {
     const user = userEvent.setup();
-    render(<CourseSearch />);
+    render(<CourseSearch courses={TEST_CATALOG} />);
 
     const searchInput = screen.getByLabelText("Search Courses");
     await user.type(searchInput, "1350");
@@ -32,7 +53,7 @@ describe("CourseSearch", () => {
 
   it("displays no results message when query returns no matches", async () => {
     const user = userEvent.setup();
-    render(<CourseSearch />);
+    render(<CourseSearch courses={TEST_CATALOG} />);
 
     const searchInput = screen.getByLabelText("Search Courses");
     await user.type(searchInput, "XYZ 9999");
@@ -44,16 +65,12 @@ describe("CourseSearch", () => {
 
   it("clears search input when clear button is clicked", async () => {
     const user = userEvent.setup();
-    render(<CourseSearch />);
+    render(<CourseSearch courses={TEST_CATALOG} />);
 
     const searchInput = screen.getByLabelText("Search Courses");
     await user.type(searchInput, "Calculus");
-
     expect(screen.getByDisplayValue("Calculus")).toBeInTheDocument();
-
-    const clearBtn = screen.getByRole("button", { name: "Clear search query" });
-    await user.click(clearBtn);
-
+    await user.click(screen.getByRole("button", { name: "Clear search query" }));
     expect(screen.getByLabelText("Search Courses")).toHaveValue("");
     expect(screen.getByText("Showing all 10 courses")).toBeInTheDocument();
   });
@@ -63,19 +80,17 @@ describe("CourseSearch", () => {
     const handleSelect = vi.fn();
     const handleToggle = vi.fn();
 
-    render(<CourseSearch onSelectCourse={handleSelect} onToggleCompleted={handleToggle} />);
-
-    const searchInput = screen.getByLabelText("Search Courses");
-    await user.type(searchInput, "CSC 1350");
-
-    const selectBtn = screen.getByRole("button", { name: "Select" });
-    await user.click(selectBtn);
-
+    render(
+      <CourseSearch
+        courses={TEST_CATALOG}
+        onSelectCourse={handleSelect}
+        onToggleCompleted={handleToggle}
+      />,
+    );
+    await user.type(screen.getByLabelText("Search Courses"), "CSC 1350");
+    await user.click(screen.getByRole("button", { name: "Select" }));
     expect(handleSelect).toHaveBeenCalledWith(expect.objectContaining({ code: "CSC 1350" }));
-
-    const toggleBtn = screen.getByRole("button", { name: "Mark Completed" });
-    await user.click(toggleBtn);
-
+    await user.click(screen.getByRole("button", { name: "Mark Completed" }));
     expect(handleToggle).toHaveBeenCalledWith("CSC 1350");
   });
 });

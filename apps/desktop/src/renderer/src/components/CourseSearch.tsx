@@ -1,8 +1,8 @@
 import type { Course, CourseCode } from "@jevschedule/shared";
-import { SAMPLE_CATALOG, useCourseSearch } from "../hooks/useCourseSearch.js";
+import { useCourseSearch } from "../hooks/useCourseSearch.js";
 
 export interface CourseSearchProps {
-  courses?: Course[];
+  courses: Course[];
   completedCourses?: Set<CourseCode>;
   onSelectCourse?: (course: Course) => void;
   onToggleCompleted?: (code: CourseCode) => void;
@@ -17,7 +17,7 @@ export function formatCreditsDisplay(credits: Course["credits"]): string {
 }
 
 export function CourseSearch({
-  courses = SAMPLE_CATALOG,
+  courses,
   completedCourses = new Set(),
   onSelectCourse,
   onToggleCompleted,

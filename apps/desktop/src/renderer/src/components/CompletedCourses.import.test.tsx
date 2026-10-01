@@ -27,6 +27,14 @@ describe("transcript upload in the installed desktop screen", () => {
             else completed.delete(code);
           },
         },
+        catalog: {
+          listCourses: async () => [],
+          getCourseDetails: async () => ({}),
+          listDegrees: async () => [],
+          getDegree: async () => {
+            throw new Error("none");
+          },
+        },
         transcript: { select },
       },
     });
@@ -38,5 +46,34 @@ describe("transcript upload in the installed desktop screen", () => {
     await user.click(screen.getByTestId("confirm-import-btn"));
     await waitFor(() => expect(screen.getByText("CSC 1350 completed")).toBeInTheDocument());
     expect(select).toHaveBeenCalledOnce();
+  });
+  it("lists server catalog courses and persists a search completion toggle", async () => {
+    const user = userEvent.setup();
+    const set = vi.fn();
+    const catalogCourse = {
+      catalogYear: "2026-2027",
+      code: "CSC 1350",
+      title: "Computer Science I",
+      credits: { min: 3, max: 3, note: null },
+      description: "Introductory course",
+      prerequisiteText: null,
+    };
+    Object.assign(window, {
+      jevschedule: {
+        completed: { get: async () => [], set },
+        transcript: { select: async () => null },
+        catalog: {
+          listCourses: async () => [catalogCourse],
+          getCourseDetails: async () => ({}),
+          listDegrees: async () => [],
+          getDegree: async () => {
+            throw new Error("none");
+          },
+        },
+      },
+    });
+    render(<CompletedCourses />);
+    await user.click(await screen.findByRole("button", { name: "Mark Completed" }));
+    await waitFor(() => expect(set).toHaveBeenCalledWith("CSC 1350", true));
   });
 });

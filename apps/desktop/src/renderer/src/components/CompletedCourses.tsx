@@ -1,10 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { CourseCodeSchema, type CourseCode } from "@jevschedule/shared";
+import { useCatalogCourses } from "../hooks/useCatalog.js";
 import { useCompletedCourses } from "../hooks/useCompletedCourses.js";
+import { CourseSearch } from "./CourseSearch.js";
 import { CourseCompletionToggle } from "./CourseCompletionToggle.js";
 import { ImportProgressFlow } from "./ImportProgressFlow.js";
 
 export function CompletedCourses() {
+  const { courses, loading: catalogLoading, error: catalogError } = useCatalogCourses();
   const { completed, loading, loaded, pending, error, toggleCourse, isCompleted, refresh } =
     useCompletedCourses();
   const [input, setInput] = useState("");
@@ -27,6 +30,22 @@ export function CompletedCourses() {
   return (
     <main>
       <h1>Completed courses</h1>
+      {catalogLoading ? (
+        <p>Loading course catalog…</p>
+      ) : catalogError ? (
+        <p role="alert">
+          Course catalog unavailable. Start the server (pnpm dev) to search courses; you can still
+          enter codes below.
+        </p>
+      ) : (
+        <CourseSearch
+          courses={courses}
+          completedCourses={completed}
+          onToggleCompleted={(code) => {
+            if (loaded) void toggleCourse(code);
+          }}
+        />
+      )}
       <p>Enter a course code to mark it complete or incomplete. Changes stay on this device.</p>
       <form onSubmit={selectCourse}>
         <label htmlFor="course-code">Course code</label>

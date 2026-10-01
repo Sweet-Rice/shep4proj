@@ -3,13 +3,14 @@ import { CourseCodeSchema, PlanSchema } from "@jevschedule/shared";
 import type { TranscriptParseResult } from "@jevschedule/workday";
 import { z } from "zod";
 import { IPC_CHANNELS } from "../shared/ipc.js";
+import type { CatalogClient } from "./catalog.js";
 import type { CompletedStore } from "./store/completed.js";
 import type { PlanStore } from "./store/plan.js";
-
-/** Stores the IPC handlers read and write. */
+/** Stores and services the handlers read. */
 export interface IpcStores {
   completed: CompletedStore;
   plan: PlanStore;
+  catalog: CatalogClient;
 }
 
 /** Thrown when an IPC call comes from a frame that isn't the app's own renderer. */
@@ -22,6 +23,8 @@ export class UntrustedIpcSenderError extends Error {
 
 const CompletedSetArgsSchema = z.tuple([CourseCodeSchema, z.boolean()]);
 const PlanSaveArgsSchema = z.tuple([PlanSchema]);
+const CatalogCourseDetailsArgsSchema = z.tuple([z.array(CourseCodeSchema).max(500)]);
+const CatalogDegreeArgsSchema = z.tuple([z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)]);
 
 /**
  * Whether `frameUrl` is the app's own renderer at `rendererUrl`: the same origin for the dev
@@ -73,5 +76,21 @@ export function registerIpcHandlers(
   handle(IPC_CHANNELS.transcriptSelect, (args) => {
     z.tuple([]).parse(args);
     return selectTranscript();
+  });
+  handle(IPC_CHANNELS.catalogCourses, (args) => {
+    z.tuple([]).parse(args);
+    return stores.catalog.listCourses();
+  });
+  handle(IPC_CHANNELS.catalogCourseDetails, (args) => {
+    const [codes] = CatalogCourseDetailsArgsSchema.parse(args);
+    return stores.catalog.getCourseDetails(codes);
+  });
+  handle(IPC_CHANNELS.catalogDegrees, (args) => {
+    z.tuple([]).parse(args);
+    return stores.catalog.listDegrees();
+  });
+  handle(IPC_CHANNELS.catalogDegree, (args) => {
+    const [id] = CatalogDegreeArgsSchema.parse(args);
+    return stores.catalog.getDegree(id);
   });
 }
