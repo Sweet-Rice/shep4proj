@@ -3,10 +3,9 @@ import * as os from "node:os";
 import * as path from "node:path";
 import type { FastifyInstance } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
-import { DegreeProgramSchema } from "@jevschedule/shared";
+import { DegreeProgramSchema, type DegreeSummary } from "@jevschedule/shared";
 import { buildServer } from "../app.js";
 import { DEFAULT_DEGREE_DATA_DIR } from "../degrees/load.js";
-import type { DegreeSummary } from "./degrees.js";
 
 describe("degrees routes", () => {
   let app: FastifyInstance | undefined;

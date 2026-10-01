@@ -1,7 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { type Course } from "@jevschedule/shared";
-import type { CourseDetailResponse } from "./routes/courses.js";
+import { type Course, type CourseDetail } from "@jevschedule/shared";
 import { buildServer } from "./app.js";
 import { seedCatalogFixtures } from "./catalog/seed.js";
 import { createDb, type Db } from "./db/client.js";
@@ -109,7 +108,7 @@ describe.skipIf(!getTestDatabaseUrl())("courses routes", () => {
       const res = await app.inject({ method: "GET", url: "/courses/CSC-4330" });
 
       expect(res.statusCode).toBe(200);
-      const course = res.json<CourseDetailResponse>();
+      const course = res.json<CourseDetail>();
       expect(course.title).toBe("Software Systems Development");
       expect(course.credits).toEqual({ min: 3, max: 3, note: null });
       expect(course.prerequisiteText).toBe("CSC 3102, CSC 3380.");
@@ -128,7 +127,7 @@ describe.skipIf(!getTestDatabaseUrl())("courses routes", () => {
       const res = await app.inject({ method: "GET", url: "/courses/CSC-3102" });
 
       expect(res.statusCode).toBe(200);
-      const course = res.json<CourseDetailResponse>();
+      const course = res.json<CourseDetail>();
       expect(course.code).toBe("CSC 3102");
       expect(course.prereq.needsReview).toBe(true);
       expect(course.prereq.tree).toBeNull();
@@ -139,7 +138,7 @@ describe.skipIf(!getTestDatabaseUrl())("courses routes", () => {
       const res = await app.inject({ method: "GET", url: "/courses/CSC-1350" });
 
       expect(res.statusCode).toBe(200);
-      const course = res.json<CourseDetailResponse>();
+      const course = res.json<CourseDetail>();
       expect(course.code).toBe("CSC 1350");
       expect(course.prereq.tree).toEqual({
         type: "OR",

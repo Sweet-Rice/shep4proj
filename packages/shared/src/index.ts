@@ -2,6 +2,8 @@
 export const PACKAGE_NAME = "@jevschedule/shared";
 
 export { CourseKeySchema, CourseSchema, CreditsSchema, parseCreditsText } from "./course.js";
+export { CourseDetailSchema, DegreeSummarySchema } from "./catalog-api.js";
+export type { CourseDetail, DegreeSummary } from "./catalog-api.js";
 export type { Course, CourseKey, Credits } from "./course.js";
 
 export { CatalogYearSchema } from "./catalog-year.js";

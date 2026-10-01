@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { and, asc, eq, max } from "drizzle-orm";
-import { CatalogYearSchema, type Course, type PrereqNode } from "@jevschedule/shared";
+import { CatalogYearSchema, type Course, type CourseDetail } from "@jevschedule/shared";
 import type { Db } from "../db/client.js";
 import { courses, sectionArchive, type CourseRow } from "../db/schema.js";
 
@@ -35,21 +35,12 @@ function toCourse(row: CourseRow): Course {
   };
 }
 
-export type CourseDetailResponse = Course & {
-  prereq: {
-    tree: PrereqNode | null;
-    needsReview: boolean;
-    reviewReason: string | null;
-    notes: string[];
-  };
-};
-
 /** Archived terms where a course had at least one offered section. */
 export interface CourseHistoryResponse {
   history: { term: string; sectionCount: number; capturedAt: string }[];
 }
 
-function toCourseDetail(row: CourseRow): CourseDetailResponse {
+function toCourseDetail(row: CourseRow): CourseDetail {
   return {
     ...toCourse(row),
     prereq: {
