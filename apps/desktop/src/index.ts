@@ -19,6 +19,9 @@ export { SectionWatchToggle } from "./renderer/src/components/SectionWatchToggle
 export { useSectionWatches } from "./renderer/src/hooks/useSectionWatches.js";
 export { JevProviderService } from "./renderer/src/services/jevProvider.js";
 export { SuggestionView } from "./renderer/src/components/SuggestionView.js";
+export { ModelProviderSettingsView } from "./renderer/src/components/ModelProviderSettingsView.js";
+export { useModelProviders } from "./renderer/src/hooks/useModelProviders.js";
+export { validateProviderSettings } from "./renderer/src/services/modelProviders.js";
 
 /** Package identifier, used to prove cross-package builds work. */
 export const PACKAGE_NAME = "@jevschedule/desktop";
