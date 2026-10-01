@@ -26,7 +26,8 @@ COPY packages/scraper packages/scraper
 COPY apps/server apps/server
 RUN pnpm --filter @jevschedule/server... build
 
-# Production deps only, with the workspace packages copied in (not symlinked).
+# Production deps only, self-contained: the workspace packages are copied into /out/node_modules
+# instead of linking back to /repo/packages.
 RUN pnpm --filter @jevschedule/server deploy --prod /out
 
 FROM node:24-alpine AS runtime
