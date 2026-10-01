@@ -155,7 +155,11 @@ export function nextSeatPollDelayMs(failures: number, intervalMs: number): numbe
 }
 
 /**
- * Runs `poll` now and then again after each one finishes, waiting `nextSeatPollDelayMs` (T-512).
+ * Runs `poll` `SEAT_POLL_RETRY_BASE_MS` after starting, then again after each one finishes,
+ * waiting `nextSeatPollDelayMs` (T-512). The first poll waits because the poller keeps no record
+ * of its last one: polling at startup would cost a portal request per watched term on every
+ * restart, and a server stuck restarting would hit the portal over and over.
+ *
  * A poll fails if it throws (passed to `onError`) or any listing in it failed. Polls never
  * overlap, and the timer is unref'd so it never keeps the process alive on its own.
  */
@@ -188,7 +192,7 @@ export function startSeatPoller(o: {
       });
   }
 
-  tick();
+  timer = setTimeout(tick, SEAT_POLL_RETRY_BASE_MS).unref();
   return {
     async stop() {
       stopped = true;

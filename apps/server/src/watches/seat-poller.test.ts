@@ -79,11 +79,27 @@ describe("startSeatPoller", () => {
     vi.useRealTimers();
   });
 
-  it("polls immediately and then once per interval", async () => {
+  it("waits 15 minutes before the first poll, so a restart loop never reaches the portal", async () => {
     const { poll, times } = scriptedPoll([]);
     const poller = startSeatPoller({ poll, intervalMs: DAY, onError: vi.fn() });
-    await vi.advanceTimersByTimeAsync(3 * DAY);
-    expect(times).toEqual([0, DAY, 2 * DAY, 3 * DAY]);
+    expect(poll).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(15 * MINUTE - 1);
+    expect(poll).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(times).toEqual([15 * MINUTE]);
+    await poller.stop();
+
+    const restarted = scriptedPoll([]);
+    await startSeatPoller({ poll: restarted.poll, intervalMs: DAY, onError: vi.fn() }).stop();
+    await vi.advanceTimersByTimeAsync(DAY);
+    expect(restarted.poll).not.toHaveBeenCalled();
+  });
+
+  it("polls once per interval after the first poll", async () => {
+    const { poll, times } = scriptedPoll([]);
+    const poller = startSeatPoller({ poll, intervalMs: DAY, onError: vi.fn() });
+    await vi.advanceTimersByTimeAsync(15 * MINUTE + 3 * DAY);
+    expect(times).toEqual([0, DAY, 2 * DAY, 3 * DAY].map((time) => 15 * MINUTE + time));
     await poller.stop();
   });
 
@@ -114,8 +130,8 @@ describe("startSeatPoller", () => {
   it("does not back off for terms the portal no longer lists", async () => {
     const { poll, times } = scriptedPoll([unlisted, unlisted]);
     const poller = startSeatPoller({ poll, intervalMs: DAY, onError: vi.fn() });
-    await vi.advanceTimersByTimeAsync(DAY);
-    expect(times).toEqual([0, DAY]);
+    await vi.advanceTimersByTimeAsync(15 * MINUTE + DAY);
+    expect(times).toEqual([15 * MINUTE, 15 * MINUTE + DAY]);
     await poller.stop();
   });
 
