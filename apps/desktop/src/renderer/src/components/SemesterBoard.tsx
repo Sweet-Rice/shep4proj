@@ -1,5 +1,13 @@
 import { useState } from "react";
-import type { CourseCode, Plan, Season } from "@jevschedule/shared";
+import {
+  validatePlan,
+  type CompletedInput,
+  type CourseCode,
+  type Plan,
+  type PlanValidationIssue,
+  type Season,
+  type ValidationPlan,
+} from "@jevschedule/shared";
 
 export interface SemesterBoardProps {
   plan: Plan;
@@ -12,6 +20,9 @@ export interface SemesterBoardProps {
   onRemoveCourse?: (termIndex: number, code: CourseCode) => void;
   onAddTerm?: (season: Season, year: number) => void;
   onRemoveTerm?: (termIndex: number) => void;
+  /** Catalog data is required to check actual credits and prerequisites. */
+  courseDetails?: ValidationPlan["courseDetails"];
+  completed?: CompletedInput[] | Set<CourseCode>;
 }
 
 interface DraggedCourseData {
@@ -26,10 +37,13 @@ export function SemesterBoard({
   onRemoveCourse,
   onAddTerm,
   onRemoveTerm,
+  courseDetails,
+  completed = [],
 }: SemesterBoardProps) {
   const [dragData, setDragData] = useState<DraggedCourseData | null>(null);
   const [newSeason, setNewSeason] = useState<Season>("Fall");
   const [newYear, setNewYear] = useState<number>(2027);
+  const validation = courseDetails ? validatePlan({ ...plan, courseDetails }, completed) : null;
 
   const handleDragStart = (
     e: React.DragEvent<HTMLDivElement>,
@@ -100,8 +114,22 @@ export function SemesterBoard({
 
       <div className="terms-grid" data-testid="terms-grid">
         {plan.terms.map((term, termIndex) => {
-          const estimatedCredits = term.courses.length * 3;
-          const isOverLimit = estimatedCredits > plan.creditLimit;
+          const issues =
+            validation?.issues.filter(
+              (issue) => issue.term.season === term.season && issue.term.year === term.year,
+            ) ?? [];
+          const creditIssue = issues.find(
+            (issue): issue is Extract<PlanValidationIssue, { type: "credit_limit" }> =>
+              issue.type === "credit_limit",
+          );
+          const knownCredits = term.courses.reduce(
+            (sum, code) => sum + (courseDetails?.[code]?.credits.max ?? 0),
+            0,
+          );
+          const missingCredits = courseDetails
+            ? term.courses.some((code) => !courseDetails[code])
+            : term.courses.length > 0;
+          const isOverLimit = creditIssue !== undefined;
 
           return (
             <div
@@ -119,7 +147,8 @@ export function SemesterBoard({
                   className={`term-credits-badge ${isOverLimit ? "badge-danger" : ""}`}
                   data-testid={`term-credits-${termIndex}`}
                 >
-                  {estimatedCredits} / {plan.creditLimit} cr
+                  {courseDetails ? `${knownCredits}${missingCredits ? "+" : ""}` : "?"} /{" "}
+                  {plan.creditLimit} cr
                 </span>
                 {onRemoveTerm && (
                   <button
@@ -133,9 +162,9 @@ export function SemesterBoard({
                 )}
               </div>
 
-              {isOverLimit && (
+              {creditIssue && (
                 <p role="alert" className="limit-warning">
-                  Exceeds credit limit ({plan.creditLimit} cr)!
+                  {creditIssue.credits} credits exceed the {plan.creditLimit}-credit limit.
                 </p>
               )}
 
@@ -143,73 +172,87 @@ export function SemesterBoard({
                 {term.courses.length === 0 ? (
                   <p className="empty-term-message">Drag courses here</p>
                 ) : (
-                  term.courses.map((code, courseIndex) => (
-                    <div
-                      key={`${code}-${courseIndex}`}
-                      className="course-card"
-                      data-testid={`course-card-${code}`}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, termIndex, courseIndex, code)}
-                      onDragOver={handleDragOver}
-                      onDrop={(e) => handleDrop(e, termIndex, courseIndex)}
-                    >
-                      <div className="course-card-body">
-                        <span className="drag-handle" aria-hidden="true">
-                          ⋮⋮
-                        </span>
-                        <span className="course-code-text">{code}</span>
+                  term.courses.map((code, courseIndex) => {
+                    const courseIssues = issues.filter(
+                      (issue) => "courseCode" in issue && issue.courseCode === code,
+                    );
+                    return (
+                      <div
+                        key={`${code}-${courseIndex}`}
+                        className="course-card"
+                        data-testid={`course-card-${code}`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, termIndex, courseIndex, code)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, termIndex, courseIndex)}
+                      >
+                        <div className="course-card-body">
+                          <span className="drag-handle" aria-hidden="true">
+                            ⋮⋮
+                          </span>
+                          <span className="course-code-text">{code}</span>
+                        </div>
+                        {courseIssues.map((issue) => (
+                          <p role="alert" className="course-validation-error" key={issue.type}>
+                            {issue.type === "missing_course"
+                              ? "Catalog data unavailable for this course."
+                              : issue.type === "prerequisite"
+                                ? `Missing prerequisite: ${issue.missingPrerequisites.join(", ")}`
+                                : null}
+                          </p>
+                        ))}
+
+                        <div className="course-card-actions">
+                          {termIndex > 0 && (
+                            <button
+                              type="button"
+                              className="btn btn-xs"
+                              onClick={() =>
+                                onMoveCourse(
+                                  termIndex,
+                                  courseIndex,
+                                  termIndex - 1,
+                                  plan.terms[termIndex - 1]?.courses.length ?? 0,
+                                )
+                              }
+                              aria-label={`Move ${code} left to ${plan.terms[termIndex - 1]?.season}`}
+                            >
+                              ← Move
+                            </button>
+                          )}
+
+                          {termIndex < plan.terms.length - 1 && (
+                            <button
+                              type="button"
+                              className="btn btn-xs"
+                              onClick={() =>
+                                onMoveCourse(
+                                  termIndex,
+                                  courseIndex,
+                                  termIndex + 1,
+                                  plan.terms[termIndex + 1]?.courses.length ?? 0,
+                                )
+                              }
+                              aria-label={`Move ${code} right to ${plan.terms[termIndex + 1]?.season}`}
+                            >
+                              Move →
+                            </button>
+                          )}
+
+                          {onRemoveCourse && (
+                            <button
+                              type="button"
+                              className="btn btn-xs btn-remove"
+                              onClick={() => onRemoveCourse(termIndex, code)}
+                              aria-label={`Remove ${code} from ${term.season} ${term.year}`}
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
                       </div>
-
-                      <div className="course-card-actions">
-                        {termIndex > 0 && (
-                          <button
-                            type="button"
-                            className="btn btn-xs"
-                            onClick={() =>
-                              onMoveCourse(
-                                termIndex,
-                                courseIndex,
-                                termIndex - 1,
-                                plan.terms[termIndex - 1]?.courses.length ?? 0,
-                              )
-                            }
-                            aria-label={`Move ${code} left to ${plan.terms[termIndex - 1]?.season}`}
-                          >
-                            ← Move
-                          </button>
-                        )}
-
-                        {termIndex < plan.terms.length - 1 && (
-                          <button
-                            type="button"
-                            className="btn btn-xs"
-                            onClick={() =>
-                              onMoveCourse(
-                                termIndex,
-                                courseIndex,
-                                termIndex + 1,
-                                plan.terms[termIndex + 1]?.courses.length ?? 0,
-                              )
-                            }
-                            aria-label={`Move ${code} right to ${plan.terms[termIndex + 1]?.season}`}
-                          >
-                            Move →
-                          </button>
-                        )}
-
-                        {onRemoveCourse && (
-                          <button
-                            type="button"
-                            className="btn btn-xs btn-remove"
-                            onClick={() => onRemoveCourse(termIndex, code)}
-                            aria-label={`Remove ${code} from ${term.season} ${term.year}`}
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

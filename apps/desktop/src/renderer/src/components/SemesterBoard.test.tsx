@@ -3,7 +3,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
-import type { Plan } from "@jevschedule/shared";
+import type { Plan, ValidationPlan } from "@jevschedule/shared";
 import { SemesterBoard } from "./SemesterBoard.js";
 
 const samplePlan: Plan = {
@@ -12,6 +12,27 @@ const samplePlan: Plan = {
     { season: "Fall", year: 2026, courses: ["CSC 1350", "MATH 1550"] },
     { season: "Spring", year: 2027, courses: ["CSC 1351"] },
   ],
+};
+
+const courseDetails: ValidationPlan["courseDetails"] = {
+  "CSC 1350": {
+    code: "CSC 1350",
+    credits: { min: 4, max: 4, note: null },
+    prereq: { tree: null, needsReview: false },
+  },
+  "MATH 1550": {
+    code: "MATH 1550",
+    credits: { min: 5, max: 5, note: null },
+    prereq: { tree: null, needsReview: false },
+  },
+  "CSC 1351": {
+    code: "CSC 1351",
+    credits: { min: 4, max: 4, note: null },
+    prereq: {
+      tree: { type: "COURSE", code: "CSC 1350", coreq: false, minGrade: null },
+      needsReview: false,
+    },
+  },
 };
 
 describe("SemesterBoard", () => {
@@ -84,5 +105,31 @@ describe("SemesterBoard", () => {
     await user.click(addTermBtn);
 
     expect(handleAddTerm).toHaveBeenCalledWith("Fall", 2027);
+  });
+
+  it("shows a prerequisite error on an invalid course placement", () => {
+    const plan: Plan = {
+      creditLimit: 12,
+      terms: [
+        { season: "Fall", year: 2026, courses: ["CSC 1351"] },
+        { season: "Spring", year: 2027, courses: ["CSC 1350"] },
+      ],
+    };
+    render(<SemesterBoard plan={plan} courseDetails={courseDetails} onMoveCourse={vi.fn()} />);
+    expect(screen.getByTestId("course-card-CSC 1351")).toHaveTextContent(
+      "Missing prerequisite: CSC 1350 completed",
+    );
+  });
+
+  it("warns using catalog credits rather than a three-credit estimate", () => {
+    render(
+      <SemesterBoard
+        plan={{ ...samplePlan, creditLimit: 8 }}
+        courseDetails={courseDetails}
+        onMoveCourse={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId("term-credits-0")).toHaveTextContent("9 / 8 cr");
+    expect(screen.getByRole("alert")).toHaveTextContent("9 credits exceed the 8-credit limit");
   });
 });
