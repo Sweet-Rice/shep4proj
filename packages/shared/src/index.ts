@@ -21,6 +21,13 @@ export type { PrereqRecord } from "./prereq-record.js";
 export { collectPrereqCourseCodes, getUnfulfilledPrereqs } from "./prereq-utils.js";
 export { isEligible } from "./is-eligible.js";
 export type { EligibilityCourse, EligibilityResult } from "./is-eligible.js";
+export { validatePlan } from "./validate-plan.js";
+export type {
+  PlanCourse,
+  PlanValidationIssue,
+  PlanValidationResult,
+  ValidationPlan,
+} from "./validate-plan.js";
 export {
   AcademicPeriodIdSchema,
   MeetingSchema,

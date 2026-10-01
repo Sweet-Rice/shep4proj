@@ -27,8 +27,8 @@ export const DEFAULT_CREDIT_LIMIT = 19;
  * term appears once and each course is planned at most once across the whole plan; whether
  * the order respects prerequisites is `validatePlan`'s job (T-233), not the schema's.
  *
- * `creditLimit` is the student's maximum credit hours per term (T-236). It lives on the plan so
- * `validatePlan(plan, completed)` can enforce it without another argument.
+ * `creditLimit` is the student's maximum credit hours per term (T-236). Validation also needs
+ * catalog course details, supplied alongside this saved plan as `ValidationPlan.courseDetails`.
  */
 export const PlanSchema = z
   .object({
