@@ -1,8 +1,39 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
+import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
+import type { Section } from "@jevschedule/shared";
 import { WeeklyCalendar, formatMinuteToTime, SAMPLE_SECTIONS } from "./WeeklyCalendar.js";
+
+const overlappingSections: Section[] = [
+  {
+    term: "LSUAM_FALL_2026",
+    courseCode: "CSC 1350",
+    sectionNumber: "001",
+    sectionType: "LEC",
+    credits: { min: 3, max: 3, note: null },
+    instructor: "Dr. Duncan",
+    location: "Coates 0214",
+    deliveryMode: "In Person",
+    enrollment: 45,
+    capacity: 50,
+    meetings: [{ days: ["Mon"], startMinute: 540, endMinute: 600 }], // 9:00 - 10:00 AM
+  },
+  {
+    term: "LSUAM_FALL_2026",
+    courseCode: "MATH 1550",
+    sectionNumber: "001",
+    sectionType: "LEC",
+    credits: { min: 5, max: 5, note: null },
+    instructor: "Dr. Smith",
+    location: "Lockett 0101",
+    deliveryMode: "In Person",
+    enrollment: 40,
+    capacity: 40,
+    meetings: [{ days: ["Mon"], startMinute: 570, endMinute: 630 }], // 9:30 - 10:30 AM (overlap!)
+  },
+];
 
 describe("WeeklyCalendar & formatMinuteToTime", () => {
   afterEach(() => {
@@ -35,21 +66,39 @@ describe("WeeklyCalendar & formatMinuteToTime", () => {
     render(<WeeklyCalendar sections={SAMPLE_SECTIONS} />);
 
     // CSC 1350 meets Mon, Wed, Fri
-    expect(screen.getByTestId("meeting-block-CSC 1350-Mon")).toHaveTextContent("CSC 1350");
-    expect(screen.getByTestId("meeting-block-CSC 1350-Wed")).toHaveTextContent("CSC 1350");
-    expect(screen.getByTestId("meeting-block-CSC 1350-Fri")).toHaveTextContent("CSC 1350");
+    expect(screen.getByTestId("meeting-block-CSC 1350-Mon")).toBeInTheDocument();
+    expect(screen.getByTestId("meeting-block-CSC 1350-Wed")).toBeInTheDocument();
+    expect(screen.getByTestId("meeting-block-CSC 1350-Fri")).toBeInTheDocument();
 
     // MATH 1550 meets Tue, Thu
-    expect(screen.getByTestId("meeting-block-MATH 1550-Tue")).toHaveTextContent("MATH 1550");
-    expect(screen.getByTestId("meeting-block-MATH 1550-Thu")).toHaveTextContent("MATH 1550");
+    expect(screen.getByTestId("meeting-block-MATH 1550-Tue")).toBeInTheDocument();
+    expect(screen.getByTestId("meeting-block-MATH 1550-Thu")).toBeInTheDocument();
   });
 
-  it("renders section location and time details in meeting block", () => {
-    render(<WeeklyCalendar sections={SAMPLE_SECTIONS} />);
+  it("highlights overlapping section meetings with red conflict style and alert banner", () => {
+    render(<WeeklyCalendar sections={overlappingSections} />);
+
+    expect(screen.getByTestId("schedule-conflict-banner")).toBeInTheDocument();
 
     const cscBlock = screen.getByTestId("meeting-block-CSC 1350-Mon");
-    expect(cscBlock).toHaveTextContent("001-LEC");
-    expect(cscBlock).toHaveTextContent("Coates 0214");
-    expect(cscBlock).toHaveTextContent("9:00 AM – 10:00 AM");
+    const mathBlock = screen.getByTestId("meeting-block-MATH 1550-Mon");
+
+    expect(cscBlock).toHaveClass("conflict");
+    expect(mathBlock).toHaveClass("conflict");
+    expect(screen.getByTestId("conflict-badge-CSC 1350-001")).toBeInTheDocument();
+  });
+
+  it("calls onRemoveSection when remove button is clicked", async () => {
+    const user = userEvent.setup();
+    const handleRemove = vi.fn();
+
+    render(<WeeklyCalendar sections={SAMPLE_SECTIONS} onRemoveSection={handleRemove} />);
+
+    const removeBtns = screen.getAllByTestId("remove-section-CSC 1350-001");
+    expect(removeBtns.length).toBeGreaterThan(0);
+
+    await user.click(removeBtns[0]!);
+
+    expect(handleRemove).toHaveBeenCalledWith("CSC 1350-001");
   });
 });

@@ -1,9 +1,12 @@
 import type { Section, Weekday } from "@jevschedule/shared";
+import { findScheduleConflicts, getSectionKey } from "../hooks/useScheduleBuilder.js";
 
 export const CALENDAR_DAYS: Weekday[] = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 export interface WeeklyCalendarProps {
   sections?: Section[];
+  conflictingSectionKeys?: Set<string>;
+  onRemoveSection?: (sectionKey: string) => void;
   startHour?: number; // 8 = 8 AM (480 mins)
   endHour?: number; // 18 = 6 PM (1080 mins)
 }
@@ -68,9 +71,13 @@ interface CalendarMeetingSlot {
 
 export function WeeklyCalendar({
   sections = SAMPLE_SECTIONS,
+  conflictingSectionKeys,
+  onRemoveSection,
   startHour = 8,
   endHour = 18,
 }: WeeklyCalendarProps) {
+  const conflicts = conflictingSectionKeys ?? findScheduleConflicts(sections);
+
   const startMinuteTotal = startHour * 60;
   const endMinuteTotal = endHour * 60;
   const totalMinutes = endMinuteTotal - startMinuteTotal;
@@ -101,6 +108,16 @@ export function WeeklyCalendar({
       <header className="calendar-header">
         <h2>Weekly Schedule</h2>
         <p className="calendar-subtitle">Mon–Fri Class Time Grid</p>
+        {conflicts.size > 0 && (
+          <div
+            role="alert"
+            className="conflict-alert-banner"
+            data-testid="schedule-conflict-banner"
+          >
+            ⚠ Schedule Conflict Detected ({conflicts.size} section{conflicts.size > 1 ? "s" : ""}{" "}
+            overlap)
+          </div>
+        )}
       </header>
 
       <div className="calendar-grid" role="region" aria-label="Weekly class schedule time grid">
@@ -138,18 +155,28 @@ export function WeeklyCalendar({
                 const heightPercent = ((slot.endMinute - slot.startMinute) / totalMinutes) * 100;
 
                 const { section } = slot;
+                const key = getSectionKey(section);
+                const isConflict = conflicts.has(key);
 
                 return (
                   <div
                     key={`${section.courseCode}-${section.sectionNumber}-${day}-${idx}`}
-                    className="meeting-block"
+                    className={`meeting-block ${isConflict ? "conflict" : ""}`}
                     data-testid={`meeting-block-${section.courseCode}-${day}`}
                     style={{
                       top: `${Math.max(0, topPercent)}%`,
                       height: `${Math.max(4, heightPercent)}%`,
                     }}
                   >
-                    <div className="block-title">{section.courseCode}</div>
+                    <div className="block-header">
+                      <span className="block-title">{section.courseCode}</span>
+                      {isConflict && (
+                        <span className="conflict-badge" data-testid={`conflict-badge-${key}`}>
+                          ⚠ Conflict
+                        </span>
+                      )}
+                    </div>
+
                     <div className="block-sub">
                       {section.sectionNumber}-{section.sectionType}
                     </div>
@@ -157,6 +184,18 @@ export function WeeklyCalendar({
                     <div className="block-time">
                       {formatMinuteToTime(slot.startMinute)} – {formatMinuteToTime(slot.endMinute)}
                     </div>
+
+                    {onRemoveSection && (
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-remove-section"
+                        onClick={() => onRemoveSection(key)}
+                        aria-label={`Remove section ${section.courseCode} ${section.sectionNumber}`}
+                        data-testid={`remove-section-${key}`}
+                      >
+                        Remove
+                      </button>
+                    )}
                   </div>
                 );
               })}
