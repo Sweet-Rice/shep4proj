@@ -13,9 +13,12 @@ export interface EligibilityCourse {
 }
 
 export interface EligibilityResult {
-  eligible: boolean;
+  /** Null means the prerequisite text needs a human decision. */
+  eligible: boolean | null;
+  status: "eligible" | "ineligible" | "needs_review";
   /** Requirements that still need to be met, including alternatives for an OR branch. */
   missingPrerequisites: string[];
+  warning?: string;
 }
 
 const GRADE_RANK: Record<LetterGrade, number> = { A: 4, B: 3, C: 2, D: 1 };
@@ -64,10 +67,15 @@ export function isEligible(
   plannedSameTerm: ReadonlySet<CourseCode> | readonly CourseCode[],
 ): EligibilityResult {
   if (course.prereq.needsReview) {
-    return { eligible: false, missingPrerequisites: ["Prerequisites need manual review"] };
+    return {
+      eligible: null,
+      status: "needs_review",
+      missingPrerequisites: [],
+      warning: "Prerequisites need manual review; check the catalog before enrolling.",
+    };
   }
   if (course.prereq.tree === null) {
-    return { eligible: true, missingPrerequisites: [] };
+    return { eligible: true, status: "eligible", missingPrerequisites: [] };
   }
 
   const grades = new Map<CourseCode, LetterGrade | null>();
@@ -85,5 +93,9 @@ export function isEligible(
   }
   const planned = plannedSameTerm instanceof Set ? plannedSameTerm : new Set(plannedSameTerm);
   const missingPrerequisites = missingForNode(course.prereq.tree, grades, planned);
-  return { eligible: missingPrerequisites.length === 0, missingPrerequisites };
+  return {
+    eligible: missingPrerequisites.length === 0,
+    status: missingPrerequisites.length === 0 ? "eligible" : "ineligible",
+    missingPrerequisites,
+  };
 }

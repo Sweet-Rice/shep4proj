@@ -66,4 +66,22 @@ describe("validatePlan", () => {
       { type: "credit_limit", credits: 9, creditLimit: 8 },
     ]);
   });
+
+  it("reports manual review as a warning without claiming the plan is invalid", () => {
+    const plan: ValidationPlan = {
+      creditLimit: 19,
+      terms: [term("Spring", 2027, "CSC 1351")],
+      courseDetails: {
+        ...details,
+        "CSC 1351": {
+          ...details["CSC 1351"]!,
+          prereq: { tree: null, needsReview: true },
+        },
+      },
+    };
+    expect(validatePlan(plan, [])).toMatchObject({
+      valid: true,
+      issues: [{ type: "prerequisite_warning", courseCode: "CSC 1351" }],
+    });
+  });
 });

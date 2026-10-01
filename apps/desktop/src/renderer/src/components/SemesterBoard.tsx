@@ -193,12 +193,22 @@ export function SemesterBoard({
                           <span className="course-code-text">{code}</span>
                         </div>
                         {courseIssues.map((issue) => (
-                          <p role="alert" className="course-validation-error" key={issue.type}>
+                          <p
+                            role={issue.type === "prerequisite_warning" ? "status" : "alert"}
+                            className={
+                              issue.type === "prerequisite_warning"
+                                ? "course-validation-warning"
+                                : "course-validation-error"
+                            }
+                            key={issue.type}
+                          >
                             {issue.type === "missing_course"
                               ? "Catalog data unavailable for this course."
                               : issue.type === "prerequisite"
                                 ? `Missing prerequisite: ${issue.missingPrerequisites.join(", ")}`
-                                : null}
+                                : issue.type === "prerequisite_warning"
+                                  ? issue.message
+                                  : null}
                           </p>
                         ))}
 

@@ -132,4 +132,19 @@ describe("SemesterBoard", () => {
     expect(screen.getByTestId("term-credits-0")).toHaveTextContent("9 / 8 cr");
     expect(screen.getByRole("alert")).toHaveTextContent("9 credits exceed the 8-credit limit");
   });
+
+  it("shows a manual-review warning rather than a missing-prerequisite error", () => {
+    const details: ValidationPlan["courseDetails"] = {
+      ...courseDetails,
+      "CSC 1351": {
+        ...courseDetails["CSC 1351"]!,
+        prereq: { tree: null, needsReview: true },
+      },
+    };
+    render(<SemesterBoard plan={samplePlan} courseDetails={details} onMoveCourse={vi.fn()} />);
+    const card = screen.getByTestId("course-card-CSC 1351");
+    expect(card).toHaveTextContent("Prerequisites need manual review");
+    expect(card.querySelector('[role="alert"]')).toBeNull();
+    expect(card.querySelector('[role="status"]')).not.toBeNull();
+  });
 });

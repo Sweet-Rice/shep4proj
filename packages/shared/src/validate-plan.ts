@@ -22,7 +22,8 @@ export type PlanValidationIssue =
       courseCode: CourseCode;
       missingPrerequisites: string[];
     }
-  | { type: "credit_limit"; term: PlanTerm; credits: number; creditLimit: number };
+  | { type: "credit_limit"; term: PlanTerm; credits: number; creditLimit: number }
+  | { type: "prerequisite_warning"; term: PlanTerm; courseCode: CourseCode; message: string };
 
 export interface PlanValidationResult {
   valid: boolean;
@@ -59,7 +60,14 @@ export function validatePlan(
       }
       credits += course.credits.max;
       const eligibility = isEligible(course, prior, sameTerm);
-      if (!eligibility.eligible) {
+      if (eligibility.status === "needs_review") {
+        issues.push({
+          type: "prerequisite_warning",
+          term,
+          courseCode,
+          message: eligibility.warning!,
+        });
+      } else if (eligibility.status === "ineligible") {
         issues.push({
           type: "prerequisite",
           term,
@@ -74,5 +82,5 @@ export function validatePlan(
     prior.push(...term.courses);
   }
 
-  return { valid: issues.length === 0, issues };
+  return { valid: issues.every((issue) => issue.type === "prerequisite_warning"), issues };
 }

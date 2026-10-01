@@ -49,6 +49,10 @@ main {
   color: light-dark(#a31515, #ffaaaa);
 }
 
+.course-validation-warning {
+  color: light-dark(#805500, #ffd27d);
+}
+
 .section-list-items,
 .section-list-meetings {
   list-style: none;
