@@ -153,25 +153,28 @@ export function PlanScreen() {
       {plan.terms.length === 0 && <p>Add a term below to start placing courses.</p>}
 
       {loaded && (
-      <SemesterBoard
-        plan={plan}
-        onMoveCourse={(sourceTermIndex, sourceCourseIndex, destTermIndex, destCourseIndex) => {
-          void moveCourse(sourceTermIndex, sourceCourseIndex, destTermIndex, destCourseIndex).catch(
-            () => {},
-          );
-        }}
-        onRemoveCourse={(termIndex, code) => {
-          void removeCourseFromTerm(termIndex, code).catch(() => {});
-        }}
-        onAddTerm={(season, year) => {
-          void addTerm(season, year).catch(() => {});
-        }}
-        onRemoveTerm={(termIndex) => {
-          void removeTerm(termIndex).catch(() => {});
-        }}
-        courseDetails={details}
-        completed={completed}
-      />
+        <SemesterBoard
+          plan={plan}
+          onMoveCourse={(sourceTermIndex, sourceCourseIndex, destTermIndex, destCourseIndex) => {
+            void moveCourse(
+              sourceTermIndex,
+              sourceCourseIndex,
+              destTermIndex,
+              destCourseIndex,
+            ).catch(() => {});
+          }}
+          onRemoveCourse={(termIndex, code) => {
+            void removeCourseFromTerm(termIndex, code).catch(() => {});
+          }}
+          onAddTerm={(season, year) => {
+            void addTerm(season, year).catch(() => {});
+          }}
+          onRemoveTerm={(termIndex) => {
+            void removeTerm(termIndex).catch(() => {});
+          }}
+          courseDetails={details}
+          completed={completed}
+        />
       )}
     </main>
   );

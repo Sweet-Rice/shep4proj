@@ -77,7 +77,10 @@ afterEach(() => {
 describe("PlanScreen", () => {
   it("withholds plan edits until the saved plan has loaded", async () => {
     const user = userEvent.setup();
-    const { promise, resolve } = Promise.withResolvers<Plan>();
+    let resolvePlan!: (plan: Plan) => void;
+    const promise = new Promise<Plan>((resolve) => {
+      resolvePlan = resolve;
+    });
     mockPlanGet.mockReturnValueOnce(promise);
     render(<PlanScreen />);
 
@@ -86,7 +89,7 @@ describe("PlanScreen", () => {
     expect(screen.getByRole("button", { name: "Add to plan" })).toBeDisabled();
     expect(mockPlanSave).not.toHaveBeenCalled();
 
-    resolve({
+    resolvePlan({
       creditLimit: 19,
       terms: [{ season: "Fall", year: 2026, courses: ["CSC 4330"] }],
     });
@@ -103,7 +106,6 @@ describe("PlanScreen", () => {
       });
     });
   });
-
 
   it("adds a catalog course to Fall 2026 and persists the plan", async () => {
     const user = userEvent.setup();
@@ -181,7 +183,6 @@ describe("PlanScreen", () => {
     expect(screen.getByRole("button", { name: "Add to plan" })).toBeDisabled();
     expect(mockPlanSave).toHaveBeenCalledTimes(1);
   });
-
 
   it("rolls back a failed plan save and shows the persistence error", async () => {
     const user = userEvent.setup();
