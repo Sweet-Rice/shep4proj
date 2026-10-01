@@ -54,8 +54,10 @@ and restarting the app. Codes use the shared format: 2–4 letters, a space, and
 
 Controls wait for the initial local-store read and disable a course while its write is
 pending. A failed write restores its previous state and displays an error. Completion data
-stays in the local SQLite store, not on the server. This screen accepts manual codes;
-catalog search and the desktop API client remain separate tasks (#60 and #59).
+stays in the local SQLite store, not on the server. The Courses screen searches the server
+catalog; start the server with `pnpm dev` after `db:migrate` and `db:seed:fixtures`. The
+manual form remains available for codes outside the catalog. Set `JEVSCHEDULE_API_URL` to
+override the default `http://127.0.0.1:3000` server URL.
 
 The desktop renderer opens to the **Courses** screen; use the **Degree progress** tab to view
 degree requirements. Only the selected planner screen is mounted.
