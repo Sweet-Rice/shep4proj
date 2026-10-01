@@ -137,7 +137,9 @@ jobs:
             curl -fsS -o /dev/null "http://127.0.0.1:3999$path" || fail "$path failed"
           done
 
+      # Runs even when an earlier step fails, so a failing build never skips the scan.
       - name: Scan for secrets
+        if: always()
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
