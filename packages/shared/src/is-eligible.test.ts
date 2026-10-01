@@ -18,6 +18,7 @@ describe("isEligible", () => {
   it("accepts a course without prerequisites", () => {
     expect(isEligible(course(null), [], [])).toEqual({
       eligible: true,
+      status: "eligible",
       missingPrerequisites: [],
     });
   });
@@ -29,6 +30,7 @@ describe("isEligible", () => {
     };
     expect(isEligible(course(tree), new Set(["CSC 1350"]), [])).toEqual({
       eligible: false,
+      status: "ineligible",
       missingPrerequisites: ["MATH 1550 completed"],
     });
     expect(isEligible(course(tree), ["CSC 1350", "MATH 1550"], []).eligible).toBe(true);
@@ -45,6 +47,7 @@ describe("isEligible", () => {
     expect(isEligible(course(tree), ["CSC 1350", "MATH 1551"], []).eligible).toBe(true);
     expect(isEligible(course(tree), ["CSC 1350"], [])).toEqual({
       eligible: false,
+      status: "ineligible",
       missingPrerequisites: ["One of: MATH 1550 completed; or MATH 1551 completed"],
     });
   });
@@ -53,6 +56,7 @@ describe("isEligible", () => {
     expect(isEligible(course(leaf("CSC 1350", true)), [], ["CSC 1350"]).eligible).toBe(true);
     expect(isEligible(course(leaf("CSC 1350")), [], ["CSC 1350"])).toEqual({
       eligible: false,
+      status: "ineligible",
       missingPrerequisites: ["CSC 1350 completed"],
     });
   });
@@ -76,10 +80,12 @@ describe("isEligible", () => {
     ]);
   });
 
-  it("does not treat unreviewed prerequisite text as no prerequisites", () => {
+  it("returns a warning instead of an ineligible verdict for unreviewed text", () => {
     expect(isEligible(course(null, true), [], [])).toEqual({
-      eligible: false,
-      missingPrerequisites: ["Prerequisites need manual review"],
+      eligible: null,
+      status: "needs_review",
+      missingPrerequisites: [],
+      warning: "Prerequisites need manual review; check the catalog before enrolling.",
     });
   });
 });
