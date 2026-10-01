@@ -114,7 +114,7 @@ describe("PlanScreen", () => {
     render(<PlanScreen />);
 
     await user.selectOptions(await screen.findByRole("combobox", { name: "Course" }), "CSC 4330");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Term" }), "0");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Term" }), "Fall-2026");
     await user.click(screen.getByRole("button", { name: "Add to plan" }));
 
     await waitFor(() => {
@@ -125,6 +125,63 @@ describe("PlanScreen", () => {
     });
     expect(await screen.findByTestId("course-card-CSC 4330")).toBeInTheDocument();
   });
+  it("keeps the selected term when an earlier term is removed", async () => {
+    const user = userEvent.setup();
+    mockPlanGet.mockResolvedValueOnce({
+      creditLimit: 19,
+      terms: [
+        { season: "Fall", year: 2026, courses: [] },
+        { season: "Spring", year: 2027, courses: [] },
+        { season: "Fall", year: 2028, courses: [] },
+      ],
+    });
+    render(<PlanScreen />);
+
+    const term = await screen.findByRole("combobox", { name: "Term" });
+    await user.selectOptions(term, "Spring-2027");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Course" }), "CSC 4330");
+    await user.click(screen.getByRole("button", { name: "Remove Fall 2026 term" }));
+
+    await waitFor(() => {
+      expect(mockPlanSave).toHaveBeenCalledWith({
+        creditLimit: 19,
+        terms: [
+          { season: "Spring", year: 2027, courses: [] },
+          { season: "Fall", year: 2028, courses: [] },
+        ],
+      });
+    });
+    await user.click(screen.getByRole("button", { name: "Add to plan" }));
+
+    await waitFor(() => {
+      expect(mockPlanSave).toHaveBeenLastCalledWith({
+        creditLimit: 19,
+        terms: [
+          { season: "Spring", year: 2027, courses: ["CSC 4330"] },
+          { season: "Fall", year: 2028, courses: [] },
+        ],
+      });
+    });
+  });
+
+  it("clears the selected term when that term is removed", async () => {
+    const user = userEvent.setup();
+    mockPlanGet.mockResolvedValueOnce({
+      creditLimit: 19,
+      terms: [{ season: "Fall", year: 2026, courses: [] }],
+    });
+    render(<PlanScreen />);
+
+    const term = await screen.findByRole("combobox", { name: "Term" });
+    await user.selectOptions(term, "Fall-2026");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Course" }), "CSC 4330");
+    await user.click(screen.getByRole("button", { name: "Remove Fall 2026 term" }));
+
+    await waitFor(() => expect(term).toHaveValue(""));
+    expect(screen.getByRole("button", { name: "Add to plan" })).toBeDisabled();
+    expect(mockPlanSave).toHaveBeenCalledTimes(1);
+  });
+
 
   it("shows an inline missing-prerequisite error for a course planned too early", async () => {
     mockPlanGet.mockResolvedValueOnce({

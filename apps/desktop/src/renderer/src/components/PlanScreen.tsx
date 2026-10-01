@@ -5,6 +5,8 @@ import { useCompletedCourses } from "../hooks/useCompletedCourses.js";
 import { usePlan } from "../hooks/usePlan.js";
 import { SemesterBoard } from "./SemesterBoard.js";
 
+const termKey = (term: { season: string; year: number }) => `${term.season}-${term.year}`;
+
 export function PlanScreen() {
   const {
     plan,
@@ -24,16 +26,22 @@ export function PlanScreen() {
   const [creditLimitInput, setCreditLimitInput] = useState(String(plan.creditLimit));
   const [creditLimitError, setCreditLimitError] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<CourseCode | "">("");
-  const [selectedTerm, setSelectedTerm] = useState("");
+  const [selectedTermKey, setSelectedTermKey] = useState("");
 
   useEffect(() => {
     setCreditLimitInput(String(plan.creditLimit));
   }, [plan.creditLimit]);
+  useEffect(() => {
+    if (selectedTermKey && !plan.terms.some((term) => termKey(term) === selectedTermKey)) {
+      setSelectedTermKey("");
+    }
+  }, [plan.terms, selectedTermKey]);
 
   const planned = new Set(plannedCodes);
   const availableCourses = courses
     .filter((course) => !planned.has(course.code))
     .sort((a, b) => a.code.localeCompare(b.code));
+  const selectedTermIndex = plan.terms.findIndex((term) => termKey(term) === selectedTermKey);
 
   const commitCreditLimit = () => {
     if (!loaded) return;
@@ -51,10 +59,16 @@ export function PlanScreen() {
 
   const addSelectedCourse = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!loaded || catalogError || catalogLoading || selectedTerm === "" || selectedCourse === "") {
+    if (
+      !loaded ||
+      catalogError ||
+      catalogLoading ||
+      selectedTermIndex < 0 ||
+      selectedCourse === ""
+    ) {
       return;
     }
-    void addCourseToTerm(Number(selectedTerm), selectedCourse).catch(() => {});
+    void addCourseToTerm(selectedTermIndex, selectedCourse).catch(() => {});
     setSelectedCourse("");
   };
 
@@ -110,13 +124,13 @@ export function PlanScreen() {
           Term
           <select
             aria-label="Term"
-            value={selectedTerm}
-            onChange={(event) => setSelectedTerm(event.target.value)}
+            value={selectedTermKey}
+            onChange={(event) => setSelectedTermKey(event.target.value)}
             disabled={!loaded || plan.terms.length === 0}
           >
             <option value="">Select a term</option>
-            {plan.terms.map((term, index) => (
-              <option key={`${term.season}-${term.year}-${index}`} value={index}>
+            {plan.terms.map((term) => (
+              <option key={termKey(term)} value={termKey(term)}>
                 {term.season} {term.year}
               </option>
             ))}
@@ -130,7 +144,7 @@ export function PlanScreen() {
             Boolean(catalogError) ||
             plan.terms.length === 0 ||
             selectedCourse === "" ||
-            selectedTerm === ""
+            selectedTermKey === ""
           }
         >
           Add to plan
