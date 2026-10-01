@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  validatePlan,
   type CompletedInput,
   type CourseCode,
   type Plan,
@@ -8,6 +7,7 @@ import {
   type Season,
   type ValidationPlan,
 } from "@jevschedule/shared";
+import { plannerTools } from "../services/plannerTools.js";
 
 export interface SemesterBoardProps {
   plan: Plan;
@@ -43,7 +43,9 @@ export function SemesterBoard({
   const [dragData, setDragData] = useState<DraggedCourseData | null>(null);
   const [newSeason, setNewSeason] = useState<Season>("Fall");
   const [newYear, setNewYear] = useState<number>(2027);
-  const validation = courseDetails ? validatePlan({ ...plan, courseDetails }, completed) : null;
+  const validation = courseDetails
+    ? plannerTools.validatePlan({ ...plan, courseDetails }, completed)
+    : null;
 
   const handleDragStart = (
     e: React.DragEvent<HTMLDivElement>,

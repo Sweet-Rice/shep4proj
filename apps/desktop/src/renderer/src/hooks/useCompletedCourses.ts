@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { CourseCode } from "@jevschedule/shared";
+import { plannerTools } from "../services/plannerTools.js";
 
 export function useCompletedCourses() {
   const [completed, setCompleted] = useState<Set<CourseCode>>(new Set());
@@ -13,11 +14,13 @@ export function useCompletedCourses() {
 
   useEffect(() => {
     let cancelled = false;
-    window.jevschedule.completed
-      .get()
+    plannerTools
+      .getCompleted()
       .then((courses) => {
         if (cancelled) return;
-        completedRef.current = new Set(courses);
+        completedRef.current = new Set(
+          courses.map((course) => (typeof course === "string" ? course : course.code)),
+        );
         setCompleted(completedRef.current);
         loadedRef.current = true;
         setLoaded(true);
@@ -71,8 +74,10 @@ export function useCompletedCourses() {
 
   const refresh = useCallback(async () => {
     try {
-      const courses = await window.jevschedule.completed.get();
-      completedRef.current = new Set(courses);
+      const courses = await plannerTools.getCompleted();
+      completedRef.current = new Set(
+        courses.map((course) => (typeof course === "string" ? course : course.code)),
+      );
       setCompleted(completedRef.current);
       setError(null);
     } catch (err) {
