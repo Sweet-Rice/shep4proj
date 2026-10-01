@@ -16,3 +16,7 @@ export async function truncateSections(db: Db): Promise<void> {
 export async function truncateSectionArchive(db: Db): Promise<void> {
   await db.execute(sql`TRUNCATE section_archive`);
 }
+
+export async function truncateWatches(db: Db): Promise<void> {
+  await db.execute(sql`TRUNCATE watches`);
+}
