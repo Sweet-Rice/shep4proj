@@ -5,13 +5,14 @@ import { DisallowedUrlError } from "./robots.js";
 
 const DETAIL_URL = courseDetailUrl({ catoid: CATALOG_2026_2027.catoid, coid: "232623" });
 const mockWait = vi.fn().mockResolvedValue(undefined);
+const mockRun = vi.fn(async (task: () => Promise<unknown>) => {
+  await mockWait();
+  return task();
+});
 vi.mock("./crawl-delay.js", () => ({
   createCrawlDelay: vi.fn(() => ({
     wait: mockWait,
-    run: async (task: () => Promise<unknown>) => {
-      await mockWait();
-      return task();
-    },
+    run: mockRun,
   })),
 }));
 
@@ -26,6 +27,7 @@ function stubFetch() {
 
 beforeEach(() => {
   mockWait.mockClear();
+  mockRun.mockClear();
 });
 
 afterEach(() => {
@@ -149,6 +151,7 @@ describe("createCatalogFetcher", () => {
     await fetcher.fetchHtml(DETAIL_URL);
     expect(events).toEqual(["wait", "fetch"]);
     expect(mockWait).toHaveBeenCalledTimes(1);
+    expect(mockRun).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
