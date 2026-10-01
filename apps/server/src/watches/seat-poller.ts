@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { parseSectionListing, sectionListingUrl, type SectionFetcher } from "@jevschedule/scraper";
 import type { Db } from "../db/client.js";
 import { watches, type WatchRow } from "../db/schema.js";
+import type { Schedule } from "../sections/scheduler.js";
 import { DEPARTMENT_PATTERN } from "../sections/store.js";
 
 /** Seat counts for one section at one point in time. */
@@ -129,4 +130,62 @@ export async function pollWatchedSeats(o: {
     }
   }
   return result;
+}
+
+/** First retry after a failed poll. Each further failure doubles it, up to the poll interval. */
+export const SEAT_POLL_RETRY_BASE_MS = 15 * 60 * 1000;
+
+/**
+ * How long to wait before the next poll: the interval after a clean poll, and exponential
+ * backoff from `SEAT_POLL_RETRY_BASE_MS` after `failures` failed polls in a row. The backoff is
+ * capped at the interval, so failures never make the poller fetch more often than the
+ * interval's rate once they've backed off.
+ */
+export function nextSeatPollDelayMs(failures: number, intervalMs: number): number {
+  if (failures === 0) return intervalMs;
+  return Math.min(SEAT_POLL_RETRY_BASE_MS * 2 ** (failures - 1), intervalMs);
+}
+
+/**
+ * Runs `poll` now and then again after each one finishes, waiting `nextSeatPollDelayMs` (T-512).
+ * A poll fails if it throws (passed to `onError`) or any listing in it failed. Polls never
+ * overlap, and the timer is unref'd so it never keeps the process alive on its own.
+ */
+export function startSeatPoller(o: {
+  poll: () => Promise<SeatPollResult>;
+  intervalMs: number;
+  onError: (error: unknown) => void;
+}): Schedule {
+  let failures = 0;
+  let stopped = false;
+  let timer: NodeJS.Timeout | undefined;
+  let running: Promise<void> | undefined;
+
+  function tick(): void {
+    running = o
+      .poll()
+      .then(
+        (result) => result.failed.length === 0,
+        (error: unknown) => {
+          o.onError(error);
+          return false;
+        },
+      )
+      .then((ok) => {
+        failures = ok ? 0 : failures + 1;
+      })
+      .finally(() => {
+        running = undefined;
+        if (!stopped) timer = setTimeout(tick, nextSeatPollDelayMs(failures, o.intervalMs)).unref();
+      });
+  }
+
+  tick();
+  return {
+    async stop() {
+      stopped = true;
+      clearTimeout(timer);
+      await running;
+    },
+  };
 }
