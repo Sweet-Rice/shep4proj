@@ -18,6 +18,7 @@ const FIXTURE_HTML = readFileSync(SECTION_FIXTURE_PATH, "utf8");
 // Seat counts in the saved Fall 2026 CSC listing.
 const OPEN = { courseCode: "CSC 1110", sectionNumber: "001", sectionType: "LEC" }; // 38/40
 const FULL = { courseCode: "CSC 2259", sectionNumber: "001", sectionType: "REC" }; // 20/20
+const FULL_LECTURE = { ...FULL, sectionType: "LEC" }; // 95/100, same course and number as FULL
 
 /** Wraps a fetcher so tests can count requests. */
 function spyOn(fetcher: SectionFetcher) {
@@ -95,6 +96,28 @@ describe.skipIf(!getTestDatabaseUrl())("pollWatchedSeats", () => {
     const rows = await db.select().from(watches);
     expect(rows.find((row) => row.id === wasOpen)).toMatchObject({ lastEnrollment: 38 });
     expect(rows.find((row) => row.id === stillFull)).toMatchObject({ lastEnrollment: 20 });
+  });
+
+  it("matches a watch to its own section type when a course and number list several", async () => {
+    const lecture = await watch(FULL_LECTURE, { lastEnrollment: 100, lastCapacity: 100 });
+    const recitation = await watch(FULL, { lastEnrollment: 20, lastCapacity: 20 });
+
+    const { result, openings } = await poll();
+    expect(result.opened).toBe(1);
+    expect(openings).toEqual([
+      {
+        watchId: lecture,
+        term: SECTION_FIXTURE_PERIOD,
+        ...FULL_LECTURE,
+        enrollment: 95,
+        capacity: 100,
+      },
+    ]);
+    const rows = await db.select().from(watches);
+    expect(rows.find((row) => row.id === recitation)).toMatchObject({
+      lastEnrollment: 20,
+      lastCapacity: 20,
+    });
   });
 
   it("fetches each watched department and term once, and nothing when there are no watches", async () => {
