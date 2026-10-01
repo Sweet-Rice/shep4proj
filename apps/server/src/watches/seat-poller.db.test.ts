@@ -197,6 +197,22 @@ describe.skipIf(!getTestDatabaseUrl())("pollWatchedSeats", () => {
     }
   });
 
+  it("reports an opening only once when only the watch's capacity changed after the poll read it", async () => {
+    // Last seen 38/38 (full); the fixture lists 38/40 (open).
+    const id = await watch(OPEN, { lastEnrollment: 38, lastCapacity: 38 });
+    const fetcher: SectionFetcher = {
+      async fetchHtml(url) {
+        // Another poll records the new capacity, and the opening, before this poll's update.
+        await db.update(watches).set({ lastCapacity: 40 }).where(eq(watches.id, id));
+        return createSectionFixtureFetcher().fetchHtml(url);
+      },
+    };
+
+    const { result, openings } = await poll(fetcher);
+    expect(result.opened).toBe(0);
+    expect(openings).toEqual([]);
+  });
+
   it("reports an opening only once when its watch changed after the poll read it", async () => {
     const id = await watch(OPEN, { lastEnrollment: 40, lastCapacity: 40 });
     const fetcher: SectionFetcher = {
