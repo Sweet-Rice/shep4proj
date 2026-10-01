@@ -8,6 +8,7 @@ import { SemesterBoard } from "./SemesterBoard.js";
 export function PlanScreen() {
   const {
     plan,
+    loaded,
     error: planError,
     moveCourse,
     addCourseToTerm,
@@ -35,6 +36,7 @@ export function PlanScreen() {
     .sort((a, b) => a.code.localeCompare(b.code));
 
   const commitCreditLimit = () => {
+    if (!loaded) return;
     const parsed = Number(creditLimitInput);
     if (!Number.isInteger(parsed) || parsed < 1) {
       setCreditLimitInput(String(plan.creditLimit));
@@ -49,7 +51,7 @@ export function PlanScreen() {
 
   const addSelectedCourse = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (catalogError || catalogLoading || selectedTerm === "" || selectedCourse === "") {
+    if (!loaded || catalogError || catalogLoading || selectedTerm === "" || selectedCourse === "") {
       return;
     }
     void addCourseToTerm(Number(selectedTerm), selectedCourse).catch(() => {});
@@ -73,6 +75,7 @@ export function PlanScreen() {
           type="number"
           min={1}
           step={1}
+          disabled={!loaded}
           value={creditLimitInput}
           onChange={(event) => setCreditLimitInput(event.target.value)}
           onBlur={commitCreditLimit}
@@ -93,7 +96,7 @@ export function PlanScreen() {
             aria-label="Course"
             value={selectedCourse}
             onChange={(event) => setSelectedCourse(event.target.value as CourseCode | "")}
-            disabled={catalogLoading || Boolean(catalogError)}
+            disabled={!loaded || catalogLoading || Boolean(catalogError)}
           >
             <option value="">Select a course</option>
             {availableCourses.map((course) => (
@@ -109,7 +112,7 @@ export function PlanScreen() {
             aria-label="Term"
             value={selectedTerm}
             onChange={(event) => setSelectedTerm(event.target.value)}
-            disabled={plan.terms.length === 0}
+            disabled={!loaded || plan.terms.length === 0}
           >
             <option value="">Select a term</option>
             {plan.terms.map((term, index) => (
@@ -122,6 +125,7 @@ export function PlanScreen() {
         <button
           type="submit"
           disabled={
+            !loaded ||
             catalogLoading ||
             Boolean(catalogError) ||
             plan.terms.length === 0 ||
@@ -134,6 +138,7 @@ export function PlanScreen() {
       </form>
       {plan.terms.length === 0 && <p>Add a term below to start placing courses.</p>}
 
+      {loaded && (
       <SemesterBoard
         plan={plan}
         onMoveCourse={(sourceTermIndex, sourceCourseIndex, destTermIndex, destCourseIndex) => {
@@ -153,6 +158,7 @@ export function PlanScreen() {
         courseDetails={details}
         completed={completed}
       />
+      )}
     </main>
   );
 }

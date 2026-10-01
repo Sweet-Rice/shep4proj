@@ -75,6 +75,36 @@ afterEach(() => {
 });
 
 describe("PlanScreen", () => {
+  it("withholds plan edits until the saved plan has loaded", async () => {
+    const user = userEvent.setup();
+    const { promise, resolve } = Promise.withResolvers<Plan>();
+    mockPlanGet.mockReturnValueOnce(promise);
+    render(<PlanScreen />);
+
+    const limit = screen.getByLabelText("Credit limit per semester");
+    expect(limit).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Add to plan" })).toBeDisabled();
+    expect(mockPlanSave).not.toHaveBeenCalled();
+
+    resolve({
+      creditLimit: 19,
+      terms: [{ season: "Fall", year: 2026, courses: ["CSC 4330"] }],
+    });
+    expect(await screen.findByTestId("course-card-CSC 4330")).toBeInTheDocument();
+    expect(limit).toBeEnabled();
+    await user.clear(limit);
+    await user.type(limit, "12");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(mockPlanSave).toHaveBeenCalledWith({
+        creditLimit: 12,
+        terms: [{ season: "Fall", year: 2026, courses: ["CSC 4330"] }],
+      });
+    });
+  });
+
+
   it("adds a catalog course to Fall 2026 and persists the plan", async () => {
     const user = userEvent.setup();
     mockPlanGet.mockResolvedValueOnce({
