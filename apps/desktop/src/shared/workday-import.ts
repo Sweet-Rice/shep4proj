@@ -111,8 +111,9 @@ export function mapTranscript(transcript: TranscriptParseResult): StoreImport {
 }
 
 /**
- * Maps current-term registrations to in-progress courses. Dropped and withdrawn sections are
- * ignored; an enrolled course counts unless its status says otherwise (e.g. "Waitlisted").
+ * Maps current-term registrations to in-progress courses. Only an enrolled course whose status
+ * is "Registered" or missing counts; any other status (e.g. "Waitlisted") is skipped. Dropped
+ * and withdrawn sections are ignored.
  */
 export function mapCurrentRegistrations(registrations: CurrentRegistrationsResult): StoreImport {
   return toStoreImport(
