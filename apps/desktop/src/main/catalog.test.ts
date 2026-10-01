@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Course } from "@jevschedule/shared";
+import { DegreeProgramSchema, type Course, type DegreeProgram } from "@jevschedule/shared";
 import { createCatalogClient, DEFAULT_API_BASE_URL } from "./catalog.js";
 
 const course: Course = {
@@ -14,6 +14,23 @@ const detail = {
   ...course,
   prereq: { tree: null, needsReview: false, reviewReason: null, notes: [] },
 };
+const degree: DegreeProgram = DegreeProgramSchema.parse({
+  id: "csc-software-engineering-2026-2027",
+  program: "Computer Science, B.S.",
+  concentration: "Software Engineering",
+  catalogYear: "2026-2027",
+  totalCredits: 120,
+  source: "https://example.test/degree",
+  requirements: [
+    {
+      kind: "fixed",
+      id: "semester-1",
+      label: "Semester 1",
+      semester: 1,
+      courses: [{ code: "CSC 1350" }],
+    },
+  ],
+});
 const response = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
@@ -62,6 +79,20 @@ describe("createCatalogClient", () => {
     expect(fetchImpl).toHaveBeenCalledOnce();
   });
 
+  it("returns and caches a successful degree response", async () => {
+    const fetchImpl = vi.fn(async () => response(degree));
+    const client = createCatalogClient(DEFAULT_API_BASE_URL, fetchImpl as typeof fetch);
+
+    const first = await client.getDegree(degree.id);
+    const second = await client.getDegree(degree.id);
+
+    expect(first).toEqual(degree);
+    expect(second).toEqual(degree);
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "http://127.0.0.1:3000/degrees/csc-software-engineering-2026-2027",
+    );
+  });
   it("rejects malformed response bodies", async () => {
     const client = createCatalogClient(
       DEFAULT_API_BASE_URL,
