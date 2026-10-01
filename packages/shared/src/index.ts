@@ -18,6 +18,7 @@ export { parsePrereqText } from "./prereq-parser.js";
 export type { PrereqFailureReason, PrereqParseResult } from "./prereq-parser.js";
 export { PrereqRecordSchema, toPrereqRecord } from "./prereq-record.js";
 export type { PrereqRecord } from "./prereq-record.js";
+export { collectPrereqCourseCodes, getUnfulfilledPrereqs } from "./prereq-utils.js";
 export {
   AcademicPeriodIdSchema,
   MeetingSchema,
