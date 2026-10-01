@@ -6,13 +6,24 @@ import { useCompletedCourses } from "./useCompletedCourses.js";
 const mockGet = vi.fn();
 const mockSet = vi.fn();
 
+interface JevScheduleGlobal {
+  window: {
+    jevschedule?: {
+      completed: {
+        get: typeof mockGet;
+        set: typeof mockSet;
+      };
+    };
+  };
+}
+
 describe("useCompletedCourses", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSet.mockResolvedValue(undefined); // Default fallback to prevent 'undefined.catch' errors
 
     // Setup global window.jevschedule for tests
-    (globalThis as any).window.jevschedule = {
+    (globalThis as unknown as JevScheduleGlobal).window.jevschedule = {
       completed: {
         get: mockGet,
         set: mockSet,
@@ -21,7 +32,7 @@ describe("useCompletedCourses", () => {
   });
 
   afterEach(() => {
-    delete (globalThis as any).window.jevschedule;
+    delete (globalThis as unknown as JevScheduleGlobal).window.jevschedule;
   });
 
   it("loads initial data from store", async () => {

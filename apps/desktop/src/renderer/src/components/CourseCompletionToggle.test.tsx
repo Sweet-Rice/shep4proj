@@ -10,17 +10,13 @@ describe("CourseCompletionToggle", () => {
     cleanup();
   });
   it("renders unchecked by default", () => {
-    render(
-      <CourseCompletionToggle courseId="CSC 1350" isCompleted={false} onToggle={() => {}} />
-    );
+    render(<CourseCompletionToggle courseId="CSC 1350" isCompleted={false} onToggle={() => {}} />);
     const checkbox = screen.getByRole("checkbox");
     expect(checkbox).not.toBeChecked();
   });
 
   it("renders checked when isCompleted is true", () => {
-    render(
-      <CourseCompletionToggle courseId="CSC 1350" isCompleted={true} onToggle={() => {}} />
-    );
+    render(<CourseCompletionToggle courseId="CSC 1350" isCompleted={true} onToggle={() => {}} />);
     const checkbox = screen.getByRole("checkbox");
     expect(checkbox).toBeChecked();
   });
@@ -29,7 +25,7 @@ describe("CourseCompletionToggle", () => {
     const user = userEvent.setup();
     const handleToggle = vi.fn();
     render(
-      <CourseCompletionToggle courseId="CSC 1350" isCompleted={false} onToggle={handleToggle} />
+      <CourseCompletionToggle courseId="CSC 1350" isCompleted={false} onToggle={handleToggle} />,
     );
     const checkbox = screen.getByRole("checkbox");
     await user.click(checkbox);
@@ -39,7 +35,12 @@ describe("CourseCompletionToggle", () => {
 
   it("shows the optional label", () => {
     render(
-      <CourseCompletionToggle courseId="CSC 1350" isCompleted={false} onToggle={() => {}} label="Completed?" />
+      <CourseCompletionToggle
+        courseId="CSC 1350"
+        isCompleted={false}
+        onToggle={() => {}}
+        label="Completed?"
+      />,
     );
     expect(screen.getByText("Completed?")).toBeInTheDocument();
   });
@@ -47,7 +48,12 @@ describe("CourseCompletionToggle", () => {
   it("does not call onToggle when disabled", async () => {
     const handleToggle = vi.fn();
     render(
-      <CourseCompletionToggle courseId="CSC 1350" isCompleted={false} onToggle={handleToggle} disabled />
+      <CourseCompletionToggle
+        courseId="CSC 1350"
+        isCompleted={false}
+        onToggle={handleToggle}
+        disabled
+      />,
     );
     const checkbox = screen.getByRole("checkbox");
     expect(checkbox).toBeDisabled();
