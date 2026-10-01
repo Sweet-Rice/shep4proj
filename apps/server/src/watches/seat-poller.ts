@@ -100,17 +100,24 @@ export async function pollWatchedSeats(o: {
       if (section.enrollment === before.enrollment && section.capacity === before.capacity) {
         continue;
       }
-      const [updated] = await o.db
-        .update(watches)
-        .set({ lastEnrollment: section.enrollment, lastCapacity: section.capacity })
-        .where(
-          and(
-            eq(watches.id, row.id),
-            eq(watches.lastEnrollment, before.enrollment),
-            eq(watches.lastCapacity, before.capacity),
-          ),
-        )
-        .returning({ id: watches.id });
+      let updated;
+      try {
+        [updated] = await o.db
+          .update(watches)
+          .set({ lastEnrollment: section.enrollment, lastCapacity: section.capacity })
+          .where(
+            and(
+              eq(watches.id, row.id),
+              eq(watches.lastEnrollment, before.enrollment),
+              eq(watches.lastCapacity, before.capacity),
+            ),
+          )
+          .returning({ id: watches.id });
+      } catch {
+        // Drizzle's error carries the query's parameters, which include the watch ID. Leave it
+        // (and its cause) out so it can't reach a log.
+        throw new Error(`could not update a watch on ${sectionKey(row)} (${row.term})`);
+      }
       if (updated === undefined || !seatsOpened(before, section)) continue;
 
       result.opened += 1;

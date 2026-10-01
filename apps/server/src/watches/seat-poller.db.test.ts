@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
-import { eq } from "drizzle-orm";
+import { inspect } from "node:util";
+import { eq, sql } from "drizzle-orm";
 import type { SectionFetcher } from "@jevschedule/scraper";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDb, type Db } from "../db/client.js";
@@ -171,6 +172,29 @@ describe.skipIf(!getTestDatabaseUrl())("pollWatchedSeats", () => {
     expect(onSeatsOpened).toHaveBeenCalledTimes(2);
     expect(onError).toHaveBeenCalledWith(error);
     expect(result.opened).toBe(2);
+  });
+
+  it("fails a poll whose watch update fails without exposing the watch ID", async () => {
+    const id = await watch(OPEN, { lastEnrollment: 40, lastCapacity: 40 });
+    const fetcher: SectionFetcher = {
+      async fetchHtml(url) {
+        // Makes the update to the fixture's 38 enrolled fail in Postgres.
+        await db.execute(
+          sql`ALTER TABLE watches ADD CONSTRAINT t512_reject CHECK (last_enrollment <> 38) NOT VALID`,
+        );
+        return createSectionFixtureFetcher().fetchHtml(url);
+      },
+    };
+
+    try {
+      const polling = poll(fetcher);
+      await expect(polling).rejects.toThrow(/CSC 1110 001-LEC/);
+      const error: unknown = await polling.catch((caught: unknown) => caught);
+      expect(inspect(error, { depth: 10 })).not.toContain(id);
+      expect(JSON.stringify(error)).not.toContain(id);
+    } finally {
+      await db.execute(sql`ALTER TABLE watches DROP CONSTRAINT IF EXISTS t512_reject`);
+    }
   });
 
   it("reports an opening only once when its watch changed after the poll read it", async () => {
