@@ -1,6 +1,7 @@
 import type { CourseCode } from "./course-code.js";
 import type { CompletedInput, EvaluatedRequirement } from "./evaluate-requirements.js";
-import { evaluateRequirements } from "./evaluate-requirements.js";
+import { evaluateRequirements, satisfiesMinGrade } from "./evaluate-requirements.js";
+import type { LetterGrade } from "./grade.js";
 import { isEligible } from "./is-eligible.js";
 import type { Season } from "./plan.js";
 import type { DegreeProgram } from "./requirements.js";
@@ -33,6 +34,7 @@ type Reason = {
   requirementId: string;
   label: string;
   limit: number;
+  minGrade: LetterGrade | null;
 };
 
 function reasonsFor(requirements: EvaluatedRequirement[]): Map<CourseCode, Reason> {
@@ -60,6 +62,7 @@ function reasonsFor(requirements: EvaluatedRequirement[]): Map<CourseCode, Reaso
           requirementId: requirement.id,
           label: requirement.label,
           limit,
+          minGrade: candidate.minGrade,
         });
       }
     }
@@ -72,12 +75,19 @@ export function createRuleBasedAdvisorProvider(): AdvisorProvider {
   return {
     async suggest(context) {
       const { completed, courses, creditLimit, term, history = {} } = context;
-      const completedCodes = new Set(
-        completed.map((item) => (typeof item === "string" ? item : item.code)),
-      );
       const reasons = reasonsFor(evaluateRequirements(context.degree, completed).requirements);
       const ranked = courses
-        .filter((course) => reasons.has(course.code) && !completedCodes.has(course.code))
+        .filter((course) => {
+          const reason = reasons.get(course.code);
+          if (!reason) return false;
+          return !completed.some((item) => {
+            if ((typeof item === "string" ? item : item.code) !== course.code) return false;
+            return satisfiesMinGrade(
+              reason.minGrade,
+              typeof item === "string" ? undefined : item.grade,
+            );
+          });
+        })
         .filter((course) => isEligible(course, completed, []).status === "eligible")
         .filter((course) => {
           const observed = typicalTerms(history[course.code] ?? []);

@@ -57,7 +57,7 @@ const GRADE_RANKS: Record<LetterGrade, number> = {
   D: 1,
 };
 
-function satisfiesMinGrade(
+export function satisfiesMinGrade(
   minGrade: LetterGrade | null,
   actualGrade?: LetterGrade | null,
 ): boolean {
