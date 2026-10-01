@@ -2,6 +2,7 @@
 # server depends on the workspace packages:
 #
 #   docker build -f apps/server/Dockerfile -t jevschedule-server .
+#   docker run --rm -e DATABASE_URL=postgres://... jevschedule-server node docker/migrate.mjs
 #   docker run -d -p 3000:3000 -e DATABASE_URL=postgres://... jevschedule-server
 #
 # The server listens on 0.0.0.0:$PORT (3000) and answers GET /health.
@@ -40,6 +41,7 @@ COPY --from=build /out/package.json ./
 COPY --from=build /out/node_modules node_modules
 COPY --from=build /out/dist dist
 COPY --from=build /out/drizzle drizzle
+COPY --from=build /out/docker docker
 COPY data/degrees /app/data/degrees
 
 USER node
