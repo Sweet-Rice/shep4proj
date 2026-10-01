@@ -100,13 +100,17 @@ jobs:
       - name: Test
         run: pnpm -r test
 
-      # Checks the production image serves /health against the CI database. Port 3999
-      # stays clear of Postgres and the server's default 3000; the section scrape stays
-      # off so CI never hits live LSU.
+      # Checks the production image serves /health against the CI database. The port is
+      # published rather than shared with --network host, so a server that only listens on
+      # the container's loopback fails here as it would in production. The container
+      # reaches the Postgres service through the runner's published 5432. The section
+      # scrape stays off so CI never hits live LSU.
       - name: Smoke-test server image
         run: |
-          docker run -d --name api --network host \
-            -e DATABASE_URL="$DATABASE_URL" -e PORT=3999 -e SECTION_SCRAPE_ENABLED=false \
+          docker run -d --name api -p 127.0.0.1:3999:3000 \
+            --add-host=host.docker.internal:host-gateway \
+            -e DATABASE_URL=postgres://jevschedule:jevschedule@host.docker.internal:5432/jevschedule \
+            -e SECTION_SCRAPE_ENABLED=false \
             jevschedule-server:ci
           for _ in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:3999/health; then exit 0; fi
