@@ -58,6 +58,12 @@ jobs:
       - name: Typecheck
         run: pnpm -r typecheck
 
+      # The production image migrates with migrate.mjs (no drizzle-kit). Running it first
+      # makes the drizzle-kit step below a compatibility check: if the two disagreed on
+      # the migrations table, drizzle-kit would re-run the migrations and fail.
+      - name: Migrate database (production migrator)
+        run: node apps/server/docker/migrate.mjs
+
       - name: Migrate database
         run: pnpm --filter @jevschedule/server db:migrate
 
@@ -66,6 +72,23 @@ jobs:
 
       - name: Test
         run: pnpm -r test
+
+      # Builds the production image and checks it serves /health against the CI database.
+      # Port 3999 stays clear of Postgres and the server's default 3000; the section scrape
+      # stays off so CI never hits live LSU.
+      - name: Smoke-test server image
+        run: |
+          docker build -f apps/server/Dockerfile -t jevschedule-server:ci .
+          docker run -d --name api --network host \
+            -e DATABASE_URL="$DATABASE_URL" -e PORT=3999 -e SECTION_SCRAPE_ENABLED=false \
+            jevschedule-server:ci
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3999/health; then exit 0; fi
+            sleep 1
+          done
+          echo "server image did not answer /health within 30s" >&2
+          docker logs api
+          exit 1
 
       - name: Scan for secrets
         uses: gitleaks/gitleaks-action@v2
