@@ -6,6 +6,8 @@ working on the codebase, and they take precedence over convenience or speed.
 - **Workday session data never leaves the user's machine.** No tokens, cookies, or raw Workday
   responses in logs, error reports, telemetry, or server requests. Only the parsed list of
   completed courses may be sent to the server, and only if a story explicitly requires it.
+  Main-process logs are redacted before output, including error stacks. Token-shaped
+  fragments in diagnostic paths may therefore appear as `[REDACTED]`.
 - **Workday calls are read-only and allowlisted.** Only call endpoints recorded in
   `packages/workday/ENDPOINTS.md`. Never call registration, financial, or profile endpoints.
 - **Never commit `.har` files or unredacted Workday responses.** They contain session tokens

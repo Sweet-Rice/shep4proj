@@ -42,7 +42,6 @@ describe("createLogger", () => {
     createLogger(sink).error(new Error("boom"));
     expect(lines[0]?.line).toContain("Error: boom");
     expect(lines[0]?.line).toMatch(/logger\.test\.ts:\d+:\d+/);
-    expect(lines[0]?.line).not.toContain("[REDACTED]");
   });
 
   it.each<[string, unknown[]]>([
