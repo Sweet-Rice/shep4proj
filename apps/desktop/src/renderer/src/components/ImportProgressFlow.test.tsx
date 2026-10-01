@@ -58,4 +58,23 @@ describe("ImportProgressFlow", () => {
 
     expect(handleFallback).toHaveBeenCalled();
   });
+
+  it("opens the PDF picker and reviews parsed courses", async () => {
+    const user = userEvent.setup();
+    const select = vi.fn().mockResolvedValue({
+      courses: [{ code: "CSC 1350", term: { season: "Fall", year: 2024 }, grade: "A" }],
+      unrecognizedLines: [],
+    });
+    Object.assign(window, { jevschedule: { transcript: { select } } });
+    try {
+      render(<ImportProgressFlow />);
+      await user.click(screen.getByTestId("select-transcript-btn"));
+      await waitFor(() => expect(screen.getByTestId("stage-review")).toBeInTheDocument());
+      expect(select).toHaveBeenCalledOnce();
+      expect(screen.getByText("Fall 2024")).toBeInTheDocument();
+      expect(screen.getByText("Grade: A")).toBeInTheDocument();
+    } finally {
+      Reflect.deleteProperty(window, "jevschedule");
+    }
+  });
 });

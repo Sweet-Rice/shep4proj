@@ -91,6 +91,14 @@ describe("registerIpcHandlers", () => {
     trusted = true;
     expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual([]);
   });
+
+  it("rejects transcript picker arguments and untrusted frames", async () => {
+    expect(() => ipc.invoke(IPC_CHANNELS.transcriptSelect, "C:/unexpected.pdf")).toThrow();
+    trusted = false;
+    expect(() => ipc.invoke(IPC_CHANNELS.transcriptSelect)).toThrow(UntrustedIpcSenderError);
+    trusted = true;
+    await expect(ipc.invoke(IPC_CHANNELS.transcriptSelect)).resolves.toBeNull();
+  });
 });
 
 describe("isAppRendererUrl", () => {

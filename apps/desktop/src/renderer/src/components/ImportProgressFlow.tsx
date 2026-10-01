@@ -1,18 +1,30 @@
 import { useState } from "react";
 import type { CourseCode } from "@jevschedule/shared";
+import type { TranscriptParseResult as PdfParseResult } from "@jevschedule/workday";
 import {
   ImportReviewScreen,
   SAMPLE_PARSE_RESULT,
   type TranscriptParseResult,
 } from "./ImportReviewScreen.js";
+import { toTranscriptReview } from "./transcript-review.js";
 
-export type ImportStage = "idle" | "signing_in" | "fetching" | "review" | "done" | "failure";
+export type ImportStage =
+  "idle" | "signing_in" | "fetching" | "uploading" | "review" | "done" | "failure";
+
+function transcriptApi(): { select(): Promise<PdfParseResult | null> } | null {
+  const globalWindow = globalThis as typeof globalThis & {
+    window?: { jevschedule?: { transcript?: { select(): Promise<PdfParseResult | null> } } };
+  };
+  return globalWindow.window?.jevschedule?.transcript ?? null;
+}
 
 export interface ImportProgressFlowProps {
   initialStage?: ImportStage;
   parseResult?: TranscriptParseResult;
   onImportComplete?: (courses: CourseCode[]) => void;
   onFallbackUpload?: () => void;
+  /** Hide unfinished direct-import demo controls in the installed app. */
+  uploadOnly?: boolean;
 }
 
 export function ImportProgressFlow({
@@ -20,10 +32,37 @@ export function ImportProgressFlow({
   parseResult = SAMPLE_PARSE_RESULT,
   onImportComplete,
   onFallbackUpload,
+  uploadOnly = false,
 }: ImportProgressFlowProps) {
   const [stage, setStage] = useState<ImportStage>(initialStage);
   const [importedCourses, setImportedCourses] = useState<CourseCode[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [uploadedResult, setUploadedResult] = useState<TranscriptParseResult | null>(null);
+
+  const selectTranscript = async () => {
+    onFallbackUpload?.();
+    const api = transcriptApi();
+    if (!api) {
+      setErrorMessage("Transcript upload is available in the desktop app.");
+      setStage("failure");
+      return;
+    }
+    const previousStage = stage;
+    setStage("uploading");
+    setErrorMessage(null);
+    try {
+      const result = await api.select();
+      if (result === null) {
+        setStage(previousStage);
+        return;
+      }
+      setUploadedResult(toTranscriptReview(result));
+      setStage("review");
+    } catch {
+      setErrorMessage("Could not read this transcript PDF. Try another PDF.");
+      setStage("failure");
+    }
+  };
 
   const startWorkdayImport = () => {
     setStage("signing_in");
@@ -63,24 +102,40 @@ export function ImportProgressFlow({
       {stage === "idle" && (
         <div className="flow-card idle-card" data-testid="stage-idle">
           <h3>Import Academic Record</h3>
-          <p>Import your completed courses directly from Workday or via transcript review.</p>
+          <p>
+            {uploadOnly
+              ? "Select a PDF transcript, then review the completed courses before saving them."
+              : "Import your completed courses directly from Workday or via transcript review."}
+          </p>
           <div className="flow-actions">
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={startWorkdayImport}
-              data-testid="start-import-btn"
-            >
-              Start Workday Import
-            </button>
+            {!uploadOnly && (
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={startWorkdayImport}
+                data-testid="start-import-btn"
+              >
+                Start Workday Import
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={simulateFailure}
-              data-testid="simulate-failure-btn"
+              onClick={() => void selectTranscript()}
+              data-testid="select-transcript-btn"
             >
-              Simulate Failure
+              Select Transcript PDF
             </button>
+            {!uploadOnly && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={simulateFailure}
+                data-testid="simulate-failure-btn"
+              >
+                Simulate Failure
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -101,10 +156,17 @@ export function ImportProgressFlow({
         </div>
       )}
 
+      {stage === "uploading" && (
+        <div className="flow-card progress-card" data-testid="stage-uploading">
+          <div className="spinner" role="status" aria-label="Loading" />
+          <h3>Reading transcript PDF…</h3>
+        </div>
+      )}
+
       {stage === "review" && (
         <div className="flow-card review-card" data-testid="stage-review">
           <ImportReviewScreen
-            parseResult={parseResult}
+            parseResult={uploadedResult ?? parseResult}
             onConfirm={handleReviewConfirm}
             onCancel={handleReviewCancel}
           />
@@ -145,7 +207,7 @@ export function ImportProgressFlow({
             <button
               type="button"
               className="btn btn-primary"
-              onClick={onFallbackUpload}
+              onClick={() => void selectTranscript()}
               data-testid="upload-instead-btn"
             >
               Upload Transcript Instead

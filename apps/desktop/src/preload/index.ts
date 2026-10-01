@@ -10,6 +10,9 @@ const api: JevscheduleApi = {
     get: () => ipcRenderer.invoke(IPC_CHANNELS.planGet),
     save: (plan) => ipcRenderer.invoke(IPC_CHANNELS.planSave, plan),
   },
+  transcript: {
+    select: () => ipcRenderer.invoke(IPC_CHANNELS.transcriptSelect),
+  },
 };
 
 contextBridge.exposeInMainWorld("jevschedule", api);

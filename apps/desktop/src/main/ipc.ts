@@ -1,5 +1,6 @@
 import type { IpcMain, IpcMainInvokeEvent } from "electron";
 import { CourseCodeSchema, PlanSchema } from "@jevschedule/shared";
+import type { TranscriptParseResult } from "@jevschedule/workday";
 import { z } from "zod";
 import { IPC_CHANNELS } from "../shared/ipc.js";
 import type { CompletedStore } from "./store/completed.js";
@@ -50,6 +51,7 @@ export function registerIpcHandlers(
   ipcMain: Pick<IpcMain, "handle">,
   stores: IpcStores,
   isTrustedSender: (event: IpcMainInvokeEvent) => boolean,
+  selectTranscript: () => Promise<TranscriptParseResult | null> = async () => null,
 ): void {
   function handle(channel: string, handler: (args: unknown[]) => unknown): void {
     ipcMain.handle(channel, (event, ...args: unknown[]) => {
@@ -67,5 +69,9 @@ export function registerIpcHandlers(
   handle(IPC_CHANNELS.planSave, (args) => {
     const [plan] = PlanSaveArgsSchema.parse(args);
     stores.plan.savePlan(plan);
+  });
+  handle(IPC_CHANNELS.transcriptSelect, (args) => {
+    z.tuple([]).parse(args);
+    return selectTranscript();
   });
 }

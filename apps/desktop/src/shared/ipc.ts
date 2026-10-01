@@ -1,4 +1,5 @@
 import type { CourseCode, Plan } from "@jevschedule/shared";
+import type { TranscriptParseResult } from "@jevschedule/workday";
 
 /**
  * IPC channel names shared by the main process and the preload script. Keeping them in one
@@ -9,6 +10,7 @@ export const IPC_CHANNELS = {
   completedSet: "completed:set",
   planGet: "plan:get",
   planSave: "plan:save",
+  transcriptSelect: "transcript:select",
 } as const;
 
 /**
@@ -23,5 +25,9 @@ export interface JevscheduleApi {
   plan: {
     get(): Promise<Plan>;
     save(plan: Plan): Promise<void>;
+  };
+  transcript: {
+    /** Opens the native PDF picker; null means the user cancelled. */
+    select(): Promise<TranscriptParseResult | null>;
   };
 }

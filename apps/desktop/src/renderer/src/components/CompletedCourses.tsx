@@ -2,9 +2,10 @@ import { useState, type FormEvent } from "react";
 import { CourseCodeSchema, type CourseCode } from "@jevschedule/shared";
 import { useCompletedCourses } from "../hooks/useCompletedCourses.js";
 import { CourseCompletionToggle } from "./CourseCompletionToggle.js";
+import { ImportProgressFlow } from "./ImportProgressFlow.js";
 
 export function CompletedCourses() {
-  const { completed, loading, loaded, pending, error, toggleCourse, isCompleted } =
+  const { completed, loading, loaded, pending, error, toggleCourse, isCompleted, refresh } =
     useCompletedCourses();
   const [input, setInput] = useState("");
   const [selected, setSelected] = useState<CourseCode | null>(null);
@@ -81,6 +82,9 @@ export function CompletedCourses() {
           </li>
         ))}
       </ul>
+      <section aria-label="Import transcript">
+        <ImportProgressFlow uploadOnly onImportComplete={() => void refresh()} />
+      </section>
     </main>
   );
 }
