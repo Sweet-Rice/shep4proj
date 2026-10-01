@@ -4,15 +4,15 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import type { Course, CourseCode, CourseDetail, Plan } from "@jevschedule/shared";
-import type { JevscheduleApi } from "../../shared/ipc.js";
+import type { JevscheduleApi } from "../../../shared/ipc.js";
 import { PlanScreen } from "./PlanScreen.js";
 
 const mockPlanGet = vi.fn<() => Promise<Plan | null>>();
 const mockPlanSave = vi.fn<(plan: Plan) => Promise<void>>();
 const mockCompletedGet = vi.fn<() => Promise<CourseCode[]>>();
 const mockCatalogList = vi.fn<() => Promise<Course[]>>();
-const mockCourseDetails = vi.fn<(codes: CourseCode[]) => Promise<Record<CourseCode, CourseDetail>>>();
-
+const mockCourseDetails =
+  vi.fn<(codes: CourseCode[]) => Promise<Record<CourseCode, CourseDetail>>>();
 const course = (code: CourseCode, title: string, credits = 3): Course => ({
   catalogYear: "2026-2027",
   code,
@@ -22,7 +22,11 @@ const course = (code: CourseCode, title: string, credits = 3): Course => ({
   prerequisiteText: null,
 });
 const detailsFor = (code: CourseCode, prereqTree: CourseDetail["prereq"]["tree"] = null) => ({
-  ...course(code, code === "CSC 4330" ? "Software Systems Development" : "Data Structures"),
+  ...course(
+    code,
+    code === "CSC 4330" ? "Software Systems Development" : "Data Structures",
+    code === "CSC 4330" ? 4 : 3,
+  ),
   prereq: { tree: prereqTree, needsReview: false, reviewReason: null, notes: [] },
 });
 const emptyPlan: Plan = { creditLimit: 19, terms: [] };
@@ -57,7 +61,9 @@ beforeEach(() => {
         listCourses: mockCatalogList,
         getCourseDetails: mockCourseDetails,
         listDegrees: async () => [],
-        getDegree: async () => { throw new Error("none"); },
+        getDegree: async () => {
+          throw new Error("none");
+        },
       },
     } as unknown as JevscheduleApi,
   });
@@ -113,7 +119,9 @@ describe("PlanScreen", () => {
     await user.type(limit, "3");
     await user.tab();
 
-    await waitFor(() => expect(mockPlanSave).toHaveBeenCalledWith(expect.objectContaining({ creditLimit: 3 })));
+    await waitFor(() =>
+      expect(mockPlanSave).toHaveBeenCalledWith(expect.objectContaining({ creditLimit: 3 })),
+    );
     expect(await screen.findByText(/exceed the 3-credit limit/)).toBeInTheDocument();
   });
 

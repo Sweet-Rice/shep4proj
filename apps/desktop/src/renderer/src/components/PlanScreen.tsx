@@ -18,10 +18,7 @@ export function PlanScreen() {
   } = usePlan();
   const { completed } = useCompletedCourses();
   const { courses, loading: catalogLoading, error: catalogError } = useCatalogCourses();
-  const plannedCodes = useMemo(
-    () => plan.terms.flatMap((term) => term.courses),
-    [plan.terms],
-  );
+  const plannedCodes = useMemo(() => plan.terms.flatMap((term) => term.courses), [plan.terms]);
   const { details } = useCourseDetails(plannedCodes);
   const [creditLimitInput, setCreditLimitInput] = useState(String(plan.creditLimit));
   const [creditLimitError, setCreditLimitError] = useState(false);
@@ -52,7 +49,9 @@ export function PlanScreen() {
 
   const addSelectedCourse = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (catalogError || catalogLoading || selectedTerm === "" || selectedCourse === "") return;
+    if (catalogError || catalogLoading || selectedTerm === "" || selectedCourse === "") {
+      return;
+    }
     void addCourseToTerm(Number(selectedTerm), selectedCourse).catch(() => {});
     setSelectedCourse("");
   };
@@ -80,15 +79,12 @@ export function PlanScreen() {
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               event.preventDefault();
-              commitCreditLimit();
               event.currentTarget.blur();
             }
           }}
         />
       </div>
-      {creditLimitError && (
-        <p role="alert">Enter a whole number of credits (1 or more).</p>
-      )}
+      {creditLimitError && <p role="alert">Enter a whole number of credits (1 or more).</p>}
 
       <form className="add-course-to-plan-form" onSubmit={addSelectedCourse}>
         <label>
@@ -126,8 +122,11 @@ export function PlanScreen() {
         <button
           type="submit"
           disabled={
-            catalogLoading || Boolean(catalogError) ||
-            plan.terms.length === 0 || selectedCourse === "" || selectedTerm === ""
+            catalogLoading ||
+            Boolean(catalogError) ||
+            plan.terms.length === 0 ||
+            selectedCourse === "" ||
+            selectedTerm === ""
           }
         >
           Add to plan
