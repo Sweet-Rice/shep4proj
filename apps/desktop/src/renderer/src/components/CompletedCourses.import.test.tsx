@@ -1,0 +1,42 @@
+// @vitest-environment jsdom
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { userEvent } from "@testing-library/user-event";
+import "@testing-library/jest-dom/vitest";
+import { CompletedCourses } from "./CompletedCourses.js";
+
+describe("transcript upload in the installed desktop screen", () => {
+  afterEach(() => {
+    cleanup();
+    Reflect.deleteProperty(window, "jevschedule");
+  });
+
+  it("selects a PDF, opens review, and refreshes completed courses after confirmation", async () => {
+    const user = userEvent.setup();
+    const completed = new Set<string>();
+    const select = vi.fn().mockResolvedValue({
+      courses: [{ code: "CSC 1350", term: { season: "Fall", year: 2024 }, grade: "A" }],
+      unrecognizedLines: [],
+    });
+    Object.assign(window, {
+      jevschedule: {
+        completed: {
+          get: async () => [...completed],
+          set: async (code: string, value: boolean) => {
+            if (value) completed.add(code);
+            else completed.delete(code);
+          },
+        },
+        transcript: { select },
+      },
+    });
+
+    render(<CompletedCourses />);
+    expect(screen.queryByTestId("start-import-btn")).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("select-transcript-btn"));
+    await waitFor(() => expect(screen.getByTestId("stage-review")).toBeInTheDocument());
+    await user.click(screen.getByTestId("confirm-import-btn"));
+    await waitFor(() => expect(screen.getByText("CSC 1350 completed")).toBeInTheDocument());
+    expect(select).toHaveBeenCalledOnce();
+  });
+});

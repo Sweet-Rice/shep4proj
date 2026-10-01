@@ -199,6 +199,9 @@ importers:
       '@jevschedule/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@jevschedule/workday':
+        specifier: workspace:*
+        version: link:../../packages/workday
       better-sqlite3:
         specifier: ^13.0.3
         version: 13.0.3
