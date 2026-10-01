@@ -4,15 +4,16 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const CATALOG_DIR = fileURLToPath(new URL("../../../fixtures/catalog/", import.meta.url));
+const FIXTURE_ROOTS = ["catalog", "sections"] as const;
 
 interface FixtureRow {
   file: string;
   sha256: string;
 }
 
-interface CatalogDirectory {
-  yearDir: string;
+interface FixtureDirectory {
+  root: string;
+  subdir: string;
   dirPath: string;
   rows: FixtureRow[];
 }
@@ -31,30 +32,32 @@ function parseReadmeRows(readmeContent: string): FixtureRow[] {
   return rows;
 }
 
-const catalogSubdirs = readdirSync(CATALOG_DIR, { withFileTypes: true })
-  .filter((dirent) => dirent.isDirectory())
-  .map((dirent) => dirent.name)
-  .sort();
-
-const catalogDirs: CatalogDirectory[] = catalogSubdirs.map((yearDir) => {
-  const dirPath = join(CATALOG_DIR, yearDir);
-  const readmePath = join(dirPath, "README.md");
-  const readmeContent = readFileSync(readmePath, "utf-8");
-  const rows = parseReadmeRows(readmeContent);
-  return {
-    yearDir,
-    dirPath,
-    rows,
-  };
+const fixtureDirs: FixtureDirectory[] = FIXTURE_ROOTS.flatMap((root) => {
+  const rootPath = fileURLToPath(new URL(`../../../fixtures/${root}/`, import.meta.url));
+  return readdirSync(rootPath, { withFileTypes: true })
+    .filter((dirent) => dirent.isDirectory())
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((dirent) => {
+      const subdir = dirent.name;
+      const dirPath = join(rootPath, subdir);
+      const rows = parseReadmeRows(readFileSync(join(dirPath, "README.md"), "utf-8"));
+      return { root, subdir, dirPath, rows };
+    });
 });
 
-describe("catalog fixtures", () => {
-  for (const { yearDir, dirPath, rows } of catalogDirs) {
-    describe(yearDir, () => {
+describe("fixture checksums", () => {
+  it("scans the catalog and section fixture directories", () => {
+    expect(fixtureDirs.map(({ root, subdir }) => `${root}/${subdir}`)).toEqual(
+      expect.arrayContaining(["catalog/2026-2027", "sections/fall-2026"]),
+    );
+  });
+
+  for (const { root, subdir, dirPath, rows } of fixtureDirs) {
+    describe(`${root}/${subdir}`, () => {
       it("has at least one fixture row recorded in README.md", () => {
         expect(
           rows.length,
-          `Expected README.md in ${yearDir} to record at least one fixture file`,
+          `Expected README.md in ${root}/${subdir} to record at least one fixture file`,
         ).toBeGreaterThanOrEqual(1);
       });
 
@@ -65,7 +68,7 @@ describe("catalog fixtures", () => {
         const expectedFiles = rows.map((r) => r.file).sort();
         expect(
           actualFiles,
-          `Directory files in ${yearDir} do not match the fixture set in README.md`,
+          `Directory files in ${root}/${subdir} do not match the fixture set in README.md`,
         ).toEqual(expectedFiles);
       });
 
