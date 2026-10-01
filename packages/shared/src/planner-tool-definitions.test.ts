@@ -16,6 +16,10 @@ describe("planner tool definitions", () => {
       new URL("./__snapshots__/planner-tool-schemas.json", import.meta.url),
       "utf8",
     );
+    const builtSchemas = readFileSync(
+      new URL("../dist/planner-tool-schemas.json", import.meta.url),
+      "utf8",
+    );
 
     expect(definitions.map(({ name }) => name)).toEqual([
       "getCompleted",
@@ -31,6 +35,7 @@ describe("planner tool definitions", () => {
       ),
     ).toBe(true);
     expect(definitions).toEqual(JSON.parse(snapshot));
+    expect(JSON.parse(builtSchemas)).toEqual(definitions);
   });
 
   it("accepts only public tool arguments", () => {
