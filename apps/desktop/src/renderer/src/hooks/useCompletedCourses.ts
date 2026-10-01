@@ -69,5 +69,16 @@ export function useCompletedCourses() {
     [completed],
   );
 
-  return { completed, loading, loaded, pending, error, toggleCourse, isCompleted };
+  const refresh = useCallback(async () => {
+    try {
+      const courses = await window.jevschedule.completed.get();
+      completedRef.current = new Set(courses);
+      setCompleted(completedRef.current);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)));
+    }
+  }, []);
+
+  return { completed, loading, loaded, pending, error, toggleCourse, isCompleted, refresh };
 }

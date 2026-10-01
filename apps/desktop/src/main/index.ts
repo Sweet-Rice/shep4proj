@@ -1,4 +1,6 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, dialog, ipcMain } from "electron";
+import { readFile, stat } from "node:fs/promises";
+import { parseTranscriptPdf } from "@jevschedule/workday";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { isAppRendererUrl, registerIpcHandlers } from "./ipc.js";
@@ -37,6 +39,18 @@ void app.whenReady().then(() => {
     ipcMain,
     { completed: createCompletedStore(db), plan: createPlanStore(db) },
     (event) => isAppRendererUrl(event.senderFrame?.url, rendererUrl),
+    async () => {
+      const selection = await dialog.showOpenDialog({
+        properties: ["openFile"],
+        filters: [{ name: "PDF transcript", extensions: ["pdf"] }],
+      });
+      const path = selection.filePaths[0];
+      if (selection.canceled || !path) return null;
+      if ((await stat(path)).size > 20 * 1024 * 1024) {
+        throw new Error("Transcript PDF exceeds the 20 MB limit");
+      }
+      return parseTranscriptPdf(await readFile(path));
+    },
   );
 
   createWindow();
