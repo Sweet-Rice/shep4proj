@@ -1,10 +1,16 @@
 import { useState, type FormEvent } from "react";
-import { CourseCodeSchema, type CourseCode } from "@jevschedule/shared";
+import { CourseCodeSchema, getRequiredUnmetPrereqs, type CourseCode } from "@jevschedule/shared";
 import { useCatalogCourses } from "../hooks/useCatalog.js";
 import { useCompletedCourses } from "../hooks/useCompletedCourses.js";
 import { CourseSearch } from "./CourseSearch.js";
 import { CourseCompletionToggle } from "./CourseCompletionToggle.js";
 import { ImportProgressFlow } from "./ImportProgressFlow.js";
+import { MarkPrereqsDialog } from "./MarkPrereqsDialog.js";
+
+interface PrereqDialogState {
+  target: CourseCode;
+  prereqs: CourseCode[];
+}
 
 export function CompletedCourses() {
   const { courses, loading: catalogLoading, error: catalogError } = useCatalogCourses();
@@ -13,7 +19,41 @@ export function CompletedCourses() {
   const [input, setInput] = useState("");
   const [selected, setSelected] = useState<CourseCode | null>(null);
   const [inputError, setInputError] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<PrereqDialogState | null>(null);
   const codes = [...new Set([...completed, ...(selected ? [selected] : [])])].sort();
+
+  async function handleSearchToggle(code: CourseCode) {
+    if (completed.has(code)) {
+      await toggleCourse(code);
+      return;
+    }
+
+    try {
+      const details = await window.jevschedule.catalog.getCourseDetails([code]);
+      const prereqs = getRequiredUnmetPrereqs(details[code]?.prereq.tree ?? null, completed);
+      if (prereqs.length > 0) {
+        setDialog({ target: code, prereqs });
+        return;
+      }
+    } catch {
+      // Completion remains available while the catalog server is unavailable.
+    }
+
+    await toggleCourse(code);
+  }
+
+  async function acceptPrereqs(target: CourseCode, prereqs: CourseCode[]) {
+    await toggleCourse(target);
+    for (const prereq of prereqs) {
+      if (!completed.has(prereq)) await toggleCourse(prereq);
+    }
+    setDialog(null);
+  }
+
+  async function declinePrereqs(target: CourseCode) {
+    await toggleCourse(target);
+    setDialog(null);
+  }
 
   function selectCourse(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,7 +82,7 @@ export function CompletedCourses() {
           courses={courses}
           completedCourses={completed}
           onToggleCompleted={(code) => {
-            if (loaded) void toggleCourse(code);
+            if (loaded) void handleSearchToggle(code);
           }}
         />
       )}
@@ -104,6 +144,16 @@ export function CompletedCourses() {
       <section aria-label="Import transcript">
         <ImportProgressFlow uploadOnly onImportComplete={() => void refresh()} />
       </section>
+      {dialog && (
+        <MarkPrereqsDialog
+          isOpen
+          targetCourse={dialog.target}
+          unfulfilledPrereqs={dialog.prereqs}
+          onAccept={(target, prereqs) => void acceptPrereqs(target, prereqs)}
+          onDecline={(target) => void declinePrereqs(target)}
+          onCancel={() => setDialog(null)}
+        />
+      )}
     </main>
   );
 }

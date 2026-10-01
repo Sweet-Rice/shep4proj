@@ -52,6 +52,10 @@ Run `pnpm --filter @jevschedule/desktop dev` after building. Enter a course code
 completions appear automatically on launch; both additions and removals survive quitting
 and restarting the app. Codes use the shared format: 2–4 letters, a space, and 4 digits.
 
+Marking a searched course complete offers to mark its unmet required prerequisites too.
+Choose **Mark All Completed**, **Mark Only** the selected course, or **Cancel** without
+saving. OR alternatives are never guessed; manual entries and unmarking do not prompt.
+
 Controls wait for the initial local-store read and disable a course while its write is
 pending. A failed write restores its previous state and displays an error. Completion data
 stays in the local SQLite store, not on the server. The Courses screen searches the server

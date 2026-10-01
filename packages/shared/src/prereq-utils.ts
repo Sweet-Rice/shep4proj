@@ -22,39 +22,28 @@ export function collectPrereqCourseCodes(node: PrereqNode | null | undefined): C
 }
 
 /**
- * Returns the list of unfulfilled prerequisite course codes required for a course,
- * excluding any courses that are already completed or the course itself.
+ * Returns unmet course leaves that are required through AND nodes. OR subtrees
+ * are skipped because this prompt cannot choose which alternative was taken.
  */
-export function getUnfulfilledPrereqs(
-  prereqMapOrNode:
-    | Record<CourseCode, CourseCode[] | PrereqNode | null>
-    | PrereqNode
-    | CourseCode[]
-    | null
-    | undefined,
-  courseCode: CourseCode,
-  completed: Set<CourseCode> | CourseCode[],
+export function getRequiredUnmetPrereqs(
+  tree: PrereqNode | null,
+  completed: ReadonlySet<CourseCode>,
 ): CourseCode[] {
-  const completedSet = completed instanceof Set ? completed : new Set(completed);
-  let prereqCodes: CourseCode[] = [];
+  const required: CourseCode[] = [];
+  const seen = new Set<CourseCode>();
 
-  if (!prereqMapOrNode) return [];
-
-  if (Array.isArray(prereqMapOrNode)) {
-    prereqCodes = prereqMapOrNode;
-  } else if (typeof prereqMapOrNode === "object" && "type" in prereqMapOrNode) {
-    prereqCodes = collectPrereqCourseCodes(prereqMapOrNode as PrereqNode);
-  } else {
-    const entry = (prereqMapOrNode as Record<CourseCode, CourseCode[] | PrereqNode | null>)[
-      courseCode
-    ];
-    if (!entry) return [];
-    if (Array.isArray(entry)) {
-      prereqCodes = entry;
-    } else if (typeof entry === "object" && "type" in entry) {
-      prereqCodes = collectPrereqCourseCodes(entry as PrereqNode);
+  function visit(node: PrereqNode): void {
+    if (node.type === "OR") return;
+    if (node.type === "COURSE") {
+      if (!completed.has(node.code) && !seen.has(node.code)) {
+        seen.add(node.code);
+        required.push(node.code);
+      }
+      return;
     }
+    for (const child of node.children) visit(child);
   }
 
-  return prereqCodes.filter((code) => code !== courseCode && !completedSet.has(code));
+  if (tree) visit(tree);
+  return required;
 }
