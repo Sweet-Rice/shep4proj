@@ -188,6 +188,18 @@ describe("mapTranscript", () => {
     expect(result.inProgress).toEqual([{ season: "Fall", year: 2026, courses: ["CSC 3102"] }]);
   });
 
+  it("matches completed grades case-insensitively, like the transcript parser", () => {
+    const result = mapTranscript({
+      courses: [
+        { code: "CSC 1350", term: { season: "Fall", year: 2024 }, grade: "a-" },
+        { code: "MATH 1021", term: null, grade: "pass" },
+      ],
+      unrecognizedLines: [],
+    });
+
+    expect(result.completed).toEqual(["CSC 1350", "MATH 1021"]);
+  });
+
   it("lists a repeated in-progress row once in its term", () => {
     const result = mapTranscript({
       courses: [
