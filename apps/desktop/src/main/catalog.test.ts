@@ -93,6 +93,69 @@ describe("createCatalogClient", () => {
       "http://127.0.0.1:3000/degrees/csc-software-engineering-2026-2027",
     );
   });
+
+  it("limits concurrent detail requests to six and returns every fetched detail", async () => {
+    const codes = Array.from({ length: 8 }, (_, index) => `CSC ${1001 + index}` as const);
+    let active = 0;
+    let peakActive = 0;
+    let nextIndex = 0;
+    const pending: Array<{ code: string; resolve: (result: Response) => void }> = [];
+    const startWaiters: Array<{ count: number; resolve: () => void }> = [];
+    const fetchImpl = vi.fn(async () => {
+      active += 1;
+      peakActive = Math.max(peakActive, active);
+      const code = codes[nextIndex++];
+      if (code === undefined) throw new Error("Unexpected catalog request");
+      const result = new Promise<Response>((resolve) => {
+        pending.push({
+          code,
+          resolve: (response) => {
+            active -= 1;
+            resolve(response);
+          },
+        });
+      });
+      for (let index = startWaiters.length - 1; index >= 0; index -= 1) {
+        const waiter = startWaiters[index];
+        if (waiter && fetchImpl.mock.calls.length >= waiter.count) {
+          startWaiters.splice(index, 1);
+          waiter.resolve();
+        }
+      }
+      return result;
+    });
+    const client = createCatalogClient(DEFAULT_API_BASE_URL, fetchImpl as typeof fetch);
+    const resultPromise = client.getCourseDetails(codes);
+
+    const releasePending = (count: number) => {
+      for (const request of pending.splice(0, count)) {
+        request.resolve(
+          response({
+            ...detail,
+            code: request.code,
+            title: `Course ${request.code}`,
+          }),
+        );
+      }
+    };
+
+    expect(fetchImpl).toHaveBeenCalledTimes(6);
+    expect(peakActive).toBe(6);
+    releasePending(6);
+    await new Promise<void>((resolve) => {
+      if (fetchImpl.mock.calls.length >= 8) resolve();
+      else startWaiters.push({ count: 8, resolve });
+    });
+    expect(peakActive).toBe(6);
+    releasePending(2);
+
+    const details = await resultPromise;
+    expect(Object.keys(details).sort()).toEqual([...codes].sort());
+    for (const code of codes) {
+      expect(details[code]).toMatchObject({ code, title: `Course ${code}` });
+    }
+    expect(peakActive).toBe(6);
+  });
   it("rejects malformed response bodies", async () => {
     const client = createCatalogClient(
       DEFAULT_API_BASE_URL,
