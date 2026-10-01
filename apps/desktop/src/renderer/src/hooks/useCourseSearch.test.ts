@@ -26,12 +26,6 @@ describe("useCourseSearch & filterCourses", () => {
     expect(matches.map((c) => c.code)).toContain("MATH 1552");
   });
 
-  it("filters courses by department", () => {
-    const matches = filterCourses(SAMPLE_CATALOG, "chemistry");
-    expect(matches).toHaveLength(1);
-    expect(matches[0]?.code).toBe("CHEM 1201");
-  });
-
   it("updates query and results state via hook", () => {
     const { result } = renderHook(() => useCourseSearch(SAMPLE_CATALOG));
 

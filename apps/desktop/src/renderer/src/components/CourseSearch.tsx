@@ -9,6 +9,13 @@ export interface CourseSearchProps {
   placeholder?: string;
 }
 
+export function formatCreditsDisplay(credits: Course["credits"]): string {
+  if (credits.min === credits.max) {
+    return `${credits.min} cr`;
+  }
+  return `${credits.min}-${credits.max} cr`;
+}
+
 export function CourseSearch({
   courses = SAMPLE_CATALOG,
   completedCourses = new Set(),
@@ -80,7 +87,7 @@ export function CourseSearch({
                 <div className="course-item-header">
                   <span className="course-code">{course.code}</span>
                   <span className="course-title">{course.title}</span>
-                  <span className="course-credits">{course.credits} cr</span>
+                  <span className="course-credits">{formatCreditsDisplay(course.credits)}</span>
                 </div>
 
                 {course.description && <p className="course-description">{course.description}</p>}
