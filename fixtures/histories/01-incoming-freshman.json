@@ -1,0 +1,28 @@
+{
+  "id": "01-incoming-freshman",
+  "description": "A new student has placement credit for an introductory mathematics course.",
+  "completed": [{ "code": "MATH 1550", "grade": "B" }],
+  "plannedSameTerm": [],
+  "cases": [
+    {
+      "course": "CSC 1350",
+      "reason": "The catalog lists MATH 1550 as one of several credit-or-registration alternatives; the completed B satisfies one alternative.",
+      "expected": { "status": "eligible", "missingPrerequisites": [] }
+    },
+    {
+      "course": "CSC 2533",
+      "reason": "The catalog requires MATH 1550, which is completed with a B.",
+      "expected": { "status": "eligible", "missingPrerequisites": [] }
+    },
+    {
+      "course": "CSC 1110",
+      "reason": "CSC 1110 appears in coursesWithoutPrereq, so its prerequisite tree is null and it is eligible.",
+      "expected": { "status": "eligible", "missingPrerequisites": [] }
+    },
+    {
+      "course": "CSC 2700",
+      "reason": "The catalog lists CSC 1254 or CSC 1351; neither is completed, and the non-course permission alternative cannot be established from this history.",
+      "expected": { "status": "ineligible", "missingPrerequisites": ["One of: CSC 1254 completed; or CSC 1351 completed"] }
+    }
+  ]
+}
