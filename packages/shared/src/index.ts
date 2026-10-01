@@ -43,6 +43,17 @@ export type {
   Requirement,
 } from "./requirements.js";
 
+export { evaluateRequirements } from "./evaluate-requirements.js";
+export type {
+  CompletedCourseInput,
+  CompletedInput,
+  DegreeEvaluation,
+  EvaluatedChooseNRequirement,
+  EvaluatedCreditBucketRequirement,
+  EvaluatedFixedRequirement,
+  EvaluatedRequirement,
+} from "./evaluate-requirements.js";
+
 /**
  * Placeholder for the shared planner types, zod schemas, and prereq /
  * requirement / eligibility / conflict logic that will live in this package.
