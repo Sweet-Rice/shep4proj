@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { useState } from "react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
@@ -118,5 +119,56 @@ describe("MarkPrereqsDialog", () => {
     expect(handleCancel).toHaveBeenCalledTimes(1);
     expect(handleAccept).not.toHaveBeenCalled();
     expect(handleDecline).not.toHaveBeenCalled();
+  });
+
+  it("moves focus into the dialog on open and returns it to the trigger on close", () => {
+    const props = {
+      targetCourse: "CSC 2250" as const,
+      unfulfilledPrereqs: ["CSC 1350" as const],
+      onAccept: vi.fn(),
+      onDecline: vi.fn(),
+    };
+    render(<button type="button">Mark Completed</button>);
+    const trigger = screen.getByRole("button", { name: "Mark Completed" });
+    trigger.focus();
+
+    const { rerender } = render(<MarkPrereqsDialog isOpen={true} {...props} />);
+    expect(screen.getByRole("dialog")).toContainElement(document.activeElement as HTMLElement);
+
+    rerender(<MarkPrereqsDialog isOpen={false} {...props} />);
+    expect(trigger).toHaveFocus();
+  });
+
+  it("returns focus to the trigger when the parent unmounts the dialog", async () => {
+    const user = userEvent.setup();
+    function Host() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>
+            Mark Completed
+          </button>
+          {open && (
+            <MarkPrereqsDialog
+              isOpen
+              targetCourse="CSC 2250"
+              unfulfilledPrereqs={["CSC 1350"]}
+              onAccept={vi.fn()}
+              onDecline={vi.fn()}
+              onCancel={() => setOpen(false)}
+            />
+          )}
+        </>
+      );
+    }
+    render(<Host />);
+    const trigger = screen.getByRole("button", { name: "Mark Completed" });
+
+    await user.click(trigger);
+    expect(screen.getByRole("dialog")).toContainElement(document.activeElement as HTMLElement);
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(trigger).toHaveFocus();
   });
 });
