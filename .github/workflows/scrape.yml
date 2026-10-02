@@ -1,0 +1,48 @@
+# Render's free instance sleeps and has only 512 MB RAM; run browser scraping on a scheduled GitHub runner instead.
+name: Production scrape
+
+on:
+  schedule:
+    - cron: '23 7 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  scrape:
+    if: vars.SCRAPE_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 340
+    concurrency:
+      group: production-scrape
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull server image
+        run: docker pull ghcr.io/sweet-rice/shep4proj-server:latest
+
+      - name: Scrape sections
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SECTION_SCRAPE_DEPARTMENTS: ${{ vars.SECTION_SCRAPE_DEPARTMENTS || 'CSC' }}
+        run: >-
+          docker run --rm -e DATABASE_URL -e SECTION_SCRAPE_DEPARTMENTS
+          ghcr.io/sweet-rice/shep4proj-server:latest node dist/scripts/scrape-sections.js
+
+      - name: Scrape catalog
+        if: always()
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: >-
+          docker run --rm -e DATABASE_URL
+          ghcr.io/sweet-rice/shep4proj-server:latest node dist/scripts/scrape-catalog.js

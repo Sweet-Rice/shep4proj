@@ -23,7 +23,7 @@ Set these variables through the host's secret/configuration facility. Never comm
 | `PORT` | The port exposed/routed by the host; defaults to `3000`. |
 | `SECTION_SCRAPE_ENABLED` | `true` or `false`; defaults to `false`. Enable only when scheduled live section scraping is intended. |
 | `SECTION_SCRAPE_DEPARTMENTS` | Comma-separated 2–4 letter department prefixes; defaults to `CSC` (for example, `CSC`). Used by scheduled section scraping and operator-triggered section scraping. |
-| `CATALOG_SCRAPE_ENABLED` | `true` or `false`; defaults to `false`. Set `true` in production to schedule the CSC catalog scrape. |
+| `CATALOG_SCRAPE_ENABLED` | `true` or `false`; defaults to `false`. Enables the server's in-process daily CSC catalog scraper. On the free Render deployment, leave it `false`; the GitHub Actions `scrape` workflow handles scheduled catalog scraping instead. |
 | `CATALOG_BROWSER_CHANNEL` | Browser channel used by the catalog scraper; the server image sets this to `chrome`. |
 
 `HOST`, `PORT` and scrape configuration are read by `apps/server/src/config.ts`. Keep scheduled scraping disabled unless the deployment is intended to contact LSU.
@@ -58,6 +58,38 @@ After the initial load, verify that the public catalog endpoint returns a non-em
 ```sh
 curl -fsS https://YOUR_PUBLIC_HOST/courses?dept=CSC
 ```
+
+## Free hosting on Render + Neon (this project's deployment)
+
+This project runs a Render free web service built from this GitHub repository and Neon Free for persistent PostgreSQL. GitHub Actions publishes the server image to GHCR, migrates the database from that digest, and asks Render to deploy the same commit after the migration succeeds. A separate scheduled workflow runs scraping on GitHub-hosted runners because Render's free instance sleeps and has only 512 MB of memory, which is not a suitable place for headless Chrome. The service may take about a minute to start after an idle period; desktop requests wait for the API response.
+
+### One-time setup
+
+1. Create a free Neon account and a Postgres project named `jevschedule`. Prefer Postgres 18 (or 17 if 18 is unavailable) and a region near the Render service, such as AWS US East Ohio. Copy the connection string, including `?sslmode=require`.
+2. In the repository's `production` GitHub environment, create secrets `DATABASE_URL` (the Neon connection string) and `RENDER_DEPLOY_HOOK_URL` (the Render deploy hook URL). The environment is restricted to `main`; keep these values out of the repository and logs.
+3. Create a Render web service from the GitHub repository `Sweet-Rice/shep4proj`. Set Language to **Docker**, Branch to `main`, Root Directory blank, Dockerfile Path to `apps/server/Dockerfile`, and Docker Build Context Directory to `.`. Choose the **Free** instance type, set Health Check Path to `/health`, and configure `DATABASE_URL` with the Neon connection string. Set **Auto-Deploy** to **Off** so a schema-changing commit cannot deploy before GitHub Actions runs migrations. Copy the service's HTTPS URL and deploy hook URL.
+4. In repository **Actions variables**, set `RENDER_SERVICE_URL` (the service's HTTPS base URL, without a trailing slash), `SCRAPE_ENABLED` (`true` to enable scheduled scraping), and optionally `SECTION_SCRAPE_DEPARTMENTS` (comma-separated prefixes; defaults to `CSC`). These repository-level variables are available to job gates before a runner starts. Keep `DATABASE_URL` and `RENDER_DEPLOY_HOOK_URL` as secrets on the `production` environment.
+5. In repository Actions variables, set `JEVSCHEDULE_API_URL` to the public HTTPS service URL, without an endpoint path. The desktop release workflow uses it when building installers.
+
+### Restore the catalog database
+
+Restore the verified database dump into Neon before making the service public. Use Neon's **direct, non-pooled** connection string for this restore, and a `pg_restore` client at least as new as the dump's PostgreSQL major version (for example, Postgres 18). A pooled Neon connection uses PgBouncer transaction mode, which can retain `pg_restore`'s session `search_path` setting and make tables appear missing to later queries.
+
+```sh
+docker run --rm -i -v "$PWD:/backup:ro" -e DATABASE_URL \
+  postgres:18-alpine pg_restore --no-owner --no-privileges \
+  --dbname "$DATABASE_URL" /backup/jevschedule.dump
+```
+
+Set `DATABASE_URL` in your shell's protected environment to Neon's direct connection string, and put the dump at `jevschedule.dump` in the current directory. The restore command does not print the URL; do not put it in shell history or commit it. If only a pooled URL is available, immediately run `psql "$DATABASE_URL" -c "RESET search_path"` after the restore, then check `psql "$DATABASE_URL" -c "SHOW search_path"` before starting the service or verifying it.
+
+### Deploy and scrape
+
+The `server-image` workflow publishes `latest` and a commit-specific tag. Its deploy job logs in to GHCR, pulls the image by the digest from that run, and runs the production migrator against Neon before asking the Git-backed Render service to deploy `${{ github.sha }}`. It then waits up to 25 minutes for `/health` to report that exact commit; the response includes `RENDER_GIT_COMMIT` so a still-running old instance cannot satisfy the check. Deployment is skipped until the repository variable `RENDER_SERVICE_URL` is configured. Trigger it with `workflow_dispatch` for the initial deployment. Afterward, verify `/health` and `/courses?dept=CSC` at the Render URL. GitHub Actions authenticates to GHCR for both migration and scheduled scraping, so the package does not need public visibility.
+
+The `scrape` workflow runs daily and can also be triggered manually. It scrapes sections first and attempts the catalog scrape even if the section scrape fails. Scraping is disabled unless `SCRAPE_ENABLED` is exactly `true`; the catalog scraper follows `robots.txt` and does not use a crawl-delay override.
+
+GitHub disables scheduled workflows in public repositories after 60 days without repository activity. Make a repository commit or other qualifying activity, then re-enable the workflow from the repository's **Actions** tab if GitHub has disabled it.
 
 ## Point the desktop app at the deployed API
 
