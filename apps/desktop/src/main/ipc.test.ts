@@ -135,6 +135,19 @@ describe("registerIpcHandlers", () => {
     expect(ipc.sent).toEqual([[IPC_CHANNELS.workdayProgress, { stage: "signing-in" }]]);
   });
 
+  it("rejects Workday import and confirm from untrusted senders without touching anything", () => {
+    trusted = false;
+    expect(() => ipc.invoke(IPC_CHANNELS.workdayImport)).toThrow(UntrustedIpcSenderError);
+    expect(() => ipc.invoke(IPC_CHANNELS.workdayConfirm, importedReview)).toThrow(
+      UntrustedIpcSenderError,
+    );
+    expect(workday.run).not.toHaveBeenCalled();
+    expect(ipc.sent).toEqual([]);
+    trusted = true;
+    expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual([]);
+    expect(ipc.invoke(IPC_CHANNELS.planGet)).toMatchObject({ terms: [] });
+  });
+
   it("saves confirmed Workday completions and deduplicated in-progress courses before done", () => {
     ipc.invoke(IPC_CHANNELS.planSave, {
       creditLimit: 19,
