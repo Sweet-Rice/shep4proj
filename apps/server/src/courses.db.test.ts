@@ -207,4 +207,87 @@ describe.skipIf(!getTestDatabaseUrl())("courses routes", () => {
       expect(res.json()).toEqual({ error: "Course not found" });
     });
   });
+
+  describe("POST /courses/details", () => {
+    function post(payload: object) {
+      return app.inject({ method: "POST", url: "/courses/details", payload });
+    }
+
+    it("returns the same detail shape as GET /courses/:id", async () => {
+      const single = await app.inject({ method: "GET", url: "/courses/CSC-3102" });
+      const res = await post({ codes: ["CSC 3102", "CSC 4330"] });
+
+      expect(res.statusCode).toBe(200);
+      const body = res.json<{ courses: CourseDetail[] }>();
+      expect(body.courses.map((c) => c.code).sort()).toEqual(["CSC 3102", "CSC 4330"]);
+      expect(body.courses.find((c) => c.code === "CSC 3102")).toEqual(single.json());
+    });
+
+    it("dedupes codes and normalizes case and hyphens", async () => {
+      const res = await post({ codes: ["CSC 4330", "csc-4330", "CSC 4330"] });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json<{ courses: CourseDetail[] }>().courses.map((c) => c.code)).toEqual([
+        "CSC 4330",
+      ]);
+    });
+
+    it("omits unknown codes", async () => {
+      const res = await post({ codes: ["CSC 4330", "CSC 9999"] });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json<{ courses: CourseDetail[] }>().courses.map((c) => c.code)).toEqual([
+        "CSC 4330",
+      ]);
+    });
+
+    it("returns an empty list for an empty codes array", async () => {
+      const res = await post({ codes: [] });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toEqual({ courses: [] });
+    });
+
+    it("accepts exactly 500 codes and rejects 501", async () => {
+      const codes = Array.from({ length: 501 }, (_, i) => `CSC ${String(1000 + i)}`);
+
+      expect((await post({ codes: codes.slice(0, 500) })).statusCode).toBe(200);
+      const res = await post({ codes });
+      expect(res.statusCode).toBe(400);
+      expect(res.json()).toEqual({ error: "too many codes (max 500)" });
+    });
+
+    it("counts the cap after deduping", async () => {
+      const codes = Array.from({ length: 501 }, () => "CSC 4330");
+
+      expect((await post({ codes })).statusCode).toBe(200);
+    });
+
+    it("returns 400 for a malformed body or code", async () => {
+      for (const payload of [
+        {},
+        { codes: "CSC 4330" },
+        { codes: [4330] },
+        { codes: ["not a code"] },
+      ]) {
+        const res = await post(payload);
+        expect(res.statusCode).toBe(400);
+        expect(res.json()).toEqual({ error: "invalid codes" });
+      }
+    });
+
+    it("returns 400 for an invalid catalogYear", async () => {
+      const res = await post({ codes: ["CSC 4330"], catalogYear: "nope" });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.json()).toEqual({ error: "invalid catalogYear" });
+    });
+
+    it("returns nothing for a catalogYear without the course", async () => {
+      const res = await post({ codes: ["CSC 4330"], catalogYear: "1999-2000" });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toEqual({ courses: [] });
+    });
+  });
 });
