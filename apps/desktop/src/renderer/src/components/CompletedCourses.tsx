@@ -154,14 +154,14 @@ export function CompletedCourses() {
                     : "Could not load completed courses. Restart the app to try again."}
               </p>
             )}
-            <p role="status">
+            <p role="status" className="completed-status">
               {loading
                 ? "Loading saved courses…"
                 : pending.size > 0
                   ? "Saving completion…"
                   : error
                     ? ""
-                    : ""}
+                    : "Changes saved on this device."}
             </p>
             {loaded && codes.length === 0 && (
               <p className="empty-state">
