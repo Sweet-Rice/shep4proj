@@ -61,13 +61,13 @@ curl -fsS https://YOUR_PUBLIC_HOST/courses?dept=CSC
 
 ## Free hosting on Render + Neon (this project's deployment)
 
-This project uses a Render free web service for the API and Neon Free for persistent PostgreSQL. GitHub Actions publishes the server image to GHCR, migrates the database, and asks Render to deploy that exact image digest. A separate scheduled workflow runs scraping on GitHub-hosted runners because Render's free instance sleeps and has only 512 MB of memory, which is not a suitable place for headless Chrome. The service may take about a minute to start after an idle period; desktop requests wait for the API response.
+This project runs a Render free web service built from this GitHub repository and Neon Free for persistent PostgreSQL. GitHub Actions publishes the server image to GHCR, migrates the database from that digest, and asks Render to deploy the same commit after the migration succeeds. A separate scheduled workflow runs scraping on GitHub-hosted runners because Render's free instance sleeps and has only 512 MB of memory, which is not a suitable place for headless Chrome. The service may take about a minute to start after an idle period; desktop requests wait for the API response.
 
 ### One-time setup
 
 1. Create a free Neon account and a Postgres project named `jevschedule`. Prefer Postgres 18 (or 17 if 18 is unavailable) and a region near the Render service, such as AWS US East Ohio. Copy the connection string, including `?sslmode=require`.
 2. In the repository's `production` GitHub environment, create secrets `DATABASE_URL` (the Neon connection string) and `RENDER_DEPLOY_HOOK_URL` (the Render deploy hook URL). The environment is restricted to `main`; keep these values out of the repository and logs.
-3. Create a Render free web service from the existing image `ghcr.io/sweet-rice/shep4proj-server:latest`. Configure its `DATABASE_URL` with the Neon connection string and its health check path as `/health`. Copy the service's HTTPS URL and deploy hook URL.
+3. Create a Render web service from the GitHub repository `Sweet-Rice/shep4proj`. Set Language to **Docker**, Branch to `main`, Root Directory blank, Dockerfile Path to `apps/server/Dockerfile`, and Docker Build Context Directory to `.`. Choose the **Free** instance type, set Health Check Path to `/health`, and configure `DATABASE_URL` with the Neon connection string. Set **Auto-Deploy** to **Off** so a schema-changing commit cannot deploy before GitHub Actions runs migrations. Copy the service's HTTPS URL and deploy hook URL.
 4. In the `production` GitHub environment, set variables `RENDER_SERVICE_URL` (the service's HTTPS base URL, without a trailing slash), `SCRAPE_ENABLED` (`true` to enable scheduled scraping), and optionally `SECTION_SCRAPE_DEPARTMENTS` (comma-separated prefixes; defaults to `CSC`).
 5. In repository Actions variables, set `JEVSCHEDULE_API_URL` to the public HTTPS service URL, without an endpoint path. The desktop release workflow uses it when building installers.
 
@@ -85,7 +85,7 @@ Set `DATABASE_URL` in your shell's protected environment and put the dump at `je
 
 ### Deploy and scrape
 
-The `server-image` workflow publishes `latest` and a commit-specific tag. Its deploy job runs the production migrator against Neon, sends Render the digest-pinned image URL, and waits for `/health`; deployment is skipped until `RENDER_SERVICE_URL` is configured. Trigger it with `workflow_dispatch` for the initial deployment. Afterward, verify `/health` and `/courses?dept=CSC` at the Render URL.
+The `server-image` workflow publishes `latest` and a commit-specific tag. Its deploy job logs in to GHCR, pulls the image by the digest from that run, and runs the production migrator against Neon before asking the Git-backed Render service to deploy `${{ github.sha }}`. It then waits for `/health`; deployment is skipped until `RENDER_SERVICE_URL` is configured. Trigger it with `workflow_dispatch` for the initial deployment. Afterward, verify `/health` and `/courses?dept=CSC` at the Render URL. GitHub Actions authenticates to GHCR for both migration and scheduled scraping, so the package does not need public visibility.
 
 The `scrape` workflow runs daily and can also be triggered manually. It scrapes sections first and attempts the catalog scrape even if the section scrape fails. Scraping is disabled unless `SCRAPE_ENABLED` is exactly `true`; the catalog scraper follows `robots.txt` and does not use a crawl-delay override.
 
