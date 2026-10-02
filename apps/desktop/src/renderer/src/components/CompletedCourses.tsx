@@ -62,6 +62,10 @@ export function CompletedCourses() {
       setInputError("Enter a course code such as CSC 1350 (2–4 letters, a space, and 4 digits).");
       return;
     }
+    if (!courses.some((course) => course.code === parsed.data)) {
+      setInputError(`${parsed.data} is not in the LSU course catalog.`);
+      return;
+    }
     setInputError(null);
     setSelected(parsed.data);
     setInput(parsed.data);
@@ -74,8 +78,8 @@ export function CompletedCourses() {
         <p>Loading course catalog…</p>
       ) : catalogError ? (
         <p role="alert">
-          {catalogError.message}. Start the server (pnpm dev) to search courses; you can still enter
-          codes below.
+          Course catalog unavailable: {catalogError.message}. Courses can&apos;t be verified or
+          marked completed until the server is reachable.
         </p>
       ) : (
         <CourseSearch
@@ -95,11 +99,11 @@ export function CompletedCourses() {
             value={input}
             onChange={(event) => setInput(event.target.value)}
             placeholder="CSC 1350"
-            disabled={!loaded}
+            disabled={catalogLoading || catalogError !== null || !loaded}
             aria-invalid={inputError !== null}
             aria-describedby={inputError ? "course-code-error" : undefined}
           />
-          <button type="submit" disabled={!loaded}>
+          <button type="submit" disabled={catalogLoading || catalogError !== null || !loaded}>
             Show course
           </button>
         </div>
@@ -111,9 +115,11 @@ export function CompletedCourses() {
       </form>
       {error && (
         <p role="alert">
-          {loaded
-            ? "Could not save completion. The previous state has been restored. Try the toggle again."
-            : "Could not load completed courses. Restart the app to try again."}
+          {loaded && error.message.includes("Not in the LSU course catalog")
+            ? error.message
+            : loaded
+              ? "Could not save completion. The previous state has been restored. Try the toggle again."
+              : "Could not load completed courses. Restart the app to try again."}
         </p>
       )}
       <p role="status">
@@ -138,11 +144,20 @@ export function CompletedCourses() {
               label={`${code} completed`}
               disabled={!loaded || pending.has(code)}
             />
+            {isCompleted(code) &&
+              !catalogLoading &&
+              !catalogError &&
+              !courses.some((course) => course.code === code) && (
+                <span className="badge badge-warning">Not in catalog</span>
+              )}
           </li>
         ))}
       </ul>
       <section aria-label="Import transcript">
-        <ImportProgressFlow onImportComplete={() => void refresh()} />
+        <ImportProgressFlow
+          catalogCodes={new Set(courses.map((course) => course.code))}
+          onImportComplete={() => void refresh()}
+        />
       </section>
       {dialog && (
         <MarkPrereqsDialog

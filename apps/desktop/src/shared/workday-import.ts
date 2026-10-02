@@ -67,7 +67,7 @@ function toStoreImport(rows: ImportRow[]): StoreImport {
     }
     const code = CourseCodeSchema.safeParse(rawCode);
     if (!code.success) {
-      skipped.push({ code: rawCode, reason: "catalog course code not supported" });
+      skipped.push({ code: rawCode, reason: "unrecognized course code format" });
       continue;
     }
     if (outcome === "completed") {

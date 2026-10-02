@@ -3,7 +3,28 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
-import { SuggestionView, SAMPLE_SUGGESTIONS } from "./SuggestionView.js";
+import { SuggestionView, type CourseSuggestion } from "./SuggestionView.js";
+const suggestionsFixture: CourseSuggestion[] = [
+  {
+    code: "CSC 1351",
+    title: "Computer Science II for Majors",
+    rationale: "Core requirement following CSC 1350 completion.",
+    status: "valid",
+  },
+  {
+    code: "MATH 1552",
+    title: "Analytic Geometry and Calculus II",
+    rationale: "Prerequisite for upper-level CSC courses.",
+    status: "valid",
+  },
+  {
+    code: "CSC 3102",
+    title: "Advanced Data Structures",
+    rationale: "Core computer science algorithm course.",
+    status: "invalid",
+    validationReason: "Prerequisite CSC 2250 is not yet completed.",
+  },
+];
 
 describe("SuggestionView", () => {
   afterEach(() => {
@@ -11,7 +32,7 @@ describe("SuggestionView", () => {
   });
 
   it("renders list of AI course suggestions with rationale and validation status", () => {
-    render(<SuggestionView onAcceptCourse={vi.fn()} suggestions={SAMPLE_SUGGESTIONS} />);
+    render(<SuggestionView onAcceptCourse={vi.fn()} suggestions={suggestionsFixture} />);
 
     expect(screen.getByTestId("suggestion-view")).toBeInTheDocument();
     expect(screen.getByText("AI Advisor Course Suggestions")).toBeInTheDocument();
@@ -30,7 +51,7 @@ describe("SuggestionView", () => {
     const user = userEvent.setup();
     const handleAccept = vi.fn();
 
-    render(<SuggestionView onAcceptCourse={handleAccept} suggestions={SAMPLE_SUGGESTIONS} />);
+    render(<SuggestionView onAcceptCourse={handleAccept} suggestions={suggestionsFixture} />);
 
     const acceptBtn = screen.getByTestId("accept-course-CSC 1351");
     expect(acceptBtn).not.toBeDisabled();
@@ -43,7 +64,7 @@ describe("SuggestionView", () => {
   });
 
   it("disables Accept button for ineligible suggestions", () => {
-    render(<SuggestionView onAcceptCourse={vi.fn()} suggestions={SAMPLE_SUGGESTIONS} />);
+    render(<SuggestionView onAcceptCourse={vi.fn()} suggestions={suggestionsFixture} />);
 
     const acceptIneligibleBtn = screen.getByTestId("accept-course-CSC 3102");
     expect(acceptIneligibleBtn).toBeDisabled();
@@ -57,7 +78,7 @@ describe("SuggestionView", () => {
       <SuggestionView
         onAcceptCourse={vi.fn()}
         onRejectCourse={handleReject}
-        suggestions={SAMPLE_SUGGESTIONS}
+        suggestions={suggestionsFixture}
       />,
     );
 

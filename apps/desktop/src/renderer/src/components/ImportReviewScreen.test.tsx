@@ -3,7 +3,20 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, cleanup, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
-import { ImportReviewScreen, SAMPLE_PARSE_RESULT } from "./ImportReviewScreen.js";
+import { ImportReviewScreen, type TranscriptParseResult } from "./ImportReviewScreen.js";
+const reviewFixture: TranscriptParseResult = {
+  parsedCourses: [
+    { code: "CSC 1350", term: "Fall 2024", grade: "A", selected: true },
+    { code: "MATH 1550", term: "Fall 2024", grade: "B+", selected: true },
+    { code: "ENGL 1001", term: "Fall 2024", grade: "A-", selected: true },
+    { code: "CSC 1351", term: "Spring 2025", grade: "B", selected: true },
+  ],
+  unrecognizedLines: [
+    "PHYS 1000 - In Progress",
+    "TOTAL CREDITS EARNED: 14.0",
+    "CUMULATIVE GPA: 3.65",
+  ],
+};
 
 const mockSet = vi.fn();
 
@@ -35,7 +48,7 @@ describe("ImportReviewScreen", () => {
   });
 
   it("renders checklist of parsed courses and unrecognized lines", () => {
-    render(<ImportReviewScreen parseResult={SAMPLE_PARSE_RESULT} />);
+    render(<ImportReviewScreen parseResult={reviewFixture} />);
 
     expect(screen.getByTestId("import-review-screen")).toBeInTheDocument();
     expect(screen.getByText("Review Imported Courses")).toBeInTheDocument();
@@ -48,7 +61,7 @@ describe("ImportReviewScreen", () => {
 
   it("allows selecting and deselecting all courses", async () => {
     const user = userEvent.setup();
-    render(<ImportReviewScreen parseResult={SAMPLE_PARSE_RESULT} />);
+    render(<ImportReviewScreen parseResult={reviewFixture} />);
 
     const deselectBtn = screen.getByTestId("deselect-all-btn");
     await user.click(deselectBtn);
@@ -67,7 +80,7 @@ describe("ImportReviewScreen", () => {
     const user = userEvent.setup();
     const handleConfirm = vi.fn();
 
-    render(<ImportReviewScreen parseResult={SAMPLE_PARSE_RESULT} onConfirm={handleConfirm} />);
+    render(<ImportReviewScreen parseResult={reviewFixture} onConfirm={handleConfirm} />);
 
     const confirmBtn = screen.getByTestId("confirm-import-btn");
     await user.click(confirmBtn);

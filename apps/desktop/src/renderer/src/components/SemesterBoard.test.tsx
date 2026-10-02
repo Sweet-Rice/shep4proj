@@ -196,7 +196,15 @@ describe("SemesterBoard", () => {
     const addTermBtn = screen.getByTestId("add-term-btn");
     await user.click(addTermBtn);
 
-    expect(handleAddTerm).toHaveBeenCalledWith("Fall", 2027);
+    expect(handleAddTerm).toHaveBeenCalledWith("Fall", new Date().getFullYear());
+    expect(screen.getByRole("spinbutton", { name: "Enter Year" })).toHaveAttribute(
+      "min",
+      String(new Date().getFullYear() - 8),
+    );
+    expect(screen.getByRole("spinbutton", { name: "Enter Year" })).toHaveAttribute(
+      "max",
+      String(new Date().getFullYear() + 8),
+    );
   });
 
   it("shows a prerequisite error on an invalid course placement", () => {
