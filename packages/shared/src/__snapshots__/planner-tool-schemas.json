@@ -29,7 +29,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "pattern": "^[A-Z]{2,4} \\d{4}$"
+            "pattern": "^[A-Z]{2,4} \\d{4}[A-Z]{0,2}$"
           },
           "minItems": 1
         }
@@ -46,7 +46,7 @@
       "properties": {
         "code": {
           "type": "string",
-          "pattern": "^[A-Z]{2,4} \\d{4}$"
+          "pattern": "^[A-Z]{2,4} \\d{4}[A-Z]{0,2}$"
         }
       },
       "required": ["code"],
@@ -85,7 +85,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "pattern": "^[A-Z]{2,4} \\d{4}$"
+                      "pattern": "^[A-Z]{2,4} \\d{4}[A-Z]{0,2}$"
                     }
                   }
                 },
@@ -134,7 +134,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "pattern": "^[A-Z]{2,4} \\d{4}$"
+                      "pattern": "^[A-Z]{2,4} \\d{4}[A-Z]{0,2}$"
                     }
                   }
                 },
