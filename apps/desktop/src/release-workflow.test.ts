@@ -112,4 +112,15 @@ describe("release.yml workflow configuration", () => {
     expect(builderConfig.mac.entitlements).toBe("build/entitlements.mac.plist");
     expect(builderConfig.win).not.toHaveProperty("publisherName");
   });
+
+  it("uses a Linux-safe executable name and lets all release platforms finish", () => {
+    const workflow = fs.readFileSync(releaseWorkflowPath, "utf-8");
+    expect(workflow).toMatch(/strategy:\r?\n\s+fail-fast: false\r?\n\s+matrix:/);
+
+    const builderConfigPath = path.join(rootDir, "apps/desktop/electron-builder.json");
+    const builderConfig = JSON.parse(fs.readFileSync(builderConfigPath, "utf-8")) as {
+      linux: { executableName?: string };
+    };
+    expect(builderConfig.linux.executableName).toBe("jevschedule");
+  });
 });
