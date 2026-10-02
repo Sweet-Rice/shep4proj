@@ -26,6 +26,15 @@ const TEST_CATALOG: Course[] = [
   prerequisiteText: null,
 }));
 
+const LARGE_CATALOG: Course[] = [
+  ...TEST_CATALOG,
+  ...Array.from({ length: 55 }, (_, index) => ({
+    ...TEST_CATALOG[0]!,
+    code: `TST ${1000 + index}`,
+    title: `Test Course ${index}`,
+  })),
+];
+
 describe("CourseSearch", () => {
   afterEach(() => {
     cleanup();
@@ -38,6 +47,26 @@ describe("CourseSearch", () => {
     expect(screen.getByLabelText("Search Courses")).toBeInTheDocument();
     expect(screen.getByTestId("course-results-list")).toBeInTheDocument();
     expect(screen.getByText("Showing all 10 courses")).toBeInTheDocument();
+  });
+
+  it("reports when the unfiltered catalog exceeds the displayed result cap", () => {
+    render(<CourseSearch courses={LARGE_CATALOG} />);
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Showing 50 of 65 courses. Search to find the rest.",
+    );
+    expect(screen.getByTestId("course-results-list").children).toHaveLength(50);
+  });
+
+  it("reports all query matches when they exceed the displayed result cap", async () => {
+    const user = userEvent.setup();
+    render(<CourseSearch courses={LARGE_CATALOG} />);
+    await user.type(screen.getByLabelText("Search Courses"), "TST");
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      'Found 55 courses matching "TST" (showing first 50)',
+    );
+    expect(screen.getByTestId("course-results-list").children).toHaveLength(50);
   });
 
   it("filters courses matching query as user types", async () => {

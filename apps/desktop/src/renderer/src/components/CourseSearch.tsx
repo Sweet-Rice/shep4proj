@@ -69,6 +69,11 @@ export function CourseSearch({
         {query.trim() ? (
           <span>
             Found {totalCount} course{totalCount === 1 ? "" : "s"} matching &quot;{query}&quot;
+            {totalCount > results.length && ` (showing first ${results.length})`}
+          </span>
+        ) : totalCount > results.length ? (
+          <span>
+            Showing {results.length} of {totalCount} courses. Search to find the rest.
           </span>
         ) : (
           <span>Showing all {totalCount} courses</span>
