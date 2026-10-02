@@ -23,7 +23,7 @@ Set these variables through the host's secret/configuration facility. Never comm
 | `PORT` | The port exposed/routed by the host; defaults to `3000`. |
 | `SECTION_SCRAPE_ENABLED` | `true` or `false`; defaults to `false`. Enable only when scheduled live section scraping is intended. |
 | `SECTION_SCRAPE_DEPARTMENTS` | Comma-separated 2–4 letter department prefixes; defaults to `CSC` (for example, `CSC`). Used by scheduled section scraping and operator-triggered section scraping. |
-| `CATALOG_SCRAPE_ENABLED` | `true` or `false`; defaults to `false`. Set `true` in production to schedule the CSC catalog scrape. |
+| `CATALOG_SCRAPE_ENABLED` | `true` or `false`; defaults to `false`. Enables the server's in-process daily CSC catalog scraper. On the free Render deployment, leave it `false`; the GitHub Actions `scrape` workflow handles scheduled catalog scraping instead. |
 | `CATALOG_BROWSER_CHANNEL` | Browser channel used by the catalog scraper; the server image sets this to `chrome`. |
 
 `HOST`, `PORT` and scrape configuration are read by `apps/server/src/config.ts`. Keep scheduled scraping disabled unless the deployment is intended to contact LSU.
