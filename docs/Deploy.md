@@ -1,6 +1,6 @@
 # Server deployment runbook
 
-This runbook is host-agnostic. Choose a container host, managed PostgreSQL service, and secret store that meet your operational needs; do not put credentials in the repository. The server image contains the API and production migration runner, but not the browser dependencies needed by the operator-only live scrapers.
+This runbook is host-agnostic. Choose a container host, managed PostgreSQL service, and secret store that meet your operational needs; do not put credentials in the repository. The server image contains the API and production migration runner.
 
 ## Build the server image
 
@@ -23,10 +23,8 @@ Set these variables through the host's secret/configuration facility. Never comm
 | `PORT` | The port exposed/routed by the host; defaults to `3000`. |
 | `SECTION_SCRAPE_ENABLED` | `true` or `false`; defaults to `false`. Enable only when scheduled live section scraping is intended. |
 | `SECTION_SCRAPE_DEPARTMENTS` | Comma-separated 2–4 letter department prefixes; defaults to `CSC` (for example, `CSC`). Used by scheduled section scraping and the operator section scrape. |
-| `SEAT_POLL_ENABLED` | `true` or `false`; defaults to `false`. Enable only when scheduled seat polling is intended. |
-| `SEAT_POLL_INTERVAL_MINUTES` | Whole minutes from `60` through `35000`; defaults to `1440` (daily). Applies when seat polling is enabled. |
 
-`HOST`, `PORT`, section scraping and seat polling are read by `apps/server/src/config.ts`; the defaults above are those in that configuration. Keep scheduled scraping and polling disabled unless the deployment is intended to contact LSU.
+`HOST`, `PORT` and section scraping are read by `apps/server/src/config.ts`; the defaults above are those in that configuration. Keep scheduled scraping disabled unless the deployment is intended to contact LSU.
 
 ## Apply database migrations
 

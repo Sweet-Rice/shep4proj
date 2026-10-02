@@ -11,8 +11,6 @@ export { WeeklyCalendar, formatMinuteToTime } from "./renderer/src/components/We
 export { ImportReviewScreen } from "./renderer/src/components/ImportReviewScreen.js";
 export { ImportProgressFlow } from "./renderer/src/components/ImportProgressFlow.js";
 export { useScheduleBuilder, getSectionKey } from "./renderer/src/hooks/useScheduleBuilder.js";
-export { SectionWatchToggle } from "./renderer/src/components/SectionWatchToggle.js";
-export { useSectionWatches } from "./renderer/src/hooks/useSectionWatches.js";
 export { JevProviderService } from "./renderer/src/services/jevProvider.js";
 export { SuggestionView } from "./renderer/src/components/SuggestionView.js";
 export { ModelProviderSettingsView } from "./renderer/src/components/ModelProviderSettingsView.js";

@@ -1,13 +1,12 @@
 import { existsSync } from "node:fs";
 import { createSectionFetcher } from "@jevschedule/scraper";
 import { buildServer } from "./app.js";
-import { readListenConfig, readSeatPollConfig, readSectionScrapeConfig } from "./config.js";
+import { readListenConfig, readSectionScrapeConfig } from "./config.js";
 import { createDb } from "./db/client.js";
 import { DEFAULT_DEGREE_DATA_DIR } from "./degrees/load.js";
 import { startSectionScrapeSchedule, type Schedule } from "./sections/scheduler.js";
 import { runSectionScrape } from "./sections/scrape-job.js";
 import { shutdown } from "./shutdown.js";
-import { startSeatPollJob } from "./watches/seat-poll-job.js";
 
 if (!process.env["DATABASE_URL"] && existsSync("../../.env")) {
   process.loadEnvFile("../../.env");
@@ -15,7 +14,6 @@ if (!process.env["DATABASE_URL"] && existsSync("../../.env")) {
 
 const { host, port } = readListenConfig();
 const sectionScrape = readSectionScrapeConfig();
-const seatPoll = readSeatPollConfig();
 
 const databaseUrl = process.env["DATABASE_URL"];
 const database = databaseUrl ? createDb(databaseUrl) : undefined;
@@ -31,7 +29,6 @@ const fetcherLog = app.log.child({ component: "section-fetcher" });
 const sectionFetcher = createSectionFetcher({ log: (message) => fetcherLog.info(message) });
 
 let schedule: Schedule | undefined;
-let seatPoller: Schedule | undefined;
 
 /** Starts the daily section scrape (T-403) when enabled; it needs the database. */
 function startSectionScrape(): void {
@@ -61,7 +58,7 @@ function startSectionScrape(): void {
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.once(signal, () => {
     app.log.info({ signal }, "shutting down");
-    shutdown({ app, schedules: [schedule, seatPoller], database })
+    shutdown({ app, schedules: [schedule], database })
       .then(() => process.exit(0))
       .catch((error: unknown) => {
         app.log.error(error, "error during shutdown");
@@ -73,12 +70,6 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 try {
   await app.listen({ host, port });
   startSectionScrape();
-  seatPoller = startSeatPollJob({
-    config: seatPoll,
-    db: database?.db,
-    fetcher: sectionFetcher,
-    log: app.log,
-  });
 } catch (error) {
   app.log.error(error, "failed to start");
   process.exit(1);

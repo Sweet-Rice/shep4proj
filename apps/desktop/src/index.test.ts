@@ -9,7 +9,6 @@ import {
   WeeklyCalendar,
   ImportReviewScreen,
   ImportProgressFlow,
-  SectionWatchToggle,
   JevProviderService,
   SuggestionView,
   ModelProviderSettingsView,
@@ -21,7 +20,7 @@ describe("desktop", () => {
     expect(describeDesktop()).toContain("@jevschedule/shared");
   });
 
-  it("exports degree progress, course search, semester board, import review, section watch, suggestion view, and harness settings components", () => {
+  it("exports degree progress, course search, semester board, import review, suggestion view, and harness settings components", () => {
     expect(DegreeProgressScreen).toBeDefined();
     expect(DegreeProgressView).toBeDefined();
     expect(MarkPrereqsDialog).toBeDefined();
@@ -30,7 +29,6 @@ describe("desktop", () => {
     expect(WeeklyCalendar).toBeDefined();
     expect(ImportReviewScreen).toBeDefined();
     expect(ImportProgressFlow).toBeDefined();
-    expect(SectionWatchToggle).toBeDefined();
     expect(JevProviderService).toBeDefined();
     expect(SuggestionView).toBeDefined();
     expect(ModelProviderSettingsView).toBeDefined();

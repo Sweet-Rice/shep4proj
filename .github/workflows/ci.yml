@@ -104,14 +104,13 @@ jobs:
       # loads its baked-in degree data. The port is published rather than shared with
       # --network host, so a server that only listens on the container's loopback fails
       # here as it would in production. The container reaches the Postgres service through
-      # the runner's published 5432. The section scrape and the seat poller stay off so CI
-      # never hits live LSU.
+      # the runner's published 5432. Section scraping stays off so CI never hits live LSU.
       - name: Smoke-test server image
         run: |
           docker run -d --name api -p 127.0.0.1:3999:3000 \
             --add-host=host.docker.internal:host-gateway \
             -e DATABASE_URL=postgres://jevschedule:jevschedule@host.docker.internal:5432/jevschedule \
-            -e SECTION_SCRAPE_ENABLED=false -e SEAT_POLL_ENABLED=false \
+            -e SECTION_SCRAPE_ENABLED=false \
             jevschedule-server:ci
           fail() {
             echo "$1" >&2
