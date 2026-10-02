@@ -93,9 +93,11 @@ and while a save is in progress, and a failed save restores the previous plan wi
 
 The **Schedule** tab uses terms from the Plan tab to browse public Course Offerings sections
 for selected catalog courses, including meeting days and times, instructor, location, and seat
-availability. Add sections to view them in the weekly calendar, which highlights overlapping
-meetings; remove a section from its calendar block. Building a schedule does not change the
-saved plan.
+availability. It opens on the earliest plan term with that term's planned courses already
+listed; choosing another term lists its planned courses instead, and you can still add or
+remove courses (these edits are not saved to the plan). Add sections to view them in the
+weekly calendar, which highlights overlapping meetings; remove a section from its calendar
+block. Building a schedule does not change the saved plan.
 
 The schedule builder identifies sections by term, course, section number, and type. Conflict
 highlights follow the shared meeting-overlap rules, so same-number lecture and lab sections

@@ -78,6 +78,7 @@ function setup(
     rejectCatalog?: boolean;
   } = {},
 ) {
+  const save = vi.fn(async () => {});
   const listSections = vi.fn(async (code: string, term: string) => {
     if (options.rejectSections) throw new Error("offline");
     if (options.pendingSections) return new Promise<Section[]>(() => {});
@@ -88,7 +89,7 @@ function setup(
       completed: { get: async () => [], set: async () => {} },
       plan: {
         get: async () => ({ ...plan, terms: options.planTerms ?? plan.terms }),
-        save: async () => {},
+        save,
       },
       transcript: { select: async () => null },
       catalog: {
@@ -105,7 +106,7 @@ function setup(
       },
     } as unknown as JevscheduleApi,
   });
-  return { listSections };
+  return { listSections, save };
 }
 
 afterEach(() => {
@@ -203,7 +204,7 @@ describe("ScheduleScreen", () => {
 
   it("offers every plan term and requests sections with the selected period id", async () => {
     const user = userEvent.setup();
-    const spring = { season: "Spring" as const, year: 2027, courses: [] };
+    const spring = { season: "Spring" as const, year: 2027, courses: ["CSC 4330" as const] };
     const { listSections } = setup({ planTerms: [...plan.terms, spring] });
     render(<ScheduleScreen />);
 
@@ -218,7 +219,7 @@ describe("ScheduleScreen", () => {
 
   it("shows only the selected term's sections on the calendar and keeps the others", async () => {
     const user = userEvent.setup();
-    const spring = { season: "Spring" as const, year: 2027, courses: [] };
+    const spring = { season: "Spring" as const, year: 2027, courses: ["CSC 4330" as const] };
     setup({ planTerms: [...plan.terms, spring] });
     render(<ScheduleScreen />);
 
@@ -255,7 +256,7 @@ describe("ScheduleScreen", () => {
 
   it("hides another term's conflict banner and restores it when switching back", async () => {
     const user = userEvent.setup();
-    const spring = { season: "Spring" as const, year: 2027, courses: [] };
+    const spring = { season: "Spring" as const, year: 2027, courses: ["CSC 4330" as const] };
     setup({ planTerms: [...plan.terms, spring] });
     render(<ScheduleScreen />);
 
@@ -331,5 +332,93 @@ describe("ScheduleScreen", () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "Term" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Courses to schedule" })).not.toBeInTheDocument();
+  });
+
+  describe("starting from the plan", () => {
+    const twoTerms = [
+      { season: "Spring" as const, year: 2027, courses: ["CSC 4330" as const] },
+      { season: "Fall" as const, year: 2026, courses: ["CSC 1350" as const, "CSC 3102" as const] },
+    ];
+    const listed = () =>
+      within(screen.getByRole("region", { name: "Courses to schedule" }))
+        .getAllByRole("listitem")
+        .map((item) => within(item).getByText(/^[A-Z]+ \d+/).textContent);
+
+    it("defaults to the earliest plan term and lists its courses in plan order", async () => {
+      const { listSections } = setup({ planTerms: twoTerms });
+      render(<ScheduleScreen />);
+
+      await waitFor(() =>
+        expect(screen.getByRole("combobox", { name: "Term" })).toHaveValue("LSUAM_FALL_2026"),
+      );
+      expect(listed()).toEqual(["CSC 1350", "CSC 3102"]);
+      await waitFor(() => expect(listSections).toHaveBeenCalledWith("CSC 1350", "LSUAM_FALL_2026"));
+      expect(listSections).toHaveBeenCalledWith("CSC 3102", "LSUAM_FALL_2026");
+      expect(await screen.findByText("B. Professor")).toBeInTheDocument();
+    });
+
+    it("replaces the courses with the selected term's and requests its period id", async () => {
+      const user = userEvent.setup();
+      const { listSections } = setup({ planTerms: twoTerms });
+      render(<ScheduleScreen />);
+
+      await user.selectOptions(
+        await screen.findByRole("combobox", { name: "Term" }),
+        "LSUAM_SPRING_2027",
+      );
+
+      expect(listed()).toEqual(["CSC 4330"]);
+      await waitFor(() =>
+        expect(listSections).toHaveBeenCalledWith("CSC 4330", "LSUAM_SPRING_2027"),
+      );
+      expect(await screen.findByText("C. Professor")).toBeInTheDocument();
+      expect(listSections.mock.calls.map(([, term]) => term)).toSatisfy((terms: string[]) =>
+        terms.every((term) => /^LSUAM_(SPRING|SUMMER|FALL|WINTER)_\d{4}$/.test(term)),
+      );
+    });
+
+    it("keeps edits until the term changes and never writes them to the plan", async () => {
+      const user = userEvent.setup();
+      const { save } = setup({ planTerms: twoTerms });
+      render(<ScheduleScreen />);
+      const termSelect = await screen.findByRole("combobox", { name: "Term" });
+
+      await user.click(
+        within(
+          within(screen.getByRole("region", { name: "Courses to schedule" }))
+            .getByText("CSC 1350")
+            .closest("li")!,
+        ).getByRole("button", { name: "Remove" }),
+      );
+      await user.selectOptions(screen.getByRole("combobox", { name: "Add course" }), "CSC 4330");
+      await user.click(screen.getByRole("button", { name: "Add course" }));
+      expect(listed()).toEqual(["CSC 3102", "CSC 4330"]);
+
+      await user.selectOptions(termSelect, "LSUAM_SPRING_2027");
+      expect(listed()).toEqual(["CSC 4330"]);
+      await user.selectOptions(termSelect, "LSUAM_FALL_2026");
+      expect(listed()).toEqual(["CSC 1350", "CSC 3102"]);
+      expect(save).not.toHaveBeenCalled();
+    });
+
+    it("orders terms by year, then Spring, Summer, Fall, Winter", async () => {
+      setup({
+        planTerms: [
+          { season: "Spring", year: 2027, courses: [] },
+          { season: "Winter", year: 2026, courses: ["CSC 3102"] },
+          { season: "Fall", year: 2026, courses: [] },
+          { season: "Summer", year: 2027, courses: [] },
+        ],
+      });
+      render(<ScheduleScreen />);
+
+      const termSelect = await screen.findByRole("combobox", { name: "Term" });
+      await waitFor(() => expect(termSelect).toHaveValue("LSUAM_FALL_2026"));
+      expect(
+        within(termSelect)
+          .getAllByRole("option")
+          .map((option) => option.textContent),
+      ).toEqual(["Fall 2026", "Winter 2026", "Spring 2027", "Summer 2027"]);
+    });
   });
 });
