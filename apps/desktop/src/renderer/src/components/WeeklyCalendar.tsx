@@ -11,6 +11,8 @@ export interface WeeklyCalendarProps {
   sections: Section[];
   conflictingSectionKeys?: Set<string>;
   onRemoveSection?: (sectionKey: string) => void;
+  /** Makes each class clickable, e.g. to open a details/removal panel. */
+  onSelectSection?: (section: Section) => void;
   startHour?: number; // 8 = 8 AM (480 mins)
   endHour?: number; // 18 = 6 PM (1080 mins)
 }
@@ -49,6 +51,7 @@ export function WeeklyCalendar({
   sections,
   conflictingSectionKeys,
   onRemoveSection,
+  onSelectSection,
   startHour: minStartHour = 8,
   endHour: minEndHour = 18,
 }: WeeklyCalendarProps) {
@@ -190,7 +193,19 @@ export function WeeklyCalendar({
                 return (
                   <div
                     key={`${section.courseCode}-${section.sectionNumber}-${day}-${idx}`}
-                    className={`meeting-block tone-${courseTones.get(section.courseCode)} ${slot.laneCount > 1 ? "multi-lane" : ""} ${isConflict ? "conflict" : ""}`}
+                    className={`meeting-block tone-${courseTones.get(section.courseCode)} ${slot.laneCount > 1 ? "multi-lane" : ""} ${isConflict ? "conflict" : ""} ${onSelectSection ? "selectable" : ""}`}
+                    {...(onSelectSection && {
+                      role: "button",
+                      tabIndex: 0,
+                      "aria-label": `${section.courseCode} ${section.sectionNumber}-${section.sectionType} details`,
+                      onClick: () => onSelectSection(section),
+                      onKeyDown: (event: React.KeyboardEvent) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          onSelectSection(section);
+                        }
+                      },
+                    })}
                     data-testid={`meeting-block-${section.courseCode}-${day}`}
                     title={[
                       `${section.courseCode} ${section.sectionNumber}-${section.sectionType}`,

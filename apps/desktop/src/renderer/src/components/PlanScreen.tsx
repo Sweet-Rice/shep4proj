@@ -3,9 +3,20 @@ import type { CourseCode } from "@jevschedule/shared";
 import { useCatalogCourses, useCourseDetails, useCourseHistory } from "../hooks/useCatalog.js";
 import { useCompletedCourses } from "../hooks/useCompletedCourses.js";
 import { usePlan } from "../hooks/usePlan.js";
+import { matchesCourseQuery } from "./courseFilter.js";
 import { SemesterBoard } from "./SemesterBoard.js";
 
 const termKey = (term: { season: string; year: number }) => `${term.season}-${term.year}`;
+
+/** Strips Electron's IPC wrapper and zod JSON so "duplicate term: Fall 2026" is what shows. */
+function readableError(error: Error): string {
+  const message = error.message.replace(
+    /^Error invoking remote method '[^']+': (?:\w*Error: )?/,
+    "",
+  );
+  const issues = [...message.matchAll(/"message":\s*"([^"]+)"/g)].map((match) => match[1]);
+  return issues.length > 0 ? issues.join("; ") : message;
+}
 
 export function PlanScreen() {
   const {
@@ -28,6 +39,7 @@ export function PlanScreen() {
   const [creditLimitInput, setCreditLimitInput] = useState(String(plan.creditLimit));
   const [creditLimitError, setCreditLimitError] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<CourseCode | "">("");
+  const [courseQuery, setCourseQuery] = useState("");
   const [selectedTermKey, setSelectedTermKey] = useState("");
   const editable = loaded && !saving;
 
@@ -37,12 +49,15 @@ export function PlanScreen() {
   useEffect(() => {
     if (selectedTermKey && !plan.terms.some((term) => termKey(term) === selectedTermKey)) {
       setSelectedTermKey("");
+    } else if (!selectedTermKey && plan.terms[0]) {
+      // Default to the first term so adding a course doesn't need an extra pick.
+      setSelectedTermKey(termKey(plan.terms[0]));
     }
   }, [plan.terms, selectedTermKey]);
 
   const planned = new Set(plannedCodes);
   const availableCourses = courses
-    .filter((course) => !planned.has(course.code))
+    .filter((course) => !planned.has(course.code) && matchesCourseQuery(course, courseQuery))
     .sort((a, b) => a.code.localeCompare(b.code));
   const selectedTermIndex = plan.terms.findIndex((term) => termKey(term) === selectedTermKey);
 
@@ -73,6 +88,7 @@ export function PlanScreen() {
     }
     void addCourseToTerm(selectedTermIndex, selectedCourse).catch(() => {});
     setSelectedCourse("");
+    setCourseQuery("");
   };
 
   return (
@@ -88,19 +104,44 @@ export function PlanScreen() {
           {catalogError.message}. Start the server to add courses and check prerequisites.
         </p>
       )}
-      {planError && <p role="alert">Could not save the plan: {planError.message}</p>}
+      {planError && <p role="alert">Could not save the plan: {readableError(planError)}</p>}
 
       <div className="toolbar plan-toolbar">
         <form className="add-course-to-plan-form" onSubmit={addSelectedCourse}>
           <label className="field">
-            <span className="field-label">Course</span>
+            <span className="field-label">Find a course</span>
+            <input
+              type="search"
+              aria-label="Search courses to plan"
+              placeholder="Code or title, e.g. CSC 3380"
+              value={courseQuery}
+              disabled={!editable || catalogLoading || Boolean(catalogError)}
+              onChange={(event) => {
+                const query = event.currentTarget.value;
+                setCourseQuery(query);
+                const matches = courses.filter(
+                  (course) => !planned.has(course.code) && matchesCourseQuery(course, query),
+                );
+                setSelectedCourse(matches.length === 1 && matches[0] ? matches[0].code : "");
+              }}
+            />
+          </label>
+          <label className="field">
+            <span className="field-label">
+              Course
+              {courseQuery.trim()
+                ? ` (${availableCourses.length} ${availableCourses.length === 1 ? "match" : "matches"})`
+                : ""}
+            </span>
             <select
               aria-label="Course"
               value={selectedCourse}
               onChange={(event) => setSelectedCourse(event.target.value as CourseCode | "")}
               disabled={!editable || catalogLoading || Boolean(catalogError)}
             >
-              <option value="">Select a course</option>
+              <option value="">
+                {availableCourses.length === 0 ? "No matching courses" : "Select a course"}
+              </option>
               {availableCourses.map((course) => (
                 <option key={course.code} value={course.code}>
                   {course.code} — {course.title}

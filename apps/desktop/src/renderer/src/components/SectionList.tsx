@@ -1,4 +1,10 @@
-import type { AcademicPeriodId, CourseCode, Section } from "@jevschedule/shared";
+import {
+  findConflicts,
+  type AcademicPeriodId,
+  type CourseCode,
+  type Section,
+} from "@jevschedule/shared";
+import { getSectionKey } from "../hooks/useScheduleBuilder.js";
 import { formatMinuteToTime } from "./WeeklyCalendar.js";
 
 export interface SectionListProps {
@@ -6,10 +12,31 @@ export interface SectionListProps {
   sections: readonly Section[];
   term?: AcademicPeriodId;
   onAddSection?: (section: Section) => void;
+  /** Sections already on the calendar; sections that overlap them are flagged. */
+  scheduledSections?: readonly Section[];
+  onRemoveCourse?: () => void;
 }
 
 /** Sections supplied by the course offerings API for one course. */
-export function SectionList({ courseCode, sections, term, onAddSection }: SectionListProps) {
+export function SectionList({
+  courseCode,
+  sections,
+  term,
+  onAddSection,
+  scheduledSections = [],
+  onRemoveCourse,
+}: SectionListProps) {
+  const scheduledKeys = new Set(scheduledSections.map(getSectionKey));
+  const clashesFor = (section: Section): string[] => {
+    if (scheduledKeys.has(getSectionKey(section))) return [];
+    const labels = findConflicts([...scheduledSections, section])
+      .filter(({ first, second }) => first === section || second === section)
+      .map(({ first, second }) => {
+        const other = first === section ? second : first;
+        return `${other.courseCode} ${other.sectionNumber}`;
+      });
+    return [...new Set(labels)];
+  };
   const visible = sections
     .filter((section) => section.courseCode === courseCode && (!term || section.term === term))
     .sort(
@@ -21,16 +48,33 @@ export function SectionList({ courseCode, sections, term, onAddSection }: Sectio
 
   return (
     <section className="section-list" aria-label={`Sections for ${courseCode}`}>
-      <h2>Sections for {courseCode}</h2>
+      <div className="section-list-header">
+        <h2>Sections for {courseCode}</h2>
+        {onRemoveCourse && (
+          <button
+            className="btn btn-ghost btn-sm"
+            type="button"
+            onClick={onRemoveCourse}
+            aria-label={`Remove ${courseCode}`}
+          >
+            Remove
+          </button>
+        )}
+      </div>
       {visible.length === 0 ? (
-        <p>No sections listed{term ? ` for ${term}` : ""}.</p>
+        <p className="muted">No sections listed for this term.</p>
       ) : (
         <ul className="section-list-items">
           {visible.map((section) => {
             const key = `${section.term}-${section.courseCode}-${section.sectionNumber}-${section.sectionType}`;
             const available = Math.max(0, section.capacity - section.enrollment);
+            const clashes = clashesFor(section);
+            const onSchedule = scheduledKeys.has(getSectionKey(section));
             return (
-              <li key={key} className="section-list-item">
+              <li
+                key={key}
+                className={`section-list-item ${clashes.length > 0 ? "conflict" : ""} ${onSchedule ? "scheduled" : ""}`}
+              >
                 <div className="section-list-heading">
                   <h3>
                     {section.sectionNumber}-{section.sectionType}
@@ -64,7 +108,10 @@ export function SectionList({ courseCode, sections, term, onAddSection }: Sectio
                     ? "Full"
                     : `${available} seat${available === 1 ? "" : "s"} available`}
                 </p>
-                {onAddSection && (
+                {clashes.length > 0 && (
+                  <p className="section-list-conflict">Time conflict with {clashes.join(", ")}</p>
+                )}
+                {onAddSection && section.meetings.length > 0 && (
                   <button
                     className="btn btn-secondary btn-sm"
                     type="button"

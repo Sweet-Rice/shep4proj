@@ -10,11 +10,14 @@
   align-items: flex-end;
   gap: var(--space-3);
 }
-.add-course-to-plan-form label:nth-of-type(2) select {
-  width: 150px;
+.add-course-to-plan-form input[type="search"] {
+  width: 240px;
 }
-.add-course-to-plan-form select {
-  width: 260px;
+.add-course-to-plan-form select[aria-label="Course"] {
+  width: 320px;
+}
+.add-course-to-plan-form select[aria-label="Term"] {
+  width: 150px;
 }
 .add-course-to-plan-form .btn-primary:disabled {
   background: var(--surface-sunken);
@@ -196,4 +199,9 @@
 }
 .add-term-form input[type="number"] {
   width: 90px;
+}
+.add-term-hint {
+  margin: 0;
+  color: var(--warning);
+  font-size: var(--text-sm);
 }

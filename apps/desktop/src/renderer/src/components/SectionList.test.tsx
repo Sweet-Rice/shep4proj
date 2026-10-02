@@ -58,7 +58,7 @@ describe("SectionList", () => {
     expect(screen.queryByText("002-LEC")).not.toBeInTheDocument();
 
     rerender(<SectionList courseCode="CSC 9999" sections={[fall, spring]} />);
-    expect(screen.getByText("No sections listed.")).toBeInTheDocument();
+    expect(screen.getByText("No sections listed for this term.")).toBeInTheDocument();
   });
 
   it("passes the chosen section to the schedule callback", async () => {
@@ -68,5 +68,28 @@ describe("SectionList", () => {
     await userEvent.setup().click(screen.getByRole("button", { name: "Add to schedule" }));
     expect(onAddSection).toHaveBeenCalledTimes(1);
     expect(onAddSection).toHaveBeenCalledWith(fall);
+  });
+
+  it("marks sections that overlap the schedule in red and names the clash", () => {
+    const clash: Section = { ...other, courseCode: "CSC 3102", sectionNumber: "005" };
+    render(<SectionList courseCode="CSC 4330" sections={[fall]} scheduledSections={[clash]} />);
+
+    expect(screen.getByText("001-LEC").closest("li")).toHaveClass("conflict");
+    expect(screen.getByText("Time conflict with CSC 3102 005")).toBeInTheDocument();
+  });
+
+  it("does not flag a section that is already on the schedule", () => {
+    render(<SectionList courseCode="CSC 4330" sections={[fall]} scheduledSections={[fall]} />);
+
+    expect(screen.getByText("001-LEC").closest("li")).not.toHaveClass("conflict");
+    expect(screen.queryByText(/Time conflict/)).not.toBeInTheDocument();
+  });
+
+  it("offers a remove button for the course", async () => {
+    const onRemoveCourse = vi.fn();
+    render(<SectionList courseCode="CSC 4330" sections={[]} onRemoveCourse={onRemoveCourse} />);
+
+    await userEvent.setup().click(screen.getByRole("button", { name: "Remove CSC 4330" }));
+    expect(onRemoveCourse).toHaveBeenCalledTimes(1);
   });
 });
