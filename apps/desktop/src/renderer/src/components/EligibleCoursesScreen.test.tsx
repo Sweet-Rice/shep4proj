@@ -164,6 +164,27 @@ describe("EligibleCoursesScreen", () => {
     expect(mockCourseDetails).toHaveBeenCalledWith(["CSC 1350", "CSC 4999"]);
   });
 
+  it("shows the first 25 courses of a long list and reveals the rest on request", async () => {
+    const user = userEvent.setup();
+    const many = Array.from({ length: 80 }, (_, i) => {
+      const code = `MATH ${1000 + i}`;
+      return { ...course(code, `Topic ${i}`), prereq: DETAILS["CSC 1350"]!.prereq };
+    });
+    mockListCourses.mockResolvedValue(many);
+    mockCourseDetails.mockImplementation(async (codes) =>
+      Object.fromEntries(many.filter((c) => codes.includes(c.code)).map((c) => [c.code, c])),
+    );
+    render(<EligibleCoursesScreen />);
+
+    const eligible = await screen.findByRole("region", { name: "Eligible now (80)" });
+    expect(within(eligible).getAllByRole("listitem")).toHaveLength(25);
+    await user.click(within(eligible).getByRole("button", { name: "Show more (55 remaining)" }));
+    expect(within(eligible).getAllByRole("listitem")).toHaveLength(75);
+    await user.click(within(eligible).getByRole("button", { name: "Show more (5 remaining)" }));
+    expect(within(eligible).getAllByRole("listitem")).toHaveLength(80);
+    expect(within(eligible).queryByRole("button", { name: /Show more/ })).not.toBeInTheDocument();
+  });
+
   it("keeps a course blocked by an uncompleted corequisite, since no term is planned here", async () => {
     const user = userEvent.setup();
     const withCoreq: CourseDetail = {
