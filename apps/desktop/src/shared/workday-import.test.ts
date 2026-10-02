@@ -122,6 +122,21 @@ describe("mapAcademicRecord", () => {
     ]);
   });
 
+  it("counts honors-section grades by their letter grade", () => {
+    const result = mapAcademicRecord(
+      record([
+        recordCourse("CSC 3501", "A+ (HNR)", "completed"),
+        recordCourse("HNRS 2000", "B(HNR)", "completed"),
+        recordCourse("HNRS 2021", "F (HNR)", "failed"),
+      ]),
+    );
+
+    expect(result.completed).toEqual(["CSC 3501", "HNRS 2000"]);
+    expect(result.skipped).toEqual([
+      { code: "HNRS 2021", reason: 'grade "F (HNR)" does not earn credit' },
+    ]);
+  });
+
   it("counts a course failed and later passed as completed", () => {
     const result = mapAcademicRecord(
       record([recordCourse("CSC 1351", "B", "completed"), recordCourse("CSC 1351", "F", "failed")]),

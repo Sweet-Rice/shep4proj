@@ -10,7 +10,8 @@ import type { AcademicRecordResult } from "@jevschedule/workday/academic-record"
 import type { AcademicProgressResult } from "@jevschedule/workday/academic-progress";
 import type { CurrentRegistrationsResult } from "@jevschedule/workday/current-registrations";
 
-const COMPLETED_GRADE = /^(?:[ABCD][+-]?|P|Pass)$/i;
+// Honors sections append "(HNR)" to the letter grade, e.g. "A+ (HNR)".
+const COMPLETED_GRADE = /^(?:[ABCD][+-]?|P|Pass)(?:\s*\(HNR\))?$/i;
 
 /** Whether `grade` earns credit, so the course can enter the completed store. */
 export function isCompletedGrade(grade: string): boolean {
