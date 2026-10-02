@@ -14,6 +14,7 @@ const program = {
     {
       kind: "fixed",
       id: "sem-1-courses",
+      area: "Computer Science",
       label: "Semester 1 courses",
       semester: 1,
       courses: [{ code: "CSC 1350" }, { code: "MATH 1550", minGrade: "C" }],
@@ -21,6 +22,7 @@ const program = {
     {
       kind: "chooseN",
       id: "sem-2-choose-1",
+      area: "English Composition",
       label: "Composition",
       semester: 2,
       n: 1,
@@ -29,6 +31,7 @@ const program = {
     {
       kind: "creditBucket",
       id: "sem-2-bucket-1",
+      area: "Natural Sciences",
       label: "Natural sciences",
       credits: 3,
       category: "General Education course - Natural Sciences",
@@ -115,6 +118,20 @@ describe("DegreeProgramSchema", () => {
     };
 
     expect(DegreeProgramSchema.safeParse(badCode).success).toBe(false);
+  });
+  it("rejects areas that mix course and credit requirements", () => {
+    const mixed = {
+      ...program,
+      requirements: [
+        { ...program.requirements[0], area: "Shared Area" },
+        { ...program.requirements[2], area: "Shared Area" },
+      ],
+    };
+    const result = DegreeProgramSchema.safeParse(mixed);
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((issue) => issue.message)).toContain(
+      "area Shared Area mixes course and credit requirements",
+    );
   });
 
   it("rejects a program with no requirements", () => {
