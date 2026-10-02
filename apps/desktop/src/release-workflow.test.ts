@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -5,6 +6,24 @@ import { describe, expect, it } from "vitest";
 describe("release.yml workflow configuration", () => {
   const rootDir = path.resolve(__dirname, "../../..");
   const releaseWorkflowPath = path.join(rootDir, ".github/workflows/release.yml");
+
+  const releaseUrlGuardPath = path.join(
+    rootDir,
+    "apps/desktop/src/release/require-https-api-url.mjs",
+  );
+
+  it("accepts HTTPS release URLs and rejects HTTP or malformed URLs", () => {
+    const runGuard = (url: string) =>
+      spawnSync(process.execPath, [releaseUrlGuardPath], {
+        encoding: "utf8",
+        env: { ...process.env, JEVSCHEDULE_API_URL: url },
+      });
+
+    expect(runGuard("https://api.example").status).toBe(0);
+    expect(runGuard("http://api.example").status).toBe(1);
+    expect(runGuard("not a URL").status).toBe(1);
+    expect(runGuard("").status).toBe(1);
+  });
 
   it("exists and triggers on version tags", () => {
     expect(fs.existsSync(releaseWorkflowPath)).toBe(true);
@@ -56,8 +75,9 @@ describe("release.yml workflow configuration", () => {
     expect(httpsGuardIndex).toBeGreaterThan(guardIndex);
     expect(httpsGuardIndex).toBeLessThan(buildIndex);
     expect(httpsGuardStep).toContain("JEVSCHEDULE_API_URL: ${{ vars.JEVSCHEDULE_API_URL }}");
-    expect(httpsGuardStep).toContain("new URL(");
-    expect(httpsGuardStep).toContain("protocol !== 'https:'");
+    expect(httpsGuardStep).toContain(
+      "run: node apps/desktop/src/release/require-https-api-url.mjs",
+    );
     expect(installerIndex).toBeGreaterThan(httpsGuardIndex);
     expect(installerStep).toContain("MAIN_VITE_API_URL: ${{ vars.JEVSCHEDULE_API_URL }}");
   });

@@ -39,7 +39,7 @@ jobs:
       - name: Require HTTPS production API URL
         env:
           JEVSCHEDULE_API_URL: ${{ vars.JEVSCHEDULE_API_URL }}
-        run: node -e "try { const apiUrl = new URL(process.env.JEVSCHEDULE_API_URL); if (apiUrl.protocol !== 'https:') throw new Error(); } catch { console.error('JEVSCHEDULE_API_URL must be an HTTPS URL for release builds'); process.exit(1); }"
+        run: node apps/desktop/src/release/require-https-api-url.mjs
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
