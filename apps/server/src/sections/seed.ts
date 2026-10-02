@@ -41,7 +41,7 @@ export async function seedSectionFixtures(db: Db): Promise<number> {
     fetcher: createSectionFixtureFetcher(),
     department: "CSC",
     periodIds: [SECTION_FIXTURE_PERIOD],
-    minIntervalMs: 0,
+    force: true,
     now: () => new Date(0),
   });
   const scraped = result.scraped[0];

@@ -5,8 +5,8 @@ import { createDb } from "../db/client.js";
 import { runSectionScrape } from "../sections/scrape-job.js";
 
 // Runs the section scrape once against the live Course Offerings portal, for local use only.
-// CI never runs this (SECURITY.md: CI never hits live LSU). Terms scraped in the last day are
-// skipped, exactly as the scheduled job would.
+// CI never runs this (SECURITY.md: CI never hits live LSU). Stored terms are refreshed once per
+// semester window; newly listed terms are scraped immediately.
 
 // Scripts run with cwd = apps/server; the repo-root .env is shared with docker compose.
 if (!process.env.DATABASE_URL && existsSync("../../.env")) {
@@ -30,7 +30,7 @@ async function main(databaseUrl: string): Promise<void> {
         console.log(`${department} ${term}: stored ${sections} sections`);
       }
       for (const term of result.skipped) {
-        console.log(`${department} ${term}: skipped (scraped in the last day)`);
+        console.log(`${department} ${term}: skipped (scraped in the current semester window)`);
       }
       for (const { term, error } of result.failed) {
         console.error(`${department} ${term}: failed: ${error}`);

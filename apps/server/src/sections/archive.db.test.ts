@@ -48,7 +48,7 @@ describe.skipIf(!getTestDatabaseUrl())("section archive", () => {
       fetcher: createSectionFixtureFetcher(),
       department: "CSC",
       periodIds: [SECTION_FIXTURE_PERIOD],
-      minIntervalMs: 0,
+      force: true,
       now: () => at,
     });
 
@@ -143,7 +143,7 @@ describe.skipIf(!getTestDatabaseUrl())("section archive", () => {
       },
       department: "CSC",
       periodIds: [SECTION_FIXTURE_PERIOD],
-      minIntervalMs: 0,
+      force: true,
       now: () => T1,
     });
 

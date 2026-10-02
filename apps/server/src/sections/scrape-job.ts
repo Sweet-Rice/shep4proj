@@ -8,18 +8,15 @@ import {
 import type { Db } from "../db/client.js";
 import { sectionScrapes } from "../db/schema.js";
 import { DEPARTMENT_PATTERN, replaceTermSections } from "./store.js";
+import { currentSemesterStart } from "../scrape-policy.js";
 
-/**
- * A term is re-scraped at most once per this interval. The portal says seat availability "is
- * updated daily", so reading it more often only adds load (T-005 decision, #90).
- */
-export const SECTION_SCRAPE_MIN_INTERVAL_MS = 24 * 60 * 60 * 1000;
+/** A term is re-scraped at most once per LSU semester window. */
 
 export interface SectionScrapeResult {
   /** Period ids the portal currently lists (after any `periodIds` filter). */
   periods: string[];
   scraped: { term: string; sections: number }[];
-  /** Terms scraped less than `minIntervalMs` ago. */
+  /** Terms already scraped in the current semester window. */
   skipped: string[];
   failed: { term: string; error: string }[];
 }
@@ -38,14 +35,13 @@ export async function runSectionScrape(o: {
   department: string;
   /** Only scrape these periods (used to seed from the one saved fixture). */
   periodIds?: readonly string[];
-  minIntervalMs?: number;
+  force?: boolean;
   now?: () => Date;
   log?: (message: string) => void;
 }): Promise<SectionScrapeResult> {
   if (!DEPARTMENT_PATTERN.test(o.department)) {
     throw new Error(`department must be 2-4 capital letters, got "${o.department}"`);
   }
-  const minIntervalMs = o.minIntervalMs ?? SECTION_SCRAPE_MIN_INTERVAL_MS;
   const now = o.now ?? (() => new Date());
 
   const landing = await o.fetcher.fetchHtml(sectionListingUrl({ department: o.department }));
@@ -68,7 +64,8 @@ export async function runSectionScrape(o: {
         .limit(1);
       if (
         lastScrape !== undefined &&
-        now().getTime() - lastScrape.scrapedAt.getTime() < minIntervalMs
+        lastScrape.scrapedAt >= currentSemesterStart(now()) &&
+        !o.force
       ) {
         result.skipped.push(term);
         return;
