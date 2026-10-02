@@ -2,9 +2,13 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseCourseDetail, type CatalogFetcher } from "@jevschedule/scraper";
+import {
+  COURSE_LIST_PAGE_SIZE,
+  parseCourseDetail,
+  type CatalogFetcher,
+} from "@jevschedule/scraper";
 import type { Db } from "../db/client.js";
-import { runCatalogScrape, toCourseRow } from "./scrape-job.js";
+import { MAX_CATALOG_LIST_PAGES, runCatalogScrape, toCourseRow } from "./scrape-job.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_DIR = path.resolve(__dirname, "../../../../fixtures/catalog/2026-2027");
@@ -69,5 +73,40 @@ describe("scrape-job unit tests", () => {
     expect(result.failed[0]?.error).toBe("Detail code mismatch: expected CSC 1350, got CSC 4330");
     expect(result.upserted).toBe(0);
     expect(result.listed).toBe(91);
+  });
+
+  it("stops after the maximum number of full catalog list pages", async () => {
+    const rows = Array.from({ length: COURSE_LIST_PAGE_SIZE }, (_, index) => {
+      const code = `CSC ${String(1000 + index).padStart(4, "0")}`;
+      const href = `preview_course_nopop.php?coid=${index + 1}`;
+      return `<a href="${href}">${code} Course ${index} (3)</a>`;
+    });
+    const html = `<h2>Computer Science</h2>${rows.join("")}`;
+    let listPageRequests = 0;
+    const fetcher: CatalogFetcher = {
+      async fetchHtml(url) {
+        if (!url.includes("content.php")) {
+          throw new Error("detail fetch before pagination ends");
+        }
+        listPageRequests += 1;
+        if (listPageRequests > MAX_CATALOG_LIST_PAGES) {
+          throw new Error("Unexpected request after the page limit");
+        }
+        return html;
+      },
+      async close() {},
+    };
+
+    await expect(
+      runCatalogScrape({
+        db: {} as Db,
+        fetcher,
+        catalogYear: "2026-2027",
+        catoid: "35",
+        navoid: "3486",
+        prefix: "CSC",
+      }),
+    ).rejects.toThrow(`Catalog course list exceeded ${MAX_CATALOG_LIST_PAGES} pages`);
+    expect(listPageRequests).toBe(MAX_CATALOG_LIST_PAGES);
   });
 });
