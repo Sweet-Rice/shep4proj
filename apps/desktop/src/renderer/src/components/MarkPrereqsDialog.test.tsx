@@ -198,4 +198,22 @@ describe("MarkPrereqsDialog", () => {
       expect(dialog).toContainElement(document.activeElement as HTMLElement);
     }
   });
+
+  it("focuses the dialog card, not the full-viewport backdrop, so the focus ring is visible", () => {
+    render(
+      <MarkPrereqsDialog
+        isOpen={true}
+        targetCourse="CSC 2250"
+        unfulfilledPrereqs={["CSC 1350"]}
+        onAccept={vi.fn()}
+        onDecline={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveFocus();
+    expect(dialog).toHaveClass("modal-card");
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(dialog).toHaveAccessibleName("Also mark prerequisites as completed?");
+  });
 });
