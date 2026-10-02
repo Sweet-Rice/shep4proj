@@ -86,74 +86,75 @@ export function PlanScreen() {
       {planError && <p role="alert">Could not save the plan: {planError.message}</p>}
 
       <div className="toolbar plan-toolbar">
-      <div className="credit-limit-control field">
-        <label htmlFor="credit-limit">Credit limit per semester</label>
-        <input
-          id="credit-limit"
-          type="number"
-          min={1}
-          step={1}
-          disabled={!editable}
-          value={creditLimitInput}
-          onChange={(event) => setCreditLimitInput(event.target.value)}
-          onBlur={commitCreditLimit}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              event.currentTarget.blur();
-            }
-          }}
-        />
-      </div>
-      {creditLimitError && <p role="alert">Enter a whole number of credits (1 or more).</p>}
+        <div className="credit-limit-control field">
+          <label htmlFor="credit-limit">Credit limit per semester</label>
+          <input
+            id="credit-limit"
+            type="number"
+            min={1}
+            step={1}
+            disabled={!editable}
+            value={creditLimitInput}
+            onChange={(event) => setCreditLimitInput(event.target.value)}
+            onBlur={commitCreditLimit}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                event.currentTarget.blur();
+              }
+            }}
+          />
+        </div>
+        {creditLimitError && <p role="alert">Enter a whole number of credits (1 or more).</p>}
 
-      <form className="add-course-to-plan-form" onSubmit={addSelectedCourse}>
-        <label className="field">
-          <span className="field-label">Course</span>
-          <select
-            aria-label="Course"
-            value={selectedCourse}
-            onChange={(event) => setSelectedCourse(event.target.value as CourseCode | "")}
-            disabled={!editable || catalogLoading || Boolean(catalogError)}
+        <form className="add-course-to-plan-form" onSubmit={addSelectedCourse}>
+          <label className="field">
+            <span className="field-label">Course</span>
+            <select
+              aria-label="Course"
+              value={selectedCourse}
+              onChange={(event) => setSelectedCourse(event.target.value as CourseCode | "")}
+              disabled={!editable || catalogLoading || Boolean(catalogError)}
+            >
+              <option value="">Select a course</option>
+              {availableCourses.map((course) => (
+                <option key={course.code} value={course.code}>
+                  {course.code} — {course.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            <span className="field-label">Term</span>
+            <select
+              aria-label="Term"
+              value={selectedTermKey}
+              onChange={(event) => setSelectedTermKey(event.target.value)}
+              disabled={!editable || plan.terms.length === 0}
+            >
+              <option value="">Select a term</option>
+              {plan.terms.map((term) => (
+                <option key={termKey(term)} value={termKey(term)}>
+                  {term.season} {term.year}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={
+              !editable ||
+              catalogLoading ||
+              Boolean(catalogError) ||
+              plan.terms.length === 0 ||
+              selectedCourse === "" ||
+              selectedTermKey === ""
+            }
           >
-            <option value="">Select a course</option>
-            {availableCourses.map((course) => (
-              <option key={course.code} value={course.code}>
-                {course.code} — {course.title}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span className="field-label">Term</span>
-          <select
-            aria-label="Term"
-            value={selectedTermKey}
-            onChange={(event) => setSelectedTermKey(event.target.value)}
-            disabled={!editable || plan.terms.length === 0}
-          >
-            <option value="">Select a term</option>
-            {plan.terms.map((term) => (
-              <option key={termKey(term)} value={termKey(term)}>
-                {term.season} {term.year}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button className="btn btn-primary"
-          type="submit"
-          disabled={
-            !editable ||
-            catalogLoading ||
-            Boolean(catalogError) ||
-            plan.terms.length === 0 ||
-            selectedCourse === "" ||
-            selectedTermKey === ""
-          }
-        >
-          Add to plan
-        </button>
-      </form>
+            Add to plan
+          </button>
+        </form>
       </div>
       {plan.terms.length === 0 && <p>Add a term below to start placing courses.</p>}
 
