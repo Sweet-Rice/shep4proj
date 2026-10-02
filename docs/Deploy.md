@@ -50,7 +50,7 @@ A successful response is HTTP 200. The container image also defines a Docker `HE
 
 ## Load catalog and section data
 
-Run the live scrapes from an operator machine, not inside the production Alpine image. The operator machine needs Node/pnpm, the repository dependencies, and an installed Chrome or Edge browser for the catalog fetcher. These commands contact live LSU pages; use them only as deliberate operator actions, never as CI tests. Run them from the repository root, where the repository `.env` is available if desired:
+Run the live scrapes from an operator machine, not inside the production Alpine image. The operator machine needs Node/pnpm, the repository dependencies, and an installed Chrome browser for the catalog fetcher (to use Microsoft Edge instead, also set `CATALOG_BROWSER_CHANNEL=msedge`). These commands contact live LSU pages; use them only as deliberate operator actions, never as CI tests. Run them from the repository root, where the repository `.env` is available if desired:
 
 ```sh
 DATABASE_URL="$DATABASE_URL" pnpm --filter @jevschedule/server db:scrape:catalog
