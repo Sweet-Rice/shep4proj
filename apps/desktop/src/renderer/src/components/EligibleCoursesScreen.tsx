@@ -4,6 +4,7 @@ import { useCatalogCourses, useCourseDetails } from "../hooks/useCatalog.js";
 import { useCompletedCourses } from "../hooks/useCompletedCourses.js";
 import { plannerTools } from "../services/plannerTools.js";
 import { formatCreditsDisplay } from "./CourseSearch.js";
+import { describeReviewReason } from "./reviewReason.js";
 
 const PAGE_SIZE = 25;
 
@@ -123,7 +124,7 @@ function EligibilitySections({
             <>
               <CourseSummary detail={detail} />
               <p role="note">{result.warning}</p>
-              {detail.prereq.reviewReason && <p>{detail.prereq.reviewReason}</p>}
+              {detail.prereq.reviewReason && <p>{describeReviewReason(detail)}</p>}
             </>
           )}
         </LimitedList>

@@ -32,10 +32,11 @@ const DETAILS: Record<CourseCode, CourseDetail> = {
   },
   "CSC 3102": {
     ...course("CSC 3102", "Advanced Data Structures"),
+    prerequisiteText: "written consent of instructor",
     prereq: {
       tree: null,
       needsReview: true,
-      reviewReason: "Prerequisite text mentions instructor consent.",
+      reviewReason: "unrecognized-token: written consent of instructor",
       notes: [],
     },
   },
@@ -114,8 +115,9 @@ describe("EligibleCoursesScreen", () => {
       "Prerequisites need manual review; check the catalog before enrolling.",
     );
     expect(
-      within(review).getByText("Prerequisite text mentions instructor consent."),
+      within(review).getByText("Prerequisite text couldn't be read: written consent of instructor"),
     ).toBeInTheDocument();
+    expect(within(review).queryByText(/unrecognized-token/)).not.toBeInTheDocument();
 
     const blocked = section(/^Blocked \(1\)$/);
     expect(within(blocked).getByText("CSC 4330")).toBeInTheDocument();
