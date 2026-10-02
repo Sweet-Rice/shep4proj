@@ -16,6 +16,27 @@
   height: 100%;
   background: linear-gradient(90deg, var(--accent), var(--purple-500));
 }
+.requirements-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+.requirements-list > h3 {
+  grid-column: 1 / -1;
+}
+.requirement-card {
+  border-left-width: 4px;
+}
+.requirement-satisfied {
+  border-left-color: var(--success);
+}
+.requirement-partially_satisfied {
+  border-left-color: var(--warning);
+}
+.requirement-unsatisfied {
+  border-left-color: var(--border-strong);
+}
 .requirement-header {
   display: flex;
   justify-content: space-between;
