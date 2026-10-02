@@ -75,6 +75,7 @@ function setup(
     planTerms?: typeof plan.terms;
     rejectSections?: boolean;
     pendingSections?: boolean;
+    rejectCatalog?: boolean;
   } = {},
 ) {
   const listSections = vi.fn(async (code: string, term: string) => {
@@ -91,7 +92,10 @@ function setup(
       },
       transcript: { select: async () => null },
       catalog: {
-        listCourses: async () => courses,
+        listCourses: async () => {
+          if (options.rejectCatalog) throw new Error("offline");
+          return courses;
+        },
         getCourseDetails: async () => ({}),
         listSections,
         listDegrees: async () => [],
@@ -205,6 +209,17 @@ describe("ScheduleScreen", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Could not reach the JevSchedule server. Start it with pnpm dev and reopen this tab.",
     );
+  });
+
+  it("shows one server error when the course catalog cannot be loaded", async () => {
+    setup({ rejectCatalog: true });
+    render(<ScheduleScreen />);
+
+    await screen.findByRole("combobox", { name: "Term" });
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Could not reach the JevSchedule server. Start it with pnpm dev and reopen this tab.",
+    );
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
   });
 
   it("shows a loading status while sections are requested", async () => {

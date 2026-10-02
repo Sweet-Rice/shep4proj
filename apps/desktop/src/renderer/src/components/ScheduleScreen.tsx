@@ -9,7 +9,7 @@ import { WeeklyCalendar } from "./WeeklyCalendar.js";
 
 export function ScheduleScreen() {
   const { plan } = usePlan();
-  const { courses } = useCatalogCourses();
+  const { courses, error: catalogError } = useCatalogCourses();
   const [selectedTerm, setSelectedTerm] = useState<AcademicPeriodId | "">("");
   const [selectedCourse, setSelectedCourse] = useState<CourseCode | "">("");
   const [courseCodes, setCourseCodes] = useState<CourseCode[]>([]);
@@ -88,7 +88,7 @@ export function ScheduleScreen() {
             </ul>
           </section>
           {loading && <p role="status">Loading sections…</p>}
-          {error && (
+          {(error || catalogError) && (
             <p role="alert">
               Could not reach the JevSchedule server. Start it with pnpm dev and reopen this tab.
             </p>
