@@ -5,17 +5,17 @@ export interface UseCourseSearchOptions {
   maxResults?: number;
 }
 
-export function filterCourses(courses: Course[], query: string, maxResults = 50): Course[] {
+function findMatchingCourses(courses: Course[], query: string): Course[] {
   const normalizedQuery = query.trim().toLowerCase();
 
   if (!normalizedQuery) {
-    return courses.slice(0, maxResults);
+    return courses;
   }
 
   // Remove spaces for code matching (e.g. "csc1350" matches "CSC 1350")
   const queryNoSpaces = normalizedQuery.replace(/\s+/g, "");
 
-  const matches = courses.filter((course) => {
+  return courses.filter((course) => {
     const codeLower = course.code.toLowerCase();
     const codeNoSpaces = codeLower.replace(/\s+/g, "");
     const titleLower = course.title.toLowerCase();
@@ -26,17 +26,21 @@ export function filterCourses(courses: Course[], query: string, maxResults = 50)
       titleLower.includes(normalizedQuery)
     );
   });
+}
 
-  return matches.slice(0, maxResults);
+export function filterCourses(courses: Course[], query: string, maxResults = 50): Course[] {
+  return findMatchingCourses(courses, query).slice(0, maxResults);
 }
 
 export function useCourseSearch(initialCourses: Course[], options: UseCourseSearchOptions = {}) {
   const [query, setQuery] = useState("");
   const { maxResults = 50 } = options;
 
-  const results = useMemo(() => {
-    return filterCourses(initialCourses, query, maxResults);
-  }, [initialCourses, query, maxResults]);
+  const matches = useMemo(
+    () => findMatchingCourses(initialCourses, query),
+    [initialCourses, query],
+  );
+  const results = useMemo(() => matches.slice(0, maxResults), [matches, maxResults]);
 
   const clearQuery = () => setQuery("");
 
@@ -45,7 +49,7 @@ export function useCourseSearch(initialCourses: Course[], options: UseCourseSear
     setQuery,
     clearQuery,
     results,
-    totalCount: results.length,
+    totalCount: matches.length,
     hasMatches: results.length > 0,
   };
 }

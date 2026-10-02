@@ -58,4 +58,32 @@ describe("useCourseSearch & filterCourses", () => {
     expect(result.current.query).toBe("");
     expect(result.current.results.length).toBe(TEST_CATALOG.length);
   });
+
+  it("reports all matches separately from capped results", () => {
+    const catalog = Array.from({ length: 65 }, (_, index) => ({
+      ...TEST_CATALOG[0]!,
+      code: `TST ${1000 + index}`,
+      title: `Test Course ${index}`,
+    }));
+    const { result } = renderHook(() => useCourseSearch(catalog));
+    expect(result.current.results).toHaveLength(50);
+    expect(result.current.totalCount).toBe(65);
+    expect(result.current.hasMatches).toBe(true);
+
+    act(() => result.current.setQuery("TST"));
+    expect(result.current.results).toHaveLength(50);
+    expect(result.current.totalCount).toBe(65);
+  });
+
+  it("reports true query match count when matches exceed the cap", () => {
+    const catalog = Array.from({ length: 65 }, (_, index) => ({
+      ...TEST_CATALOG[0]!,
+      code: `TST ${1000 + index}`,
+      title: `Test Course ${index}`,
+    }));
+    const { result } = renderHook(() => useCourseSearch(catalog));
+    act(() => result.current.setQuery("Test Course"));
+    expect(result.current.results).toHaveLength(50);
+    expect(result.current.totalCount).toBe(65);
+  });
 });
