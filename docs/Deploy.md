@@ -50,7 +50,8 @@ A successful response is HTTP 200. The container image also defines a Docker `HE
 
 ## Enable scheduled scraping
 
-Set `SECTION_SCRAPE_ENABLED=true`, `CATALOG_SCRAPE_ENABLED=true`, and `SECTION_SCRAPE_DEPARTMENTS=CSC` in the host's secure configuration. The server runs both scrapes on its own schedule; no operator-machine scrape is required. The first catalog load takes about three hours because the catalog's robots.txt specifies a 120-second crawl delay.
+The catalog scrape covers CSC, then the departments in `apps/server/src/catalog/departments.ts`. It saves each course as it is parsed and, after the first full load (days at the 120 s crawl delay; CSC lands first, after about 3 h), fetches only courses that are missing from the database, refreshing each department once per semester window.
+Section terms are scraped when first listed and refreshed once per semester window.
 
 After the initial load, verify that the public catalog endpoint returns a non-empty list:
 
