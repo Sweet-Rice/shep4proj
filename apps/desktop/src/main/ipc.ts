@@ -1,16 +1,27 @@
 import type { IpcMain, IpcMainInvokeEvent } from "electron";
-import { AcademicPeriodIdSchema, CourseCodeSchema, PlanSchema } from "@jevschedule/shared";
+import {
+  AcademicPeriodIdSchema,
+  CourseCodeSchema,
+  PlanSchema,
+  PlanTermSchema,
+  type CourseCode,
+} from "@jevschedule/shared";
 import type { TranscriptParseResult } from "@jevschedule/workday";
 import { z } from "zod";
 import { IPC_CHANNELS } from "../shared/ipc.js";
 import type { CatalogClient } from "./catalog.js";
 import type { CompletedStore } from "./store/completed.js";
 import type { PlanStore } from "./store/plan.js";
+import type { WorkdayImporter } from "./workday-import.js";
 /** Stores and services the handlers read. */
 export interface IpcStores {
   completed: CompletedStore;
   plan: PlanStore;
   catalog: CatalogClient;
+}
+
+export interface IpcServices {
+  workday?: WorkdayImporter;
 }
 
 /** Thrown when an IPC call comes from a frame that isn't the app's own renderer. */
@@ -22,6 +33,11 @@ export class UntrustedIpcSenderError extends Error {
 }
 
 const CompletedSetArgsSchema = z.tuple([CourseCodeSchema, z.boolean()]);
+const WorkdayReviewSchema = z.object({
+  completed: z.array(CourseCodeSchema),
+  inProgress: z.array(PlanTermSchema),
+  skipped: z.array(z.object({ code: z.string(), reason: z.string() })),
+});
 const PlanSaveArgsSchema = z.tuple([PlanSchema]);
 const CatalogCourseDetailsArgsSchema = z.tuple([z.array(CourseCodeSchema).max(500)]);
 const CatalogCourseHistoryArgsSchema = z.tuple([CourseCodeSchema]);
@@ -56,11 +72,15 @@ export function registerIpcHandlers(
   stores: IpcStores,
   isTrustedSender: (event: IpcMainInvokeEvent) => boolean,
   selectTranscript: () => Promise<TranscriptParseResult | null> = async () => null,
+  services: IpcServices = {},
 ): void {
-  function handle(channel: string, handler: (args: unknown[]) => unknown): void {
+  function handle(
+    channel: string,
+    handler: (args: unknown[], event: IpcMainInvokeEvent) => unknown,
+  ): void {
     ipcMain.handle(channel, (event, ...args: unknown[]) => {
       if (!isTrustedSender(event)) throw new UntrustedIpcSenderError(channel);
-      return handler(args);
+      return handler(args, event);
     });
   }
 
@@ -101,5 +121,36 @@ export function registerIpcHandlers(
   handle(IPC_CHANNELS.catalogSections, (args) => {
     const [courseCode, term] = CatalogSectionsArgsSchema.parse(args);
     return stores.catalog.listSections(courseCode, term);
+  });
+  handle(IPC_CHANNELS.workdayImport, (args, event) => {
+    z.tuple([]).parse(args);
+    if (!services.workday) throw new Error("Workday importer is unavailable");
+    return services.workday.run((progress) => {
+      event.sender.send(IPC_CHANNELS.workdayProgress, progress);
+    });
+  });
+  handle(IPC_CHANNELS.workdayConfirm, (args, event) => {
+    const [review] = z.tuple([WorkdayReviewSchema]).parse(args);
+    for (const code of review.completed) stores.completed.setCompleted(code, true);
+
+    const plan = stores.plan.getPlan();
+    const plannedCodes = new Set<CourseCode>(plan.terms.flatMap((term) => term.courses));
+    for (const importedTerm of review.inProgress) {
+      const courses: CourseCode[] = [];
+      for (const code of importedTerm.courses) {
+        if (plannedCodes.has(code)) continue;
+        plannedCodes.add(code);
+        courses.push(code);
+      }
+      if (courses.length === 0) continue;
+      const existing = plan.terms.find(
+        (term) => term.season === importedTerm.season && term.year === importedTerm.year,
+      );
+      if (existing) existing.courses.push(...courses);
+      else plan.terms.push({ ...importedTerm, courses });
+      courses.forEach((code) => plannedCodes.add(code));
+    }
+    stores.plan.savePlan(plan);
+    event.sender.send(IPC_CHANNELS.workdayProgress, { stage: "done" });
   });
 }

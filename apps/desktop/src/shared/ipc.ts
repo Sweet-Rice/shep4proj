@@ -29,6 +29,9 @@ export const IPC_CHANNELS = {
   catalogSections: "catalog:sections",
   catalogDegrees: "catalog:degrees",
   catalogDegree: "catalog:degree",
+  workdayImport: "workday:import",
+  workdayConfirm: "workday:confirm",
+  workdayProgress: "workday:import-progress",
 } as const;
 
 /** Stages the main process reports while a Workday import runs (T-321). */
@@ -70,5 +73,10 @@ export interface JevscheduleApi {
     listSections(courseCode: CourseCode, term: AcademicPeriodId): Promise<Section[]>;
     listDegrees(): Promise<DegreeSummary[]>;
     getDegree(id: string): Promise<DegreeProgram>;
+  };
+  workday: {
+    start(): Promise<WorkdayImportReview>;
+    confirm(review: WorkdayImportReview): Promise<void>;
+    onProgress(listener: (progress: WorkdayImportProgress) => void): () => void;
   };
 }
