@@ -5,6 +5,12 @@ import { guardedFetch } from "@jevschedule/workday/allowlist";
 import { DEFAULT_LOGGED_IN_PATTERN, WORKDAY_TENANT_URL } from "@jevschedule/workday/urls";
 
 const APP_ROOT_URL = "https://www.myworkday.com/lsu/app-root";
+// Workday serves its HTML page from app-root unless it's requested as JSON, as its own page does.
+const APP_ROOT_HEADERS = {
+  accept: "application/json",
+  "content-type": "application/json",
+  referer: "https://www.myworkday.com/lsu/d/home.htmld",
+};
 const SIGN_IN_WIDTH = 520;
 const SIGN_IN_HEIGHT = 720;
 // Keeps sign-in pages from closing the popup before the app has read the Workday session.
@@ -39,6 +45,7 @@ async function readSessionCredentials(ses: Session): Promise<WorkdaySessionCrede
     const response = await guardedFetch((url, init) => ses.fetch(url, init), {
       method: "GET",
       url: APP_ROOT_URL,
+      headers: APP_ROOT_HEADERS,
     });
     if (response.status < 200 || response.status >= 300) return null;
     const payload = response.json;
@@ -141,6 +148,8 @@ export async function openWorkdaySignIn(parent: BrowserWindow): Promise<WorkdayS
   });
   let settled = false;
   let probeInFlight: Promise<void> | undefined;
+  // A navigation during a check may be the login landing; check once more afterwards.
+  let probeAgain = false;
   const finish = (result: WorkdaySignInResult) => {
     if (settled) return;
     settled = true;
@@ -158,13 +167,21 @@ export async function openWorkdaySignIn(parent: BrowserWindow): Promise<WorkdayS
     resolveResult(result);
   };
   const probe = () => {
-    if (settled || probeInFlight) return;
+    if (settled) return;
+    if (probeInFlight) {
+      probeAgain = true;
+      return;
+    }
     probeInFlight = readSessionCredentials(ses)
       .then((credentials) => {
         if (credentials && !settled) finish({ status: "success", session: ses, ...credentials });
       })
       .finally(() => {
         probeInFlight = undefined;
+        if (probeAgain) {
+          probeAgain = false;
+          probe();
+        }
       });
   };
   const queueProbe = (url: string, isMainFrame = true) => {

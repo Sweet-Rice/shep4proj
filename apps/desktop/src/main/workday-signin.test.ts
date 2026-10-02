@@ -113,10 +113,21 @@ vi.mock("electron", () => {
       fromPartition: (partition: string) => {
         const ses: SessionMock = {
           partition,
-          fetch: vi.fn(async () => {
+          fetch: vi.fn(async (_url: string, init?: { headers?: Record<string, string> }) => {
             const payload = testState.rootResponses.shift() ?? {};
             if (payload instanceof Error) throw payload;
             const value = await payload;
+            // Live Workday serves its HTML page from app-root unless it's requested as JSON.
+            if (init?.headers?.accept !== "application/json") {
+              return {
+                status: 200,
+                json: async () => {
+                  throw new SyntaxError(
+                    "Unexpected token '<', \"<!DOCTYPE \"... is not valid JSON",
+                  );
+                },
+              };
+            }
             return { status: 200, json: async () => value };
           }),
           setUserAgent: vi.fn(),
@@ -243,6 +254,32 @@ describe("openWorkdaySignIn", () => {
     resolveProbe(credentials);
     await new Promise<void>((resolve) => setImmediate(resolve));
     await expect(opened).resolves.toMatchObject({ status: "success", ...credentials });
+  });
+
+  it("checks app-root again when a navigation arrives during a tokenless check", async () => {
+    let resolveProbe!: (value: unknown) => void;
+    const pendingProbe = new Promise<unknown>((resolve) => {
+      resolveProbe = resolve;
+    });
+    state().rootResponses.push({}, pendingProbe, credentials);
+    const { openWorkdaySignIn } = await import("./workday-signin.js");
+    const opened = openWorkdaySignIn({} as never);
+    const window = await waitForPopup();
+    const ses = sessionMock();
+    window.webContents.emit(
+      "did-redirect-navigation",
+      {},
+      "https://www.myworkday.com/lsu/d/home.htmld",
+      false,
+      true,
+    );
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    // Login completes while the first check is still waiting on Workday.
+    window.webContents.emit("did-navigate", {}, "https://www.myworkday.com/lsu/d/home.htmld");
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    resolveProbe({});
+    await expect(opened).resolves.toMatchObject({ status: "success", ...credentials });
+    expect(ses.fetch).toHaveBeenCalledTimes(3);
   });
 
   it("reopens the popup when an app-run session no longer has credentials", async () => {
