@@ -79,9 +79,55 @@ describe("WeeklyCalendar & formatMinuteToTime", () => {
     render(<WeeklyCalendar sections={calendarSections} />);
 
     expect(screen.getByText("2 sections · 8 credits")).toBeInTheDocument();
-    expect(screen.getByTestId("meeting-block-CSC 1350-Mon")).toHaveClass("tone-0");
-    expect(screen.getByTestId("meeting-block-CSC 1350-Fri")).toHaveClass("tone-0");
-    expect(screen.getByTestId("meeting-block-MATH 1550-Tue")).toHaveClass("tone-1");
+    expect(screen.getByTestId("meeting-block-CSC 1350-Mon")).toHaveClass("tone-2");
+    expect(screen.getByTestId("meeting-block-CSC 1350-Fri")).toHaveClass("tone-2");
+    expect(screen.getByTestId("meeting-block-MATH 1550-Tue")).toHaveClass("tone-3");
+  });
+
+  it("keeps a course's tone when other courses are added or removed", () => {
+    const course = (courseCode: string): Section => ({
+      ...overlappingSections[0]!,
+      courseCode,
+      meetings: [{ days: ["Mon"], startMinute: 540, endMinute: 600 }],
+    });
+    const toneOf = (courseCode: string) =>
+      Array.from(screen.getByTestId(`meeting-block-${courseCode}-Mon`).classList).find((name) =>
+        name.startsWith("tone-"),
+      );
+
+    const { rerender } = render(<WeeklyCalendar sections={[course("MATH 1550")]} />);
+    const alone = toneOf("MATH 1550");
+
+    rerender(<WeeklyCalendar sections={[course("ART 1001"), course("MATH 1550")]} />);
+    expect(toneOf("MATH 1550")).toBe(alone);
+
+    rerender(
+      <WeeklyCalendar
+        sections={[
+          course("ART 1001"),
+          course("BIOL 1001"),
+          course("CSC 1350"),
+          course("MATH 1550"),
+        ]}
+      />,
+    );
+    expect(toneOf("MATH 1550")).toBe(alone);
+
+    rerender(<WeeklyCalendar sections={[course("CSC 1350"), course("MATH 1550")]} />);
+    expect(toneOf("MATH 1550")).toBe(alone);
+  });
+
+  it("ignores weekend meetings when sizing the hour range", () => {
+    const weekend: Section = {
+      ...overlappingSections[0]!,
+      meetings: [{ days: ["Sat", "Sun"], startMinute: 360, endMinute: 1320 }], // 6 AM - 10 PM
+    };
+    render(<WeeklyCalendar sections={[weekend, calendarSections[0]!]} />);
+
+    expect(screen.getByTestId("time-label-8")).toBeInTheDocument();
+    expect(screen.queryByTestId("time-label-6")).not.toBeInTheDocument();
+    expect(screen.getByTestId("time-label-18")).toBeInTheDocument();
+    expect(screen.queryByTestId("time-label-22")).not.toBeInTheDocument();
   });
 
   it("extends the time grid to fit meetings outside the default hours", () => {
@@ -105,6 +151,20 @@ describe("WeeklyCalendar & formatMinuteToTime", () => {
     expect(screen.getByTestId("time-label-7")).toBeInTheDocument();
     expect(screen.queryByTestId("time-label-6")).not.toBeInTheDocument();
   });
+
+  it.each(["Mon", "Tue", "Wed", "Thu", "Fri"] as const)(
+    "sizes the hour range from %s meetings",
+    (day) => {
+      const outside: Section = {
+        ...overlappingSections[0]!,
+        meetings: [{ days: [day], startMinute: 360, endMinute: 1260 }], // 6 AM - 9 PM
+      };
+      render(<WeeklyCalendar sections={[outside]} />);
+
+      expect(screen.getByTestId("time-label-6")).toBeInTheDocument();
+      expect(screen.getByTestId("time-label-21")).toBeInTheDocument();
+    },
+  );
 
   it("uses singular wording for one section and one credit", () => {
     const single: Section = {

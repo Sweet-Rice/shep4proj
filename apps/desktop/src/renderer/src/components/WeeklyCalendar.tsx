@@ -5,6 +5,15 @@ import { assignMeetingLanes } from "./meeting-lanes.js";
 
 const COURSE_TONE_COUNT = 4;
 
+/** Hashes the course code so a course keeps its tone whatever else is on the calendar. */
+function courseTone(courseCode: string): number {
+  let hash = 0;
+  for (const char of courseCode) {
+    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  }
+  return hash % COURSE_TONE_COUNT;
+}
+
 export const CALENDAR_DAYS: Weekday[] = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 export interface WeeklyCalendarProps {
@@ -53,7 +62,10 @@ export function WeeklyCalendar({
   endHour: minEndHour = 18,
 }: WeeklyCalendarProps) {
   // Widen the default range so evening or early meetings are never drawn outside the grid.
-  const meetings = sections.flatMap((section) => section.meetings);
+  // Only meetings on drawn days count; weekend meetings never appear.
+  const meetings = sections.flatMap((section) =>
+    section.meetings.filter((meeting) => meeting.days.some((day) => CALENDAR_DAYS.includes(day))),
+  );
   const startHour = Math.min(
     minStartHour,
     ...meetings.map((meeting) => Math.floor(meeting.startMinute / 60)),
@@ -103,11 +115,6 @@ export function WeeklyCalendar({
   }
 
   const totalCredits = sections.reduce((sum, section) => sum + section.credits.min, 0);
-  const courseTones = new Map(
-    [...new Set(sections.map((section) => section.courseCode))]
-      .sort()
-      .map((code, index) => [code, index % COURSE_TONE_COUNT]),
-  );
 
   const hours: number[] = [];
   for (let h = startHour; h <= endHour; h++) {
@@ -190,7 +197,7 @@ export function WeeklyCalendar({
                 return (
                   <div
                     key={`${section.courseCode}-${section.sectionNumber}-${day}-${idx}`}
-                    className={`meeting-block tone-${courseTones.get(section.courseCode)} ${slot.laneCount > 1 ? "multi-lane" : ""} ${isConflict ? "conflict" : ""}`}
+                    className={`meeting-block tone-${courseTone(section.courseCode)} ${slot.laneCount > 1 ? "multi-lane" : ""} ${isConflict ? "conflict" : ""}`}
                     data-testid={`meeting-block-${section.courseCode}-${day}`}
                     title={[
                       `${section.courseCode} ${section.sectionNumber}-${section.sectionType}`,
