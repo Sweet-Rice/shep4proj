@@ -1,10 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LocalWatch, WatchStore } from "./store/watches.js";
 import type { WatchStatus } from "./watches.js";
-import {
-  seatOpeningNotification,
-  startWatchChecker,
-} from "./watch-checker.js";
+import { seatOpeningNotification, startWatchChecker } from "./watch-checker.js";
 
 const detail: WatchStatus = {
   term: "LSUAM_FALL_2026",

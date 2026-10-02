@@ -126,7 +126,6 @@ describe("main API URL wiring", () => {
   });
 });
 
-
 describe("closing every window", () => {
   it("quits on Windows and Linux when no section is watched", async () => {
     setPlatform("win32");
