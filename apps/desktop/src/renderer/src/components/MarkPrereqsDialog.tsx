@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from "react";
 import type { CourseCode } from "@jevschedule/shared";
 
 export interface MarkPrereqsDialogProps {
@@ -21,9 +22,17 @@ export function MarkPrereqsDialog({
     return null;
   }
 
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape" && onCancel) {
+      event.stopPropagation();
+      onCancel();
+    }
+  }
+
   return (
     <div
       className="modal-backdrop"
+      onKeyDown={handleKeyDown}
       role="dialog"
       aria-modal="true"
       aria-labelledby="mark-prereqs-title"
