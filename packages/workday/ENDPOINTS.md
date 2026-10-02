@@ -73,7 +73,7 @@ change.
 - Purpose: Session bootstrap. The importer reads only `sessionSecureToken` and `uiClientVersion`, then discards the rest of the response.
 - Method: GET
 - URL pattern: `https://www.myworkday.com/lsu/app-root`
-- Required headers: none beyond the session cookie.
+- Required headers: `accept: application/json`, `content-type: application/json`, and a `https://www.myworkday.com/lsu/d/...` referer, as Workday's own page sends. In live testing, a check sent without these headers never found the token after sign-in; with them, the first check after sign-in returned JSON with the token. Before sign-in, app-root returns `text/html` even with these headers.
 - Fixture: none; responses contain session and personal data and are never saved.
 - Notes: The two selected values are held only in memory and sent as `session-secure-token` and `x-workday-client` headers for the course-data requests.
 
