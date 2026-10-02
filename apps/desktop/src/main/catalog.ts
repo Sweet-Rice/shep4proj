@@ -33,7 +33,9 @@ export function resolveApiBaseUrl(
   return runtime || buildTime || DEFAULT_API_BASE_URL;
 }
 
+const COURSE_DETAILS_BATCH_SIZE = 500;
 const CoursesResponseSchema = z.object({ courses: z.array(CourseSchema) });
+const CourseDetailsResponseSchema = z.object({ courses: z.array(CourseDetailSchema) });
 const SectionsResponseSchema = z.object({ sections: z.array(SectionSchema) });
 const DegreesResponseSchema = z.object({ degrees: z.array(DegreeSummarySchema) });
 const CourseHistoryResponseSchema = z.object({
@@ -68,10 +70,15 @@ export function createCatalogClient(
   const courseHistory = new Map<CourseCode, CourseOfferingHistory[]>();
   const degrees = new Map<string, DegreeProgram>();
 
-  async function request(path: string): Promise<Response> {
+  // Set once the server answers 404 to the batch route, e.g. a server that predates it.
+  let batchDetailsUnsupported = false;
+
+  async function request(path: string, init?: RequestInit): Promise<Response> {
     let response: Response;
     try {
-      response = await fetchImpl(`${baseString}${path}`);
+      response = await (init
+        ? fetchImpl(`${baseString}${path}`, init)
+        : fetchImpl(`${baseString}${path}`));
     } catch {
       throw new Error(`Course catalog server unreachable at ${baseString}`);
     }
@@ -86,6 +93,27 @@ export function createCatalogClient(
     return schema.parse(await response.json());
   }
 
+  /** Fallback for servers without POST /courses/details: one GET per course, six at a time. */
+  async function fetchDetailsIndividually(codes: readonly CourseCode[]): Promise<void> {
+    let cursor = 0;
+    const workers = Array.from({ length: Math.min(6, codes.length) }, async () => {
+      while (cursor < codes.length) {
+        const code = codes[cursor++];
+        if (code === undefined) continue;
+        const pathCode = code.replace(" ", "-");
+        const response = await request(`/courses/${pathCode}`);
+        if (response.status === 404) continue;
+        if (!response.ok) {
+          throw new Error(
+            `Course catalog request failed: GET /courses/${pathCode} returned ${response.status}`,
+          );
+        }
+        courseDetails.set(code, CourseDetailSchema.parse(await response.json()));
+      }
+    });
+    await Promise.all(workers);
+  }
+
   return {
     async listCourses() {
       if (coursesCache) return coursesCache;
@@ -96,24 +124,31 @@ export function createCatalogClient(
     async getCourseDetails(codes) {
       const unique = [...new Set(codes)];
       const uncached = unique.filter((code) => !courseDetails.has(code));
-      let cursor = 0;
-      const workers = Array.from({ length: Math.min(6, uncached.length) }, async () => {
-        while (cursor < uncached.length) {
-          const code = uncached[cursor++];
-          if (code === undefined) continue;
-          const pathCode = code.replace(" ", "-");
-          const response = await request(`/courses/${pathCode}`);
-          if (response.status === 404) continue;
+      if (!batchDetailsUnsupported) {
+        for (let start = 0; start < uncached.length; start += COURSE_DETAILS_BATCH_SIZE) {
+          const chunk = uncached.slice(start, start + COURSE_DETAILS_BATCH_SIZE);
+          const response = await request("/courses/details", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ codes: chunk }),
+          });
+          if (response.status === 404) {
+            batchDetailsUnsupported = true;
+            break;
+          }
           if (!response.ok) {
             throw new Error(
-              `Course catalog request failed: GET /courses/${pathCode} returned ${response.status}`,
+              `Course catalog request failed: POST /courses/details returned ${response.status}`,
             );
           }
-          const detail = CourseDetailSchema.parse(await response.json());
-          courseDetails.set(code, detail);
+          const { courses: details } = CourseDetailsResponseSchema.parse(await response.json());
+          for (const detail of details) courseDetails.set(detail.code, detail);
         }
-      });
-      await Promise.all(workers);
+      }
+      // A server with the batch route omits unknown codes, so only a 404 falls back.
+      if (batchDetailsUnsupported) {
+        await fetchDetailsIndividually(uncached.filter((code) => !courseDetails.has(code)));
+      }
       const result: Record<CourseCode, CourseDetail> = {};
       for (const code of unique) {
         const detail = courseDetails.get(code);
