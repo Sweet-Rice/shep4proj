@@ -1,13 +1,26 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CatalogFetcher } from "@jevschedule/scraper";
 import { createDb, type Db } from "../db/client.js";
-import { courses } from "../db/schema.js";
+import { catalogDepartmentScrapes, courses } from "../db/schema.js";
 import { getTestDatabaseUrl, truncateCourses } from "../test-support/db.js";
-import { seedCatalogFixtures } from "./seed.js";
-import { runScheduledCatalogScrape, CATALOG_SCRAPE_MIN_AGE_MS } from "./scheduled-scrape.js";
+import { CATALOG_SCRAPE_DEPARTMENTS } from "./departments.js";
+import { runCatalogScrape } from "./scrape-job.js";
+import { runScheduledCatalogScrape } from "./scheduled-scrape.js";
 
-const NOW = new Date("2026-10-02T12:00:00Z").getTime();
+const NOW = new Date("2026-10-02T12:00:00Z");
+const CURRENT = new Date("2026-09-01T00:00:00Z");
+const PREVIOUS = new Date("2026-07-15T00:00:00Z");
+const fetcher: CatalogFetcher = {
+  fetchHtml: async () => "",
+  close: async () => {},
+};
+const scrapeResult = {
+  listed: 3,
+  upserted: 1,
+  skipped: 1,
+  failed: [] as { code: string; error: string }[],
+};
 
 describe.skipIf(!getTestDatabaseUrl())("runScheduledCatalogScrape", () => {
   let db: Db;
@@ -29,76 +42,159 @@ describe.skipIf(!getTestDatabaseUrl())("runScheduledCatalogScrape", () => {
     await closeDb?.();
   });
 
-  it("skips fresh CSC rows without creating a fetcher", async () => {
-    await seedCatalogFixtures(db);
-    const createFetcher = vi.fn(() => {
-      throw new Error("must not create a fetcher");
-    });
-    const log = vi.fn();
-
-    await expect(
-      runScheduledCatalogScrape({ db, createFetcher, now: () => NOW, log }),
-    ).resolves.toBe("skipped");
-
-    expect(createFetcher).not.toHaveBeenCalled();
-    expect(log).toHaveBeenCalledWith("catalog scrape skipped: refreshed within 7 days");
-  });
-
-  it("scrapes an empty catalog and closes its fetcher", async () => {
-    const fetcher: CatalogFetcher = {
-      fetchHtml: vi.fn(),
-      close: vi.fn().mockResolvedValue(undefined),
-    };
-    const createFetcher = vi.fn(() => fetcher);
-    const runScrape = vi.fn().mockResolvedValue({
-      listed: 12,
-      upserted: 10,
-      failed: [{ code: "CSC 1000", error: "bad detail" }],
-    });
-    const log = vi.fn();
-
-    await expect(
-      runScheduledCatalogScrape({ db, createFetcher, runScrape, now: () => NOW, log }),
-    ).resolves.toBe("scraped");
-
-    expect(createFetcher).toHaveBeenCalledOnce();
-    expect(runScrape).toHaveBeenCalledOnce();
-    expect(runScrape.mock.calls[0]?.[0]).toMatchObject({
-      db,
-      fetcher,
+  async function writeState(dept: string, completedAt: Date, failedCount = 0): Promise<void> {
+    await db.insert(catalogDepartmentScrapes).values({
       catalogYear: "2026-2027",
-      catoid: "35",
-      navoid: "3486",
-      prefix: "CSC",
+      dept,
+      completedAt,
+      failedCount,
     });
-    expect(fetcher.close).toHaveBeenCalledOnce();
-    expect(log).toHaveBeenCalledWith("catalog scrape finished: 12 listed, 10 upserted, 1 failed");
-    expect(log).toHaveBeenCalledWith("CSC 1000: failed: bad detail");
+  }
+
+  function makeRun() {
+    const calls: Parameters<typeof runCatalogScrape>[0][] = [];
+    const runScrape = vi.fn(async (options: Parameters<typeof runCatalogScrape>[0]) => {
+      calls.push(options);
+      return scrapeResult;
+    });
+    return { calls, runScrape };
+  }
+
+  it("scrapes the configured CSC-first department order", async () => {
+    const { calls, runScrape } = makeRun();
+    const createFetcher = vi.fn(() => fetcher);
+    const result = await runScheduledCatalogScrape({
+      db,
+      createFetcher,
+      runScrape,
+      now: () => NOW,
+      log: () => {},
+    });
+
+    expect(calls.map((call) => call.prefix)).toEqual([...CATALOG_SCRAPE_DEPARTMENTS]);
+    expect(result.scraped).toEqual([...CATALOG_SCRAPE_DEPARTMENTS]);
+    expect(createFetcher).toHaveBeenCalledTimes(1);
+    expect(await db.select().from(catalogDepartmentScrapes)).toHaveLength(
+      CATALOG_SCRAPE_DEPARTMENTS.length,
+    );
   });
 
-  it("scrapes when the latest catalog row is older than seven days", async () => {
-    await seedCatalogFixtures(db);
-    await db
-      .update(courses)
-      .set({ updatedAt: new Date(NOW - CATALOG_SCRAPE_MIN_AGE_MS - 1) })
-      .where(eq(courses.dept, "CSC"));
-    const fetcher: CatalogFetcher = {
-      fetchHtml: vi.fn(),
-      close: vi.fn().mockResolvedValue(undefined),
-    };
-    const runScrape = vi.fn().mockResolvedValue({ listed: 0, upserted: 0, failed: [] });
+  it("skips a department already completed in the current semester without creating a fetcher", async () => {
+    await writeState("CSC", CURRENT);
+    const createFetcher = vi.fn(() => fetcher);
+    const log = vi.fn();
+    const result = await runScheduledCatalogScrape({
+      db,
+      departments: ["CSC"],
+      createFetcher,
+      now: () => NOW,
+      log,
+    });
 
-    await expect(
-      runScheduledCatalogScrape({
-        db,
-        createFetcher: () => fetcher,
-        runScrape,
-        now: () => NOW,
-        log: vi.fn(),
-      }),
-    ).resolves.toBe("scraped");
+    expect(result.skipped).toEqual(["CSC"]);
+    expect(result.scraped).toEqual([]);
+    expect(createFetcher).not.toHaveBeenCalled();
+    expect(log).toHaveBeenCalledWith("catalog scrape CSC: skipped, already scraped this semester");
+  });
 
-    expect(runScrape).toHaveBeenCalledOnce();
-    expect(fetcher.close).toHaveBeenCalledOnce();
+  it.each([
+    ["previous semester", PREVIOUS, 0],
+    ["prior failures", CURRENT, 2],
+  ])("retries CSC when it has %s", async (_reason, completedAt, failedCount) => {
+    await writeState("CSC", completedAt, failedCount);
+    const { calls, runScrape } = makeRun();
+    const result = await runScheduledCatalogScrape({
+      db,
+      departments: ["CSC"],
+      createFetcher: () => fetcher,
+      runScrape,
+      now: () => NOW,
+      log: () => {},
+    });
+
+    expect(calls.map((call) => call.prefix)).toEqual(["CSC"]);
+    expect(result.scraped).toEqual(["CSC"]);
+  });
+
+  it("skips only courses refreshed this semester and records the run's failure count", async () => {
+    await db.insert(courses).values([
+      {
+        catalogYear: "2026-2027",
+        code: "CSC 1350",
+        dept: "CSC",
+        title: "Intro",
+        creditsMin: 3,
+        creditsMax: 3,
+        creditsNote: null,
+        description: "",
+        prerequisiteText: null,
+        prereqTree: null,
+        prereqNeedsReview: false,
+        prereqReviewReason: null,
+        prereqNotes: [],
+        coid: "1350",
+        createdAt: CURRENT,
+        updatedAt: CURRENT,
+      },
+      {
+        catalogYear: "2026-2027",
+        code: "CSC 3102",
+        dept: "CSC",
+        title: "Data Structures",
+        creditsMin: 3,
+        creditsMax: 3,
+        creditsNote: null,
+        description: "",
+        prerequisiteText: null,
+        prereqTree: null,
+        prereqNeedsReview: false,
+        prereqReviewReason: null,
+        prereqNotes: [],
+        coid: "3102",
+        createdAt: PREVIOUS,
+        updatedAt: PREVIOUS,
+      },
+    ]);
+    const { calls } = makeRun();
+    const runScrape = vi.fn(async (options: Parameters<typeof runCatalogScrape>[0]) => {
+      calls.push(options);
+      return { ...scrapeResult, failed: [{ code: "CSC 3102", error: "failed" }] };
+    });
+
+    await runScheduledCatalogScrape({
+      db,
+      departments: ["CSC"],
+      createFetcher: () => fetcher,
+      runScrape,
+      now: () => NOW,
+      log: () => {},
+    });
+
+    expect(calls[0]?.skipCodes).toEqual(new Set(["CSC 1350"]));
+    const [state] = await db
+      .select()
+      .from(catalogDepartmentScrapes)
+      .where(
+        and(
+          eq(catalogDepartmentScrapes.catalogYear, "2026-2027"),
+          eq(catalogDepartmentScrapes.dept, "CSC"),
+        ),
+      );
+    expect(state?.failedCount).toBe(1);
+    expect(state?.completedAt).toEqual(NOW);
+  });
+
+  it("does not create a fetcher when every department is current", async () => {
+    await Promise.all(CATALOG_SCRAPE_DEPARTMENTS.map((dept) => writeState(dept, CURRENT)));
+    const createFetcher = vi.fn(() => fetcher);
+    const result = await runScheduledCatalogScrape({
+      db,
+      createFetcher,
+      now: () => NOW,
+      log: () => {},
+    });
+
+    expect(result.skipped).toEqual([...CATALOG_SCRAPE_DEPARTMENTS]);
+    expect(createFetcher).not.toHaveBeenCalled();
   });
 });
