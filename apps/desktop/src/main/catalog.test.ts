@@ -86,6 +86,26 @@ describe("createCatalogClient", () => {
     expect(fetchImpl).toHaveBeenCalledWith("http://127.0.0.1:3000/courses/CSC-1350/history");
   });
 
+  it("caches course offering history separately for each code", async () => {
+    const historyFor = (term: string, sectionCount: number) => ({
+      history: [{ term, sectionCount, capturedAt: "2026-08-01T00:00:00Z" }],
+    });
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL) =>
+      String(input).endsWith("/CSC-1350/history")
+        ? response(historyFor("LSUAM_FALL_2026", 2))
+        : response(historyFor("LSUAM_SPRING_2027", 1)),
+    );
+    const client = createCatalogClient(DEFAULT_API_BASE_URL, fetchImpl as typeof fetch);
+
+    await client.getCourseHistory("CSC 1350");
+    const other = await client.getCourseHistory("CSC 3102");
+    const again = await client.getCourseHistory("CSC 1350");
+
+    expect(other).toEqual([{ term: "LSUAM_SPRING_2027", sectionCount: 1 }]);
+    expect(again).toEqual([{ term: "LSUAM_FALL_2026", sectionCount: 2 }]);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
   it("returns and caches empty history for a missing course", async () => {
     const fetchImpl = vi.fn(async () => response({ error: "Course not found" }, 404));
     const client = createCatalogClient(DEFAULT_API_BASE_URL, fetchImpl as typeof fetch);
