@@ -35,7 +35,9 @@ export function SectionList({ courseCode, sections, term, onAddSection }: Sectio
                   <h3>
                     {section.sectionNumber}-{section.sectionType}
                   </h3>
-                  <span>{section.term.replaceAll("_", " ")}</span>
+                  <span className={`badge ${available === 0 ? "badge-danger" : "badge-success"}`}>
+                    {available === 0 ? "Closed" : "Open"}
+                  </span>
                 </div>
                 <p>
                   {section.credits.min === section.credits.max
@@ -43,8 +45,8 @@ export function SectionList({ courseCode, sections, term, onAddSection }: Sectio
                     : `${section.credits.min}–${section.credits.max} credits`}
                   {section.deliveryMode ? ` · ${section.deliveryMode}` : ""}
                 </p>
-                <p>{section.instructor ?? "Instructor TBA"}</p>
-                <p>{section.location ?? "Location TBA"}</p>
+                <p className="section-list-meta">{section.instructor ?? "Instructor TBA"}</p>
+                <p className="section-list-meta">{section.location ?? "Location TBA"}</p>
                 {section.meetings.length === 0 ? (
                   <p>Meeting time TBA</p>
                 ) : (
@@ -57,7 +59,7 @@ export function SectionList({ courseCode, sections, term, onAddSection }: Sectio
                     ))}
                   </ul>
                 )}
-                <p aria-label={`${available} seats available`}>
+                <p className="section-list-seats" aria-label={`${available} seats available`}>
                   {available === 0
                     ? "Full"
                     : `${available} seat${available === 1 ? "" : "s"} available`}

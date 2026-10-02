@@ -63,61 +63,68 @@ export function ScheduleScreen() {
 
   return (
     <main className="schedule-screen">
-      <h1>Schedule</h1>
+      <header className="page-header">
+        <h1>Schedule</h1>
+        <p className="page-subtitle">
+          Pick sections for your planned courses and check for overlaps.
+        </p>
+      </header>
       {terms.length === 0 ? (
-        <p>Add a term in the Plan tab to build a schedule.</p>
+        <p className="empty-state">Add a term in the Plan tab to build a schedule.</p>
       ) : (
         <>
           <div className="schedule-layout">
             <div className="schedule-sidebar">
-              <label className="field">
-                <span className="field-label">Term</span>
-                <select
-                  aria-label="Term"
-                  value={term ?? ""}
-                  onChange={(event) => {
-                    setSelectedTerm(event.currentTarget.value as AcademicPeriodId);
-                    setEdited(null);
-                  }}
-                >
-                  {terms.map(({ season, year, periodId }) => (
-                    <option key={periodId} value={periodId}>
-                      {season} {year}
-                    </option>
-                  ))}
-                </select>
-              </label>
               <section className="card" aria-labelledby="schedule-courses-heading">
                 <h2 id="schedule-courses-heading">Courses to schedule</h2>
                 <label className="field">
-                  <span className="field-label">Add course</span>
+                  <span className="field-label">Term</span>
                   <select
-                    aria-label="Add course"
-                    value={selectedCourse}
-                    onChange={(event) =>
-                      setSelectedCourse(event.currentTarget.value as CourseCode | "")
-                    }
+                    aria-label="Term"
+                    value={term ?? ""}
+                    onChange={(event) => {
+                      setSelectedTerm(event.currentTarget.value as AcademicPeriodId);
+                      setEdited(null);
+                    }}
                   >
-                    <option value="">Select a course</option>
-                    {availableCourses.map((course) => (
-                      <option key={course.code} value={course.code}>
-                        {course.code} — {course.title}
+                    {terms.map(({ season, year, periodId }) => (
+                      <option key={periodId} value={periodId}>
+                        {season} {year}
                       </option>
                     ))}
                   </select>
                 </label>
-                <button
-                  className="btn btn-primary"
-                  type="button"
-                  onClick={addCourse}
-                  disabled={!selectedCourse}
-                >
-                  Add course
-                </button>
-                <ul className="schedule-course-list">
+                <div className="schedule-add-row">
+                  <label className="field">
+                    <span className="field-label">Add course</span>
+                    <select
+                      aria-label="Add course"
+                      value={selectedCourse}
+                      onChange={(event) =>
+                        setSelectedCourse(event.currentTarget.value as CourseCode | "")
+                      }
+                    >
+                      <option value="">Select a course</option>
+                      {availableCourses.map((course) => (
+                        <option key={course.code} value={course.code}>
+                          {course.code} — {course.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    className="btn btn-primary"
+                    type="button"
+                    onClick={addCourse}
+                    disabled={!selectedCourse}
+                  >
+                    Add course
+                  </button>
+                </div>
+                <ul className="schedule-course-list" hidden={courseCodes.length === 0}>
                   {courseCodes.map((code) => (
                     <li key={code}>
-                      <span>{code}</span>
+                      <span className="schedule-course-code">{code}</span>
                       <button
                         className="btn btn-ghost btn-sm"
                         type="button"
