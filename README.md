@@ -95,6 +95,8 @@ The schedule builder identifies sections by term, course, section number, and ty
 highlights follow the shared meeting-overlap rules, so same-number lecture and lab sections
 stay distinct and sections from different terms never conflict.
 
+For production setup, image builds, database migrations, health checks, and the initial live catalog and section scrapes, see the [server deployment runbook](docs/Deploy.md). Set the repository variable `JEVSCHEDULE_API_URL` to the deployed API's HTTPS base URL for release builds.
+
 Release installers require the repository variable `JEVSCHEDULE_API_URL` as their production
 API URL and enforce HTTPS. A non-empty runtime `JEVSCHEDULE_API_URL` overrides the build-time
 value; local builds without either setting use `http://127.0.0.1:3000`.

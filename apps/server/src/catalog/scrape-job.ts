@@ -13,6 +13,9 @@ import type { Db } from "../db/client.js";
 import { type NewCourseRow } from "../db/schema.js";
 import { upsertCourses } from "./upsert.js";
 
+/** Hard stop for a malformed or unexpectedly unbounded catalog listing (10,000 rows). */
+export const MAX_CATALOG_LIST_PAGES = 100;
+
 export function toCourseRow(
   entry: CourseListEntry,
   detail: CourseDetail,
@@ -57,11 +60,10 @@ export async function runCatalogScrape(o: {
   codes?: readonly string[];
   log?: (m: string) => void;
 }): Promise<{ listed: number; upserted: number; failed: { code: string; error: string }[] }> {
-  // 1. Fetch courseListUrl for page = 1, 2, ..., parse with parseCourseList, accumulate entries.
-  // Stop when a page yields fewer than COURSE_LIST_PAGE_SIZE entries.
+  // 1. Fetch catalog pages until one is short; fail closed if the listing never ends.
   const entries: CourseListEntry[] = [];
   let page = 1;
-  while (true) {
+  while (page <= MAX_CATALOG_LIST_PAGES) {
     const url = courseListUrl({
       catoid: o.catoid,
       navoid: o.navoid,
@@ -74,6 +76,9 @@ export async function runCatalogScrape(o: {
     entries.push(...pageEntries);
     if (pageEntries.length < COURSE_LIST_PAGE_SIZE) {
       break;
+    }
+    if (page === MAX_CATALOG_LIST_PAGES) {
+      throw new Error(`Catalog course list exceeded ${MAX_CATALOG_LIST_PAGES} pages`);
     }
     page++;
   }
