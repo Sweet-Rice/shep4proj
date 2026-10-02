@@ -79,6 +79,7 @@ describe("mapAcademicRecord", () => {
         "CSC 1350",
         "CSC 1351",
         "CSC 2259",
+        "CSC 4999G",
         "ENGL 1000",
         "ENGL 1001",
         "MATH 1431",
@@ -87,11 +88,14 @@ describe("mapAcademicRecord", () => {
         "MATH 2065",
       ],
       inProgress: [{ season: "Fall", year: 2026, courses: ["CSC 3102"] }],
-      skipped: [
-        { code: "CSC 4999G", reason: "grade does not earn credit" },
-        { code: "ENGL 1001", reason: "grade does not earn credit" },
-      ],
+      skipped: [{ code: "ENGL 1001", reason: "grade does not earn credit" }],
     });
+  });
+  it("imports a suffixed course code when it earns credit", () => {
+    const result = mapAcademicRecord(record([recordCourse("CSC 4999G", "A", "completed")]));
+
+    expect(result.completed).toEqual(["CSC 4999G"]);
+    expect(result.skipped).toEqual([]);
   });
 
   it("excludes failed, withdrawn and audited courses from completed", () => {
@@ -175,7 +179,7 @@ describe("mapAcademicRecord", () => {
 });
 
 describe("mapTranscript", () => {
-  it("keeps IP rows in progress and excludes failed or withdrawn rows", () => {
+  it("keeps suffixed course codes and IP rows while excluding failed or withdrawn rows", () => {
     const result = mapTranscript({
       courses: [
         { code: "CSC 1350", term: { season: "Fall", year: 2024 }, grade: "A-" },
@@ -190,12 +194,11 @@ describe("mapTranscript", () => {
     });
 
     expect(result).toEqual({
-      completed: ["CSC 1350", "MATH 1021"],
+      completed: ["CSC 1350", "CSC 4103G", "MATH 1021"],
       inProgress: [{ season: "Fall", year: 2026, courses: ["CSC 3102"] }],
       skipped: [
         { code: "CSC 1351", reason: "grade does not earn credit" },
         { code: "CSC 4562", reason: "grade does not earn credit" },
-        { code: "CSC 4103G", reason: "catalog course code not supported" },
       ],
     });
   });
@@ -274,9 +277,7 @@ describe("mapCurrentRegistrations", () => {
     expect(result.skipped).toEqual([{ code: "CSC 4001", reason: "in-progress term unknown" }]);
   });
 
-  it("skips in-progress courses whose code the catalog can't store", () => {
-    const unsupported = { code: "CSC 4103G", reason: "catalog course code not supported" };
-
+  it("imports suffixed in-progress courses from registrations and transcripts", () => {
     const fromRegistrations = mapCurrentRegistrations(
       registrations([registered("CSC 4103G", "Registered")]),
     );
@@ -286,8 +287,8 @@ describe("mapCurrentRegistrations", () => {
     });
 
     for (const result of [fromRegistrations, fromTranscript]) {
-      expect(result.inProgress).toEqual([]);
-      expect(result.skipped).toEqual([unsupported]);
+      expect(result.inProgress).toEqual([{ season: "Fall", year: 2026, courses: ["CSC 4103G"] }]);
+      expect(result.skipped).toEqual([]);
     }
   });
 

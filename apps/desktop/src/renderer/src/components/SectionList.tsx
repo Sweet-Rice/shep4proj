@@ -1,8 +1,8 @@
-import type { AcademicPeriodId, Section, SectionCourseCode } from "@jevschedule/shared";
+import type { AcademicPeriodId, CourseCode, Section } from "@jevschedule/shared";
 import { formatMinuteToTime } from "./WeeklyCalendar.js";
 
 export interface SectionListProps {
-  courseCode: SectionCourseCode;
+  courseCode: CourseCode;
   sections: readonly Section[];
   term?: AcademicPeriodId;
   onAddSection?: (section: Section) => void;

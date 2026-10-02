@@ -176,6 +176,12 @@ describe.skipIf(!getTestDatabaseUrl())("courses routes", () => {
       expect(res.statusCode).toBe(404);
       expect(res.json()).toEqual({ error: "Course not found" });
     });
+    it("returns 404 for a missing suffixed course id", async () => {
+      const res = await app.inject({ method: "GET", url: "/courses/CSC-4330G" });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.json()).toEqual({ error: "Course not found" });
+    });
 
     it("returns 400 for malformed course id", async () => {
       const res = await app.inject({ method: "GET", url: "/courses/nope" });

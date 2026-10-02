@@ -139,10 +139,13 @@ describe("CatalogYearSchema", () => {
 });
 
 describe("CourseCodeSchema", () => {
-  it("requires uppercase prefix, one space and four digits", () => {
+  it("requires uppercase prefix, one space, four digits and at most a two-letter suffix", () => {
     expect(CourseCodeSchema.safeParse("CSC 4330").success).toBe(true);
+    expect(CourseCodeSchema.safeParse("CSC 4330G").success).toBe(true);
+    expect(CourseCodeSchema.safeParse("CSC 4890GE").success).toBe(true);
+    expect(CourseCodeSchema.safeParse("CSC 4330GEX").success).toBe(false);
+    expect(CourseCodeSchema.safeParse("csc 4330g").success).toBe(false);
     expect(CourseCodeSchema.safeParse("CSC4330").success).toBe(false);
-    expect(CourseCodeSchema.safeParse("csc 4330").success).toBe(false);
     expect(CourseCodeSchema.safeParse("CSC 433").success).toBe(false);
   });
 });

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { CourseCodeSchema } from "./course-code.js";
 import {
   AcademicPeriodIdSchema,
   MeetingSchema,
-  SectionCourseCodeSchema,
   SectionSchema,
   termToPeriodId,
   type Section,
@@ -22,15 +22,15 @@ const section: Section = {
   meetings: [{ days: ["Tue", "Thu"], startMinute: 900, endMinute: 980 }],
 };
 
-describe("SectionCourseCodeSchema", () => {
+describe("CourseCodeSchema", () => {
   it.each(["CSC 4330", "CSC 4330G", "CSC 4890GE", "MATH 1550", "EE 2741"])("accepts %s", (code) => {
-    expect(SectionCourseCodeSchema.safeParse(code).success).toBe(true);
+    expect(CourseCodeSchema.safeParse(code).success).toBe(true);
   });
 
   it.each(["CSC4330", "csc 4330", "CSC 4330GGG", "CSC 4330g", "CSC 433", "CSC 4330 "])(
     "rejects %j",
     (code) => {
-      expect(SectionCourseCodeSchema.safeParse(code).success).toBe(false);
+      expect(CourseCodeSchema.safeParse(code).success).toBe(false);
     },
   );
 });
