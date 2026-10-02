@@ -147,6 +147,14 @@
   border-top: 1px solid var(--border);
   padding-top: var(--space-4);
 }
+.credit-hour-totals-container {
+  margin-top: var(--space-6);
+}
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 .totals-metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
