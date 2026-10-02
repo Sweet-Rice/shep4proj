@@ -7,9 +7,11 @@ import type {
   DegreeProgram,
   DegreeSummary,
   Plan,
+  PlanTerm,
   Section,
 } from "@jevschedule/shared";
 import type { TranscriptParseResult } from "@jevschedule/workday";
+import type { SkippedCourse } from "./workday-import.js";
 
 /**
  * IPC channel names shared by the main process and the preload script. Keeping them in one
@@ -28,6 +30,21 @@ export const IPC_CHANNELS = {
   catalogDegrees: "catalog:degrees",
   catalogDegree: "catalog:degree",
 } as const;
+
+/** Stages the main process reports while a Workday import runs (T-321). */
+export type WorkdayImportStage = "signing-in" | "fetching" | "review" | "done" | "error";
+
+export interface WorkdayImportProgress {
+  stage: WorkdayImportStage;
+  message?: string;
+  fallback?: "upload";
+}
+
+export interface WorkdayImportReview {
+  completed: CourseCode[];
+  inProgress: PlanTerm[];
+  skipped: SkippedCourse[];
+}
 
 /**
  * The API the preload exposes to the renderer as `window.jevschedule`. The renderer has no

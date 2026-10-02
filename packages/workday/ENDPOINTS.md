@@ -95,9 +95,10 @@ change.
     which is only an HTML shell (~33 KB) — the actual data comes from the
     `generic-hub` call above (~200 KB JSON).
   - `session-secure-token` is session-bound and must never be recorded in a
-    fixture or log. The plan is for the app to read it from the page's own
-    session context — e.g. from the response of `GET /lsu/app-root`, which
-    carries `sessionSecureToken` — **to confirm in implementation** (T-312/T-315).
+    fixture or log. The app harvests it, together with the other required
+    header values, in memory from the Workday UI's own outgoing requests
+    after sign-in (T-321); the values are never logged, stored, or sent to
+    the renderer.
 
 ### current-registrations-get
 - Purpose: Reads the student's current-term registrations ("View My
@@ -139,7 +140,7 @@ change.
 | --- | --- |
 | `GET /lsu/task/2998$30300.htmld` (HUB_NAV) | Navigation-panel metadata for the Academics hub only; carries no course data, so there's nothing here worth the allowlist surface area. |
 | `GET /lsu/task/2998$28771.htmld` (HUB_NAV) | Same as above, for "View My Courses" — navigation-panel metadata only, no grid data. |
-| `GET /lsu/app-root` | Possibly needed to obtain `sessionSecureToken` for the academic-record call; not yet allowlisted pending confirmation in T-312/T-315 of how the session token is actually sourced. |
+| `GET /lsu/app-root` | Not used: the session token and other required header values are harvested in memory from the Workday UI's own outgoing requests after sign-in (T-321), never logged or stored. |
 | `GET /wday/sirg/protectedapi/asorInternal/v1/lsu/registration` | Registration-related; stays on the deny side per `SECURITY.md` — never allowlist. |
 
 ## How this was captured
