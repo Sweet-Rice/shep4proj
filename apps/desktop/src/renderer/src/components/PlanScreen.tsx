@@ -85,7 +85,8 @@ export function PlanScreen() {
       )}
       {planError && <p role="alert">Could not save the plan: {planError.message}</p>}
 
-      <div className="credit-limit-control">
+      <div className="toolbar plan-toolbar">
+      <div className="credit-limit-control field">
         <label htmlFor="credit-limit">Credit limit per semester</label>
         <input
           id="credit-limit"
@@ -107,8 +108,8 @@ export function PlanScreen() {
       {creditLimitError && <p role="alert">Enter a whole number of credits (1 or more).</p>}
 
       <form className="add-course-to-plan-form" onSubmit={addSelectedCourse}>
-        <label>
-          Course
+        <label className="field">
+          <span className="field-label">Course</span>
           <select
             aria-label="Course"
             value={selectedCourse}
@@ -123,8 +124,8 @@ export function PlanScreen() {
             ))}
           </select>
         </label>
-        <label>
-          Term
+        <label className="field">
+          <span className="field-label">Term</span>
           <select
             aria-label="Term"
             value={selectedTermKey}
@@ -139,7 +140,7 @@ export function PlanScreen() {
             ))}
           </select>
         </label>
-        <button
+        <button className="btn btn-primary"
           type="submit"
           disabled={
             !editable ||
@@ -153,6 +154,7 @@ export function PlanScreen() {
           Add to plan
         </button>
       </form>
+      </div>
       {plan.terms.length === 0 && <p>Add a term below to start placing courses.</p>}
 
       {loaded && (

@@ -113,6 +113,7 @@ function EligibilitySections({
               <li key={detail.code}>
                 <CourseSummary detail={detail} />
                 <button
+                  className="btn btn-ghost btn-sm"
                   type="button"
                   aria-expanded={open}
                   aria-controls={`why-${slug}`}
@@ -141,7 +142,7 @@ function EligibilitySections({
 function CourseSummary({ detail }: { detail: CourseDetail }) {
   return (
     <span className="eligible-course">
-      <strong>{detail.code}</strong> {detail.title}{" "}
+      <strong className="eligible-course-code">{detail.code}</strong> {detail.title}{" "}
       <span className="course-credits">{formatCreditsDisplay(detail.credits)}</span>
     </span>
   );
