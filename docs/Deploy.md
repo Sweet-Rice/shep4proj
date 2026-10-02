@@ -68,12 +68,12 @@ This project runs a Render free web service built from this GitHub repository an
 1. Create a free Neon account and a Postgres project named `jevschedule`. Prefer Postgres 18 (or 17 if 18 is unavailable) and a region near the Render service, such as AWS US East Ohio. Copy the connection string, including `?sslmode=require`.
 2. In the repository's `production` GitHub environment, create secrets `DATABASE_URL` (the Neon connection string) and `RENDER_DEPLOY_HOOK_URL` (the Render deploy hook URL). The environment is restricted to `main`; keep these values out of the repository and logs.
 3. Create a Render web service from the GitHub repository `Sweet-Rice/shep4proj`. Set Language to **Docker**, Branch to `main`, Root Directory blank, Dockerfile Path to `apps/server/Dockerfile`, and Docker Build Context Directory to `.`. Choose the **Free** instance type, set Health Check Path to `/health`, and configure `DATABASE_URL` with the Neon connection string. Set **Auto-Deploy** to **Off** so a schema-changing commit cannot deploy before GitHub Actions runs migrations. Copy the service's HTTPS URL and deploy hook URL.
-4. In the `production` GitHub environment, set variables `RENDER_SERVICE_URL` (the service's HTTPS base URL, without a trailing slash), `SCRAPE_ENABLED` (`true` to enable scheduled scraping), and optionally `SECTION_SCRAPE_DEPARTMENTS` (comma-separated prefixes; defaults to `CSC`).
+4. In repository **Actions variables**, set `RENDER_SERVICE_URL` (the service's HTTPS base URL, without a trailing slash), `SCRAPE_ENABLED` (`true` to enable scheduled scraping), and optionally `SECTION_SCRAPE_DEPARTMENTS` (comma-separated prefixes; defaults to `CSC`). These repository-level variables are available to job gates before a runner starts. Keep `DATABASE_URL` and `RENDER_DEPLOY_HOOK_URL` as secrets on the `production` environment.
 5. In repository Actions variables, set `JEVSCHEDULE_API_URL` to the public HTTPS service URL, without an endpoint path. The desktop release workflow uses it when building installers.
 
 ### Restore the catalog database
 
-Restore the verified database dump into Neon before making the service public. Use a `pg_restore` client at least as new as the dump's PostgreSQL major version (for example, Postgres 18):
+Restore the verified database dump into Neon before making the service public. Use Neon's **direct, non-pooled** connection string for this restore, and a `pg_restore` client at least as new as the dump's PostgreSQL major version (for example, Postgres 18). A pooled Neon connection uses PgBouncer transaction mode, which can retain `pg_restore`'s session `search_path` setting and make tables appear missing to later queries.
 
 ```sh
 docker run --rm -i -v "$PWD:/backup:ro" -e DATABASE_URL \
@@ -81,11 +81,11 @@ docker run --rm -i -v "$PWD:/backup:ro" -e DATABASE_URL \
   --dbname "$DATABASE_URL" /backup/jevschedule.dump
 ```
 
-Set `DATABASE_URL` in your shell's protected environment and put the dump at `jevschedule.dump` in the current directory. The restore command does not print the URL; do not put it in shell history or commit it.
+Set `DATABASE_URL` in your shell's protected environment to Neon's direct connection string, and put the dump at `jevschedule.dump` in the current directory. The restore command does not print the URL; do not put it in shell history or commit it. If only a pooled URL is available, immediately run `psql "$DATABASE_URL" -c "RESET search_path"` after the restore, then check `psql "$DATABASE_URL" -c "SHOW search_path"` before starting the service or verifying it.
 
 ### Deploy and scrape
 
-The `server-image` workflow publishes `latest` and a commit-specific tag. Its deploy job logs in to GHCR, pulls the image by the digest from that run, and runs the production migrator against Neon before asking the Git-backed Render service to deploy `${{ github.sha }}`. It then waits for `/health`; deployment is skipped until `RENDER_SERVICE_URL` is configured. Trigger it with `workflow_dispatch` for the initial deployment. Afterward, verify `/health` and `/courses?dept=CSC` at the Render URL. GitHub Actions authenticates to GHCR for both migration and scheduled scraping, so the package does not need public visibility.
+The `server-image` workflow publishes `latest` and a commit-specific tag. Its deploy job logs in to GHCR, pulls the image by the digest from that run, and runs the production migrator against Neon before asking the Git-backed Render service to deploy `${{ github.sha }}`. It then waits up to 25 minutes for `/health` to report that exact commit; the response includes `RENDER_GIT_COMMIT` so a still-running old instance cannot satisfy the check. Deployment is skipped until the repository variable `RENDER_SERVICE_URL` is configured. Trigger it with `workflow_dispatch` for the initial deployment. Afterward, verify `/health` and `/courses?dept=CSC` at the Render URL. GitHub Actions authenticates to GHCR for both migration and scheduled scraping, so the package does not need public visibility.
 
 The `scrape` workflow runs daily and can also be triggered manually. It scrapes sections first and attempts the catalog scrape even if the section scrape fails. Scraping is disabled unless `SCRAPE_ENABLED` is exactly `true`; the catalog scraper follows `robots.txt` and does not use a crawl-delay override.
 

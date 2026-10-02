@@ -95,16 +95,27 @@ jobs:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: curl -fsS "${RENDER_DEPLOY_HOOK_URL}&ref=${GITHUB_SHA}" -o /dev/null
 
-
-      - name: Wait for service health
+      - name: Wait for service health to match this commit
         env:
           RENDER_SERVICE_URL: ${{ vars.RENDER_SERVICE_URL }}
         run: |
-          for _ in $(seq 1 96); do
-            if curl -fsS -o /dev/null "${RENDER_SERVICE_URL}/health"; then
+          deadline=$((SECONDS + 1500))
+          next_log=$((SECONDS + 60))
+          while (( SECONDS < deadline )); do
+            health=$(curl --silent --show-error --fail --max-time 5 "${RENDER_SERVICE_URL}/health" 2>/dev/null) || health=''
+            observed=$(jq -r '.commit // empty' <<<"$health" 2>/dev/null || true)
+            if [[ "$observed" == "$GITHUB_SHA" ]]; then
               exit 0
+            fi
+            if (( SECONDS >= next_log )); then
+              if [[ -n "$observed" ]]; then
+                printf 'health commit: %.7s\n' "$observed"
+              else
+                echo 'health commit: none'
+              fi
+              next_log=$((next_log + 60))
             fi
             sleep 5
           done
-          echo "Render service did not become healthy within 8 minutes" >&2
+          echo 'Render service did not report this commit within 25 minutes' >&2
           exit 1

@@ -8,6 +8,7 @@ import { registerSectionRoutes } from "./routes/sections.js";
 /** Body returned by `GET /health`. */
 export interface HealthResponse {
   status: "ok";
+  commit: string | null;
 }
 
 export interface ServerOptions extends FastifyServerOptions {
@@ -38,14 +39,20 @@ export function buildServer(opts: ServerOptions = {}): FastifyInstance {
         response: {
           200: {
             type: "object",
-            properties: { status: { type: "string", const: "ok" } },
-            required: ["status"],
+            properties: {
+              status: { type: "string", const: "ok" },
+              commit: { type: ["string", "null"] },
+            },
+            required: ["status", "commit"],
             additionalProperties: false,
           },
         },
       },
     },
-    async (): Promise<HealthResponse> => ({ status: "ok" }),
+    async (): Promise<HealthResponse> => ({
+      status: "ok",
+      commit: process.env["RENDER_GIT_COMMIT"] ?? null,
+    }),
   );
 
   if (db) {
