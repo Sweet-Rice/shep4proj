@@ -1,0 +1,41 @@
+name: ML
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ml/**"
+      - ".github/workflows/ml.yml"
+  pull_request:
+    paths:
+      - "ml/**"
+      - ".github/workflows/ml.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  career-match-tests:
+    runs-on: ubuntu-latest
+    env:
+      # Tests are fixture-only; fail loudly if anything tries to reach the HF hub.
+      HF_HUB_OFFLINE: "1"
+    defaults:
+      run:
+        working-directory: ml/career-match
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.14"
+          enable-cache: true
+          cache-dependency-glob: ml/career-match/uv.lock
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Test
+        run: uv run --locked pytest -q
