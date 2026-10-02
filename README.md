@@ -75,6 +75,13 @@ each completed course counts at most once. Requirement results retain the catalo
 order. Fixed groups are **unsatisfied** with no matched courses, **partially satisfied**
 with some, and **satisfied** when all are complete.
 
+The **Eligible courses** tab checks every catalog course you have not completed against its
+prerequisite tree and sorts it into **Eligible now**, **Needs review** (prerequisite text the
+parser could not settle, with a warning instead of a verdict), or **Blocked**, where **Why
+blocked?** lists the missing prerequisites. It does not consider planned terms, so a
+corequisite reads "completed or planned in the same term". Catalog data is cached for the
+session; if the server cannot be reached before it loads, the tab shows an error.
+
 The **Plan** tab maps out future terms. Add a term, pick a catalog course and term, then
 choose **Add to plan**; drag a course card (or use its move buttons) to another term. A
 course placed before its prerequisites shows an inline **Missing prerequisite** error; only
