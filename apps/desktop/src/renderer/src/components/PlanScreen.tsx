@@ -77,7 +77,12 @@ export function PlanScreen() {
 
   return (
     <main className="plan-screen">
-      <h1>Plan</h1>
+      <header className="page-header">
+        <h1>Plan</h1>
+        <p className="page-subtitle">
+          Lay out your remaining semesters and keep each term within your credit limit.
+        </p>
+      </header>
       {catalogError && (
         <p role="alert">
           {catalogError.message}. Start the server to add courses and check prerequisites.
@@ -86,27 +91,6 @@ export function PlanScreen() {
       {planError && <p role="alert">Could not save the plan: {planError.message}</p>}
 
       <div className="toolbar plan-toolbar">
-        <div className="credit-limit-control field">
-          <label htmlFor="credit-limit">Credit limit per semester</label>
-          <input
-            id="credit-limit"
-            type="number"
-            min={1}
-            step={1}
-            disabled={!editable}
-            value={creditLimitInput}
-            onChange={(event) => setCreditLimitInput(event.target.value)}
-            onBlur={commitCreditLimit}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                event.currentTarget.blur();
-              }
-            }}
-          />
-        </div>
-        {creditLimitError && <p role="alert">Enter a whole number of credits (1 or more).</p>}
-
         <form className="add-course-to-plan-form" onSubmit={addSelectedCourse}>
           <label className="field">
             <span className="field-label">Course</span>
@@ -155,8 +139,27 @@ export function PlanScreen() {
             Add to plan
           </button>
         </form>
+        <div className="credit-limit-control field">
+          <label htmlFor="credit-limit">Credit limit per semester</label>
+          <input
+            id="credit-limit"
+            type="number"
+            min={1}
+            step={1}
+            disabled={!editable}
+            value={creditLimitInput}
+            onChange={(event) => setCreditLimitInput(event.target.value)}
+            onBlur={commitCreditLimit}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                event.currentTarget.blur();
+              }
+            }}
+          />
+        </div>
       </div>
-      {plan.terms.length === 0 && <p>Add a term below to start placing courses.</p>}
+      {creditLimitError && <p role="alert">Enter a whole number of credits (1 or more).</p>}
 
       {loaded && (
         <SemesterBoard

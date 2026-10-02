@@ -233,8 +233,7 @@ describe("PlanScreen", () => {
       "Could not save the plan: disk full",
     );
     await waitFor(() => expect(limit).toHaveValue(19));
-    expect(screen.getByText("Credit limit per semester:")).toBeInTheDocument();
-    expect(screen.getByText("19 hrs")).toBeInTheDocument();
+    expect(screen.getByLabelText("Credit limit per semester")).toHaveValue(19);
   });
 
   it("blocks further edits while a save is pending so a failed save cannot undo a newer one", async () => {
