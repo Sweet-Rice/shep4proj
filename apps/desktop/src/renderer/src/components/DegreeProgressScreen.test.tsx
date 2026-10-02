@@ -3,71 +3,121 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, cleanup, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
+import type { Course, DegreeProgram, DegreeSummary } from "@jevschedule/shared";
 import { DegreeProgressScreen } from "./DegreeProgressScreen.js";
 
-const mockGet = vi.fn();
-const mockSet = vi.fn();
+const sampleDegree: DegreeProgram = {
+  id: "csc-software-engineering-2026-2027",
+  program: "Computer Science, B.S.",
+  concentration: "Software Engineering",
+  catalogYear: "2026-2027",
+  totalCredits: 120,
+  source: "https://example.com",
+  requirements: [
+    {
+      kind: "fixed",
+      id: "sem-1-courses",
+      label: "Semester 1 Core Courses",
+      semester: 1,
+      courses: [
+        { code: "CSC 1350", minGrade: "C" },
+        { code: "MATH 1550", minGrade: "C" },
+      ],
+    },
+    {
+      kind: "creditBucket",
+      id: "gened-humanities",
+      label: "General Education Humanities",
+      semester: 3,
+      credits: 6,
+      category: "Humanities",
+      eligibleCourses: [{ code: "HIST 1001", minGrade: null }],
+    },
+  ],
+};
+const summary: DegreeSummary = {
+  id: sampleDegree.id,
+  program: sampleDegree.program,
+  concentration: sampleDegree.concentration,
+  catalogYear: sampleDegree.catalogYear,
+  totalCredits: sampleDegree.totalCredits,
+};
+const catalog: Course[] = [
+  {
+    code: "CSC 1350",
+    title: "Computer Science I",
+    credits: { min: 3, max: 3, note: null },
+    catalogYear: "2026-2027",
+    description: "Introductory course",
+    prerequisiteText: null,
+  },
+];
 
-interface JevScheduleGlobal {
-  window: {
-    jevschedule?: {
-      completed: {
-        get: typeof mockGet;
-        set: typeof mockSet;
-      };
-    };
-  };
-}
+const mockCompletedGet = vi.fn();
+const mockCompletedSet = vi.fn();
+const mockListDegrees = vi.fn();
+const mockGetDegree = vi.fn();
+const mockListCourses = vi.fn();
 
 describe("DegreeProgressScreen", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSet.mockResolvedValue(undefined);
-
-    (globalThis as unknown as JevScheduleGlobal).window.jevschedule = {
-      completed: {
-        get: mockGet,
-        set: mockSet,
+    mockCompletedGet.mockResolvedValue([]);
+    mockCompletedSet.mockResolvedValue(undefined);
+    mockListDegrees.mockResolvedValue([summary]);
+    mockGetDegree.mockResolvedValue(sampleDegree);
+    mockListCourses.mockResolvedValue(catalog);
+    Object.assign(window, {
+      jevschedule: {
+        completed: { get: mockCompletedGet, set: mockCompletedSet },
+        catalog: {
+          listDegrees: mockListDegrees,
+          getDegree: mockGetDegree,
+          listCourses: mockListCourses,
+        },
       },
-    };
+    });
   });
 
   afterEach(() => {
     cleanup();
-    delete (globalThis as unknown as JevScheduleGlobal).window.jevschedule;
+    Reflect.deleteProperty(window, "jevschedule");
   });
 
-  it("renders sample degree data and shows loading state initially", async () => {
-    mockGet.mockResolvedValueOnce(["CSC 1350"]);
-
+  it("loads the server degree and shows its requirements", async () => {
     render(<DegreeProgressScreen />);
-
     expect(screen.getByRole("status")).toHaveTextContent("Loading degree progress…");
-
-    await waitFor(() => {
-      expect(screen.getByText("Computer Science, B.S.")).toBeInTheDocument();
-    });
-
+    await waitFor(() => expect(screen.getByText("Computer Science, B.S.")).toBeInTheDocument());
+    expect(mockListDegrees).toHaveBeenCalledOnce();
+    expect(mockGetDegree).toHaveBeenCalledWith(summary.id);
     expect(screen.getByText("Software Engineering (2026-2027)")).toBeInTheDocument();
-    expect(screen.getByText("Semester 1 Core Courses")).toBeInTheDocument();
+    expect(screen.getByTestId("req-status-sem-1-courses")).toBeInTheDocument();
   });
 
   it("allows toggling courses directly on the progress screen", async () => {
     const user = userEvent.setup();
-    mockGet.mockResolvedValueOnce(["CSC 1350"]);
-
     render(<DegreeProgressScreen />);
+    const checkbox = await screen.findByRole("checkbox", { name: /CSC 1350/i });
+    await user.click(checkbox);
+    expect(checkbox).toBeChecked();
+    expect(mockCompletedSet).toHaveBeenCalledWith("CSC 1350", true);
+  });
 
-    await waitFor(() => {
-      expect(screen.getByText("Computer Science, B.S.")).toBeInTheDocument();
-    });
+  it("shows an actionable error when no degree is available", async () => {
+    mockListDegrees.mockResolvedValue([]);
+    render(<DegreeProgressScreen />);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Could not load the degree program from the server. Start it with pnpm dev and reopen this tab.",
+    );
+    expect(screen.queryByText("Computer Science, B.S.")).not.toBeInTheDocument();
+  });
 
-    const checkbox1351 = screen.getByRole("checkbox", { name: /CSC 1351/i });
-    expect(checkbox1351).not.toBeChecked();
-
-    await user.click(checkbox1351);
-
-    expect(checkbox1351).toBeChecked();
-    expect(mockSet).toHaveBeenCalledWith("CSC 1351", true);
+  it("shows totals and falls back to evaluator defaults when catalog loading fails", async () => {
+    mockListCourses.mockRejectedValue(new Error("offline"));
+    render(<DegreeProgressScreen />);
+    expect(await screen.findByText("Credit-Hour Summary")).toBeInTheDocument();
+    expect(screen.getByTestId("bucket-remaining-gened-humanities")).toHaveTextContent(
+      "6 credits left",
+    );
   });
 });
