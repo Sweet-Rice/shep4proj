@@ -27,6 +27,29 @@ it("persists watches and notification timestamps in the section_watches table", 
   db.close();
 });
 
+it("removes and marks only the addressed watch", () => {
+  const db = openLocalDb(":memory:");
+  const store = createWatchStore(db);
+  const other = {
+    ...watch,
+    id: "0f6b6a1c-3c2e-4b55-9d1f-2b8c5f0e7a11",
+    sectionNumber: "002",
+  };
+  store.add(watch);
+  store.add(other);
+
+  const timestamp = "2026-10-01T12:00:00.000Z";
+  store.markNotified(watch.id, timestamp);
+  expect(store.list()).toEqual([
+    { ...watch, lastNotifiedAt: timestamp },
+    { ...other, lastNotifiedAt: null },
+  ]);
+
+  store.remove(watch.id);
+  expect(store.list()).toEqual([{ ...other, lastNotifiedAt: null }]);
+  db.close();
+});
+
 it("rejects a second watch on the same section", () => {
   const db = openLocalDb(":memory:");
   const store = createWatchStore(db);
