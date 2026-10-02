@@ -52,12 +52,18 @@ export function publicCompletedCodes(completed: readonly CompletedInput[]): Cour
   return completed.map((item) => (typeof item === "string" ? item : item.code));
 }
 
-/** A proposal is returned only after validation; this helper never writes to a store. */
+/**
+ * A proposal is returned only after validation; this helper never writes to a store.
+ * The generated JSON Schema cannot express `PlanSchema`'s unique-term and unique-course
+ * rules, so they are enforced here and reported in `schemaErrors`.
+ */
 export function proposePlan(
   tools: Pick<PlannerTools, "validatePlan">,
   plan: ValidationPlan,
   completed: CompletedInput[] | Set<CourseCode>,
 ) {
   const validation = tools.validatePlan(plan, completed);
-  return { proposal: validation.valid ? plan : null, validation };
+  const parsed = PlanSchema.safeParse({ creditLimit: plan.creditLimit, terms: plan.terms });
+  const schemaErrors = parsed.success ? [] : parsed.error.issues.map(({ message }) => message);
+  return { proposal: validation.valid && parsed.success ? plan : null, validation, schemaErrors };
 }
