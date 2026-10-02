@@ -74,8 +74,8 @@ export function CompletedCourses() {
         <p>Loading course catalog…</p>
       ) : catalogError ? (
         <p role="alert">
-          Course catalog unavailable. Start the server (pnpm dev) to search courses; you can still
-          enter codes below.
+          {catalogError.message}. Start the server (pnpm dev) to search courses; you can still enter
+          codes below.
         </p>
       ) : (
         <CourseSearch

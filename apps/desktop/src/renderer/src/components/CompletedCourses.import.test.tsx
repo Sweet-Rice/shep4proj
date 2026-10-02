@@ -83,4 +83,30 @@ describe("transcript upload in the installed desktop screen", () => {
     await user.click(await screen.findByRole("button", { name: "Mark Completed" }));
     await waitFor(() => expect(set).toHaveBeenCalledWith("CSC 1350", true));
   });
+
+  it("shows the resolved API URL when the catalog server is unreachable", async () => {
+    Object.assign(window, {
+      jevschedule: {
+        completed: { get: async () => [], set: vi.fn() },
+        transcript: { select: async () => null },
+        catalog: {
+          listCourses: async () => {
+            throw new Error("Course catalog server unreachable at http://127.0.0.1:3000");
+          },
+          getCourseDetails: async () => ({}),
+          getCourseHistory: async () => [],
+          listDegrees: async () => [],
+          getDegree: async () => {
+            throw new Error("none");
+          },
+        },
+      },
+    });
+
+    render(<CompletedCourses />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Course catalog server unreachable at http://127.0.0.1:3000",
+    );
+  });
 });
