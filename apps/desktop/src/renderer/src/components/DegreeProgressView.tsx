@@ -55,7 +55,7 @@ export function DegreeProgressView({
           </span>
         </div>
       </header>
-      <CreditHourTotalsView evaluation={evaluation} />
+      <CreditHourTotalsView evaluation={evaluation} catalog={catalog} />
 
       <section className="requirements-list">
         <h3>Requirements</h3>

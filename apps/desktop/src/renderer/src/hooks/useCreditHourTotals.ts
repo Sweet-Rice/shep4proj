@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { DegreeEvaluation, EvaluatedRequirement } from "@jevschedule/shared";
+import type { Course, DegreeEvaluation, EvaluatedRequirement } from "@jevschedule/shared";
 
 export interface BucketCreditTotal {
   id: string;
@@ -23,8 +23,18 @@ export interface CreditHourTotalsSummary {
   buckets: BucketCreditTotal[];
 }
 
+function courseCreditHours(code: Course["code"], catalog?: readonly Course[]): number {
+  if (catalog) {
+    for (const course of catalog) {
+      if (course.code === code) return course.credits.min;
+    }
+  }
+  return 3;
+}
+
 export function calculateCreditHourTotals(
   evaluation: DegreeEvaluation | null,
+  catalog?: readonly Course[],
 ): CreditHourTotalsSummary | null {
   if (!evaluation) return null;
 
@@ -34,8 +44,12 @@ export function calculateCreditHourTotals(
 
     switch (req.kind) {
       case "fixed":
-        requiredCredits = req.courses.length * 3;
-        fulfilledCredits = req.fulfilledCourses.length * 3;
+        for (const course of req.courses) {
+          requiredCredits += courseCreditHours(course.code, catalog);
+        }
+        for (const course of req.fulfilledCourses) {
+          fulfilledCredits += courseCreditHours(course.code, catalog);
+        }
         break;
       case "chooseN":
         requiredCredits = req.n * 3;
@@ -82,6 +96,7 @@ export function calculateCreditHourTotals(
 
 export function useCreditHourTotals(
   evaluation: DegreeEvaluation | null,
+  catalog?: readonly Course[],
 ): CreditHourTotalsSummary | null {
-  return useMemo(() => calculateCreditHourTotals(evaluation), [evaluation]);
+  return useMemo(() => calculateCreditHourTotals(evaluation, catalog), [evaluation, catalog]);
 }

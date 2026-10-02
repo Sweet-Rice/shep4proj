@@ -93,27 +93,31 @@ describe("DegreeProgressView", () => {
     expect(screen.getByTestId("req-status-req-fixed")).toHaveTextContent("Unsatisfied");
     expect(screen.getByTestId("req-status-req-choose")).toHaveTextContent("Unsatisfied");
     expect(screen.getByText("Credit-Hour Summary")).toBeInTheDocument();
-    expect(screen.getByTestId("bucket-remaining-req-fixed")).toHaveTextContent("6 credits left");
     expect(screen.getByTestId("overall-remaining")).toHaveTextContent("120 hrs");
   });
 
-  it("updates requirement status and visible credit totals immediately when courses change", async () => {
+  it("uses catalog hours while completing and removing fixed courses", async () => {
     const user = userEvent.setup();
     render(<InteractiveDegreeProgressWrapper initialCompleted={[]} />);
-    expect(screen.getByTestId("credits-summary")).toHaveTextContent("0 / 120 credits (0%)");
-    expect(screen.getByTestId("bucket-progress-req-fixed")).toHaveTextContent("0 / 6 credits");
+    expect(screen.getByTestId("bucket-progress-req-fixed")).toHaveTextContent("0 / 7 credits");
+    expect(screen.getByTestId("bucket-remaining-req-fixed")).toHaveTextContent("7 credits left");
 
     await user.click(screen.getByRole("checkbox", { name: /CSC 1350/i }));
-    expect(screen.getByTestId("credits-summary")).toHaveTextContent("4 / 120 credits (3%)");
-    expect(screen.getByTestId("bucket-progress-req-fixed")).toHaveTextContent("3 / 6 credits");
+    expect(screen.getByTestId("bucket-progress-req-fixed")).toHaveTextContent("4 / 7 credits");
     expect(screen.getByTestId("bucket-remaining-req-fixed")).toHaveTextContent("3 credits left");
     expect(screen.getByTestId("overall-fulfilled")).toHaveTextContent("4 hrs");
     expect(screen.getByTestId("req-status-req-fixed")).toHaveTextContent("Partially Satisfied");
 
     await user.click(screen.getByRole("checkbox", { name: /CSC 1351/i }));
     expect(screen.getByTestId("req-status-req-fixed")).toHaveTextContent(/^Satisfied$/);
-    expect(screen.getByTestId("bucket-progress-req-fixed")).toHaveTextContent("6 / 6 credits");
+    expect(screen.getByTestId("bucket-progress-req-fixed")).toHaveTextContent("7 / 7 credits");
     expect(screen.getByTestId("bucket-remaining-req-fixed")).toHaveTextContent("0 credits left");
-    expect(screen.getByTestId("credits-summary")).toHaveTextContent("7 / 120 credits (6%)");
+    expect(screen.getByTestId("overall-fulfilled")).toHaveTextContent("7 hrs");
+
+    await user.click(screen.getByRole("checkbox", { name: /CSC 1350/i }));
+    expect(screen.getByTestId("bucket-progress-req-fixed")).toHaveTextContent("3 / 7 credits");
+    expect(screen.getByTestId("bucket-remaining-req-fixed")).toHaveTextContent("4 credits left");
+    expect(screen.getByTestId("overall-fulfilled")).toHaveTextContent("3 hrs");
+    expect(screen.getByTestId("req-status-req-fixed")).toHaveTextContent("Partially Satisfied");
   });
 });
