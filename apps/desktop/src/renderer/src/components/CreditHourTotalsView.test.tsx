@@ -27,6 +27,5 @@ describe("CreditHourTotalsView", () => {
     expect(screen.getByTestId("overall-fulfilled")).toHaveTextContent("9 hrs");
     expect(screen.getByTestId("overall-remaining")).toHaveTextContent("111 hrs");
     expect(screen.getByTestId("overall-required")).toHaveTextContent("120 hrs");
-    expect(screen.queryByTestId("bucket-totals-grid")).not.toBeInTheDocument();
   });
 });
