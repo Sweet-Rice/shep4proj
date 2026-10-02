@@ -115,6 +115,25 @@ describe("createCatalogClient", () => {
     expect(fetchImpl).toHaveBeenCalledOnce();
   });
 
+  it("rejects a failed history request without caching it", async () => {
+    const fetchImpl = vi
+      .fn(async () =>
+        response({
+          history: [
+            { term: "LSUAM_FALL_2026", sectionCount: 2, capturedAt: "2026-08-01T00:00:00Z" },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(response({ error: "Internal error" }, 500));
+    const client = createCatalogClient(DEFAULT_API_BASE_URL, fetchImpl as typeof fetch);
+
+    await expect(client.getCourseHistory("CSC 1350")).rejects.toThrow("returned 500");
+    await expect(client.getCourseHistory("CSC 1350")).resolves.toEqual([
+      { term: "LSUAM_FALL_2026", sectionCount: 2 },
+    ]);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
   it("rejects malformed course history responses", async () => {
     const malformed = response({
       history: [{ term: "LSUAM_FALL_2026", sectionCount: 2 }],
