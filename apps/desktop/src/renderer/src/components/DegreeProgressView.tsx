@@ -1,21 +1,24 @@
-import type { CourseCode, DegreeProgram } from "@jevschedule/shared";
+import type { Course, CourseCode, DegreeProgram } from "@jevschedule/shared";
 import { useDegreeProgress } from "../hooks/useDegreeProgress.js";
 import { CourseCompletionToggle } from "./CourseCompletionToggle.js";
+import { CreditHourTotalsView } from "./CreditHourTotalsView.js";
 
 export interface DegreeProgressViewProps {
   degree: DegreeProgram;
   completed: Set<CourseCode>;
   onToggleCourse: (code: CourseCode) => void;
   disabled?: boolean;
+  catalog?: Course[];
 }
 
 export function DegreeProgressView({
   degree,
   completed,
   onToggleCourse,
+  catalog,
   disabled = false,
 }: DegreeProgressViewProps) {
-  const evaluation = useDegreeProgress(degree, completed);
+  const evaluation = useDegreeProgress(degree, completed, catalog);
 
   if (!evaluation) {
     return null;
@@ -52,6 +55,7 @@ export function DegreeProgressView({
           </span>
         </div>
       </header>
+      <CreditHourTotalsView evaluation={evaluation} catalog={catalog} />
 
       <section className="requirements-list">
         <h3>Requirements</h3>

@@ -1,12 +1,13 @@
-import type { DegreeEvaluation } from "@jevschedule/shared";
+import type { Course, DegreeEvaluation } from "@jevschedule/shared";
 import { useCreditHourTotals } from "../hooks/useCreditHourTotals.js";
 
 export interface CreditHourTotalsViewProps {
   evaluation: DegreeEvaluation | null;
+  catalog?: readonly Course[];
 }
 
-export function CreditHourTotalsView({ evaluation }: CreditHourTotalsViewProps) {
-  const totals = useCreditHourTotals(evaluation);
+export function CreditHourTotalsView({ evaluation, catalog }: CreditHourTotalsViewProps) {
+  const totals = useCreditHourTotals(evaluation, catalog);
 
   if (!totals) {
     return null;

@@ -64,7 +64,11 @@ manual form remains available for codes outside the catalog. Set `JEVSCHEDULE_AP
 override the default `http://127.0.0.1:3000` server URL.
 
 The desktop renderer opens to the **Courses** screen; use the **Degree progress** tab to view
-degree requirements. Only the selected planner screen is mounted.
+degree requirements. Only the selected planner screen is mounted. The tab loads the first
+degree the server lists (`csc-software-engineering-2026-2027`) and shows an error if the
+server is unreachable. Its **Credit-Hour Summary** lists fulfilled and remaining hours per
+requirement and in total, using catalog credits (3 per course when the catalog is
+unavailable), and recomputes as soon as a course is checked or unchecked.
 
 Degree evaluation assigns courses to explicit requirements before open credit buckets, and
 each completed course counts at most once. Requirement results retain the catalog display

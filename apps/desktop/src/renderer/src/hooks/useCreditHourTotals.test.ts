@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
-import type { DegreeEvaluation } from "@jevschedule/shared";
+import type { Course, DegreeEvaluation } from "@jevschedule/shared";
 import { useCreditHourTotals } from "./useCreditHourTotals.js";
 
 const sampleEvaluation: DegreeEvaluation = {
@@ -40,6 +40,17 @@ const sampleEvaluation: DegreeEvaluation = {
     },
   ],
 };
+
+const catalog: Course[] = [
+  {
+    code: "CSC 1350",
+    title: "Computer Science I",
+    credits: { min: 4, max: 4, note: null },
+    catalogYear: "2026-2027",
+    description: "Intro",
+    prerequisiteText: null,
+  },
+];
 
 describe("useCreditHourTotals", () => {
   it("returns null when evaluation is null", () => {
@@ -81,6 +92,32 @@ describe("useCreditHourTotals", () => {
       fulfilledCredits: 3,
       remainingCredits: 3,
       isSatisfied: false,
+    });
+  });
+
+  it("recomputes fixed-course hours when catalog metadata arrives or becomes unavailable", () => {
+    const { result, rerender } = renderHook(
+      ({ courses }) => useCreditHourTotals(sampleEvaluation, courses),
+      { initialProps: { courses: undefined as Course[] | undefined } },
+    );
+    expect(result.current?.buckets[0]).toMatchObject({
+      requiredCredits: 6,
+      fulfilledCredits: 3,
+      remainingCredits: 3,
+    });
+
+    rerender({ courses: catalog });
+    expect(result.current?.buckets[0]).toMatchObject({
+      requiredCredits: 7,
+      fulfilledCredits: 4,
+      remainingCredits: 3,
+    });
+
+    rerender({ courses: undefined });
+    expect(result.current?.buckets[0]).toMatchObject({
+      requiredCredits: 6,
+      fulfilledCredits: 3,
+      remainingCredits: 3,
     });
   });
 });
