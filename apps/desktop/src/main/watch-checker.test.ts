@@ -124,12 +124,16 @@ describe("startWatchChecker", () => {
     const checker = startWatchChecker({ store, client: { get }, notify });
     await vi.advanceTimersByTimeAsync(0);
     expect(get).toHaveBeenCalledTimes(1);
-    await vi.advanceTimersByTimeAsync(DEFAULT_WATCH_CHECK_INTERVAL_MS - 1);
+    await vi.advanceTimersByTimeAsync(6 * 60 * 60 * 1000 - 1);
     expect(get).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(1);
     expect(get).toHaveBeenCalledTimes(2);
     expect(notify).not.toHaveBeenCalled();
     checker.stop();
+  });
+
+  it("pins the default check interval at six hours", () => {
+    expect(DEFAULT_WATCH_CHECK_INTERVAL_MS).toBe(21_600_000);
   });
 
   it("continues after API and notification failures and checks on the interval", async () => {
