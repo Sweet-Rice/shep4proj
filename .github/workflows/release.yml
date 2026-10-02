@@ -5,6 +5,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
   release:
     name: Build & Upload (${{ matrix.os }})
@@ -47,7 +50,6 @@ jobs:
       - name: Build Desktop Installer
         run: pnpm --filter @jevschedule/desktop run ${{ matrix.build_script }}
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}

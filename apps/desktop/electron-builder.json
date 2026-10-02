@@ -11,6 +11,7 @@
     "package.json"
   ],
   "npmRebuild": false,
+  "publish": null,
   "asar": true,
   "asarUnpack": [
     "**/node_modules/better-sqlite3/prebuilds/**/*",
