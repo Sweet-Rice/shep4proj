@@ -1,31 +1,44 @@
 # JevSchedule
 
-JevSchedule is a desktop course planner for LSU CSC students. It shows what a student has completed, what they still need, what they are eligible to take next, and helps build a conflict-free weekly schedule.
+JevSchedule is a desktop course planner for LSU CSC students. Track completed courses,
+explore degree requirements, plan semesters, and build a conflict-free weekly schedule.
+See the [project wiki](https://github.com/Sweet-Rice/shep4proj/wiki) for the project plan,
+architecture, and backlog.
 
 ## Install
 
-Download the Windows or Linux installer from [GitHub Releases](https://github.com/Sweet-Rice/shep4proj/releases):
+Download v1.1.0 from [GitHub Releases](https://github.com/Sweet-Rice/shep4proj/releases):
 
-- Windows: `*.exe` (NSIS installer). If SmartScreen warns, choose **More info → Run anyway**.
-- Linux: `*.AppImage`.
-- macOS: v1.0.0 does not include an installer; macOS users can build from source.
+- Windows: `JevSchedule.Setup.1.1.0.exe` (NSIS installer; you can choose the install
+  directory). If SmartScreen warns, choose **More info → Run anyway**.
+- Linux: `JevSchedule-1.1.0.AppImage`.
+- macOS: there is no macOS release build; build from source using the dev setup below.
 
-In v1.0.0, installers connect to a JevSchedule server that you run yourself. The default address is `http://127.0.0.1:3000`; set the `JEVSCHEDULE_API_URL` environment variable to use a different server URL.
+The installers connect to the hosted JevSchedule server automatically. To use another
+server, set `JEVSCHEDULE_API_URL` to its base URL (for example,
+`http://127.0.0.1:3000` for a local server). The free hosted API spins down after idle;
+its first request after that may take about a minute.
 
-To run the server locally, first install the repository dependencies with `pnpm install`, then from the repository root:
+## Features
 
-```sh
-docker compose up -d
-pnpm --filter @jevschedule/server db:migrate
-pnpm --filter @jevschedule/server db:seed:fixtures
-pnpm --filter @jevschedule/server dev
-```
+- **Courses:** search the LSU catalog, mark courses complete, and import course history
+  from a transcript PDF or Workday. Completed courses must exist in the catalog.
+- **Degree progress:** view requirements grouped into nine areas, with progress bars and
+  expandable course details.
+- **Eligible courses:** see catalog courses you are eligible to take and why others need
+  review or are blocked.
+- **Plan:** add catalog courses to semesters and see credit totals and limit warnings.
+- **Schedule:** find sections for planned courses and assemble a weekly schedule.
 
-The fixture seed provides local sample data. Instead, you can load public catalog and section data using the server's scrape commands; see [the deployment runbook](docs/Deploy.md). Those commands contact live LSU pages.
+The app uses LSU purple and gold with light and dark themes. Course counts report the
+actual number shown, for example, “Showing 50 of 2629 courses.”
 
 ## Importing your courses
 
-On the Courses tab, start a Workday import to open a visible Playwright sign-in window. Sign in through LSU SSO and Duo yourself. JevSchedule reads current-term courses without changing them, shows progress stages, and presents a review before anything is saved. If you prefer, or Workday's page format is not recognized, upload a transcript PDF instead.
+On the Courses tab, start a Workday import to open a visible browser sign-in window. Sign
+in through LSU SSO and Duo yourself. JevSchedule reads current-term courses without
+changing them, shows progress stages, and presents a review before anything is saved. If
+you prefer, or Workday's page format is not recognized, upload a transcript PDF instead.
 
 ## What JevSchedule never does
 
@@ -35,51 +48,93 @@ On the Courses tab, start a Workday import to open a visible Playwright sign-in 
 
 ## What stays on your device
 
-Your Workday session, cookies, and raw Workday responses never leave your machine. The app calls only allowlisted GET endpoints for read-only Workday access. Completed courses and your plan are stored in local SQLite on your device. See [SECURITY.md](SECURITY.md) for the data-handling rules.
+Your Workday session, cookies, and raw Workday responses never leave your machine. The app
+calls only allowlisted GET endpoints for read-only Workday access. Completed courses and
+your plan are stored in local SQLite on your device. The server contains only public LSU
+catalog and section data; it holds no user data. See [SECURITY.md](SECURITY.md) for the
+data-handling rules.
 
 ## The JevSchedule server
 
-The server is the app's one external component. It scrapes public LSU catalog and section data, and retains section snapshots for offering-history queries. For v1.0.0, you run the server yourself.
+The desktop app requests catalog and section data from the hosted API on Render. The API
+uses Neon for its PostgreSQL database. GitHub Actions builds the server image, publishes
+it to GitHub Container Registry (GHCR), migrates the database, and deploys the matching
+commit to Render. A daily GitHub Actions workflow runs the scrapers and writes public LSU
+data to Neon:
+
+```mermaid
+flowchart LR
+  Desktop["Desktop app"] --> Render["Render API"]
+  Render --> Neon["Neon PostgreSQL"]
+  Actions["GitHub Actions"] --> GHCR["GHCR server image"]
+  Actions --> Render
+  Actions --> Neon
+  Actions --> Scraper["Scrape public data"]
+  Scraper --> Catalog["catalog.lsu.edu"]
+  Scraper --> Sections["courseofferings.lsu.edu"]
+  Scraper --> Neon
+```
+
+The API may take about a minute to respond after its free Render service has been idle.
+Scraping honors `robots.txt` and the catalog's 120-second crawl delay; each department
+and section term is refreshed at most once per semester window. See
+[docs/Deploy.md](docs/Deploy.md) for deployment, database recovery, and operations.
 
 ## Repo structure
 
-- `apps/desktop` — Electron main + React renderer (planner and schedule UI)
-- `apps/server` — Fastify API + scheduled scraper jobs
-- `packages/shared` — types, schemas, and planner logic shared by client and server
-- `packages/workday` — Workday response parser + transcript PDF parser (fixture-tested)
-- `packages/scraper` — catalog + section parsers (fixture-tested) and the rate-limited catalog fetcher (`pnpm --filter @jevschedule/scraper live-check` runs it against the live site)
-- `fixtures` — redacted Workday responses, saved LSU HTML, sample transcripts
-- `data/degrees` — hand-encoded degree requirements (YAML), validated by `DegreeProgramSchema` in `packages/shared`
+- `apps/desktop` — Electron main process and React renderer
+- `apps/server` — Fastify API, database migrations, and scrapers
+- `packages/shared` — shared types, schemas, and planner logic
+- `packages/workday` — Workday response and transcript PDF parsers
+- `packages/scraper` — LSU catalog and section parsers and rate-limited fetcher
+- `data/degrees` — degree requirements in YAML
+- `docs/Deploy.md` — server deployment and operations runbook
+- `.github/workflows` — CI, release, deploy, and scheduled scraper workflows
 
 ## Dev setup
 
-1. Install [fnm](https://github.com/Schniz/fnm) and use Node 24 LTS:
+1. Install [fnm](https://github.com/Schniz/fnm) and use Node 24:
    ```sh
    fnm install 24
    fnm use 24
    ```
-2. Enable Corepack and let it manage pnpm (pinned via `packageManager` in `package.json`):
+2. Enable Corepack and install dependencies:
    ```sh
    corepack enable
-   ```
-3. Install dependencies:
-   ```sh
    pnpm install
    ```
-4. Build and test everything:
+3. Build and test:
    ```sh
    pnpm -r build
    pnpm -r test
    ```
-5. Start the local Postgres used by the server (needs [Docker](https://docs.docker.com/get-docker/)):
+4. Start local PostgreSQL with [Docker](https://docs.docker.com/get-docker/), then
+   initialize the server database. The fixture seed adds only five sample courses.
    ```sh
-   docker compose up -d        # Postgres 18 on 127.0.0.1:5432, data kept in a named volume
-   docker compose down         # stop it (add -v to also delete the data)
+   docker compose up -d
+   pnpm --filter @jevschedule/server db:migrate
+   pnpm --filter @jevschedule/server db:seed:fixtures
    ```
-   Defaults work without any setup. To change the user, password, database or port,
-   copy `.env.example` to `.env` and edit it.
+5. In one terminal, start the local API:
+   ```sh
+   pnpm --filter @jevschedule/server dev
+   ```
+   In another, start the desktop app pointed at it:
+   ```sh
+   JEVSCHEDULE_API_URL=http://127.0.0.1:3000 pnpm --filter @jevschedule/desktop dev
+   ```
+   On Windows PowerShell, set the variable first with
+   `$env:JEVSCHEDULE_API_URL="http://127.0.0.1:3000"` and then run the desktop command.
+   Alternatively, `JEVSCHEDULE_API_URL=http://127.0.0.1:3000 pnpm dev` from the repository
+   root starts both development scripts concurrently and points the desktop at the local API.
 
-Other useful root scripts: `pnpm lint`, `pnpm typecheck`, `pnpm format`.
+Local data can be populated with `pnpm --filter @jevschedule/server db:scrape:catalog`
+and `pnpm --filter @jevschedule/server db:scrape:sections`. These commands contact live
+LSU websites. The catalog scraper honors the 120-second robots crawl delay and requires
+Chrome by default; set `CATALOG_BROWSER_CHANNEL=msedge` to use installed Microsoft Edge.
+Do not use a crawl-delay override.
+
+Other useful root scripts: `pnpm lint`, `pnpm typecheck`, and `pnpm format`.
 
 ### Windows (PowerShell)
 
@@ -93,7 +148,6 @@ pnpm install; pnpm -r build; pnpm -r test
 ```
 
 - Line endings are forced to LF by `.gitattributes`, so `prettier --check` passes on Windows checkouts. If you cloned before that file existed, run `git rm --cached -r . ; git reset --hard` once.
-- The Workday scripts use Microsoft Edge (preinstalled on Windows) first and fall back to Chrome. Nothing extra is needed.
 - Workday tooling (log in yourself when the browser opens):
   - `pnpm --filter @jevschedule/workday smoke:login` checks login detection (T-314).
   - `pnpm --filter @jevschedule/workday capture` captures the academic record into `fixtures/workday/raw/` (git-ignored).
@@ -101,5 +155,6 @@ pnpm install; pnpm -r build; pnpm -r test
 
 ## Documentation
 
-Project plan, architecture, backlog, and data-handling notes live on the
-[wiki](https://github.com/Sweet-Rice/shep4proj/wiki), not in this repo.
+Project plan, architecture, and backlog live on the
+[wiki](https://github.com/Sweet-Rice/shep4proj/wiki). See [SECURITY.md](SECURITY.md)
+for data-handling rules and [docs/Deploy.md](docs/Deploy.md) for server operations.
