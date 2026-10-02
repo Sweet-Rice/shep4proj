@@ -8,6 +8,7 @@ working on the codebase, and they take precedence over convenience or speed.
   completed courses may be sent to the server, and only if a story explicitly requires it.
   Main-process logs are redacted before output, including error stacks. Token-shaped
   fragments in diagnostic paths may therefore appear as `[REDACTED]`.
+- **Workday sign-in uses an in-app Electron popup.** No external browser is launched. After sign-in, the main process reads only the session token and client version from `/lsu/app-root`; both remain in memory and are cleared with the popup's ephemeral session.
 - **Workday calls are read-only and allowlisted.** Only call endpoints recorded in
   `packages/workday/ENDPOINTS.md`. Never call registration, financial, or profile endpoints.
 - **Never commit `.har` files or unredacted Workday responses.** They contain session tokens
