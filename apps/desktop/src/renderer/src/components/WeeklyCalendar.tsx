@@ -53,7 +53,10 @@ export function WeeklyCalendar({
   endHour: minEndHour = 18,
 }: WeeklyCalendarProps) {
   // Widen the default range so evening or early meetings are never drawn outside the grid.
-  const meetings = sections.flatMap((section) => section.meetings);
+  // Only meetings on drawn days count; weekend meetings never appear.
+  const meetings = sections.flatMap((section) =>
+    section.meetings.filter((meeting) => meeting.days.some((day) => CALENDAR_DAYS.includes(day))),
+  );
   const startHour = Math.min(
     minStartHour,
     ...meetings.map((meeting) => Math.floor(meeting.startMinute / 60)),
