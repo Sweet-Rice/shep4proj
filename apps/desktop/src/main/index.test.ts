@@ -12,6 +12,8 @@ const state = vi.hoisted(() => ({
     body: "body",
   })),
   startWatchChecker: vi.fn((_options: unknown) => ({ check: vi.fn(), stop: vi.fn() })),
+  windows: [] as { show: Mock; focus: Mock; isDestroyed: Mock }[],
+  buildFromTemplate: vi.fn((_template: unknown) => ({})),
 }));
 
 vi.mock("electron", () => ({
@@ -25,10 +27,16 @@ vi.mock("electron", () => ({
     loadFile = vi.fn();
     loadURL = vi.fn();
     on = vi.fn();
+    show = vi.fn();
+    focus = vi.fn();
+    isDestroyed = vi.fn(() => false);
+    constructor() {
+      state.windows.push(this);
+    }
   },
   dialog: { showOpenDialog: vi.fn() },
   ipcMain: {},
-  Menu: { buildFromTemplate: vi.fn(() => ({})) },
+  Menu: { buildFromTemplate: state.buildFromTemplate },
   nativeImage: { createFromPath: () => ({ resize: () => ({}) }) },
   Notification: class {
     show = vi.fn();
@@ -109,6 +117,8 @@ afterEach(() => {
   state.notifications.length = 0;
   state.seatOpeningNotification.mockClear();
   state.startWatchChecker.mockClear();
+  state.windows.length = 0;
+  state.buildFromTemplate.mockClear();
 });
 
 describe("main API URL wiring", () => {
@@ -142,6 +152,51 @@ describe("seat opening notifications", () => {
     expect(state.notifications).toHaveLength(1);
     expect(state.notifications[0]!.options).toEqual({ title: "title for CSC 4330", body: "body" });
     expect(state.notifications[0]!.show).toHaveBeenCalledTimes(1);
+  });
+});
+
+interface TrayMenuItem {
+  label?: string;
+  type?: string;
+  click?: () => void;
+}
+
+async function loadTrayMenu(): Promise<TrayMenuItem[]> {
+  await loadMain();
+  expect(state.buildFromTemplate).toHaveBeenCalledTimes(1);
+  return state.buildFromTemplate.mock.calls[0]![0] as TrayMenuItem[];
+}
+
+describe("tray menu", () => {
+  it("offers Open JevSchedule and Quit", async () => {
+    const template = await loadTrayMenu();
+    expect(template.filter((item) => item.type !== "separator").map((item) => item.label)).toEqual([
+      "Open JevSchedule",
+      "Quit",
+    ]);
+  });
+
+  it("quits the app from Quit", async () => {
+    const template = await loadTrayMenu();
+    template.find((item) => item.label === "Quit")!.click!();
+    expect(state.quit).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows and focuses the existing window from Open JevSchedule", async () => {
+    const template = await loadTrayMenu();
+    expect(state.windows).toHaveLength(1);
+    template.find((item) => item.label === "Open JevSchedule")!.click!();
+    expect(state.windows).toHaveLength(1);
+    expect(state.windows[0]!.show).toHaveBeenCalledTimes(1);
+    expect(state.windows[0]!.focus).toHaveBeenCalledTimes(1);
+  });
+
+  it("recreates the window from Open JevSchedule once it has been destroyed", async () => {
+    const template = await loadTrayMenu();
+    state.windows[0]!.isDestroyed.mockReturnValue(true);
+    template.find((item) => item.label === "Open JevSchedule")!.click!();
+    expect(state.windows).toHaveLength(2);
+    expect(state.windows[0]!.show).not.toHaveBeenCalled();
   });
 });
 
