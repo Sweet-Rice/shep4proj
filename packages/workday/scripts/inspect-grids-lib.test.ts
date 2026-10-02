@@ -182,11 +182,18 @@ describe("formatEntry / inspectHar", () => {
     expect(output).not.toContain("001");
   });
 
-  it("exposes only a string that exactly matches the course-code pattern", () => {
+  it("exposes only exact course-code values and traverses extra per-row cells", () => {
     const body = {
       widget: "grid",
       columns: [{ columnId: "1", label: "Course" }],
-      rows: [{ rowIndex: 0, cellsMap: { "1": { text: "CSC 4103" } } }],
+      rows: [{
+        rowIndex: 0,
+        cellsMap: {
+          "1": { text: "CSC 4103" },
+          "314.1": { label: "Registrations Used", instances: [{ text: "SENSITIVE NAME - CSC 4103" }] },
+          "314.2": { text: "MATH 1550" },
+        },
+      }],
     };
     const entry = buildEntry({
       response: {
@@ -195,7 +202,12 @@ describe("formatEntry / inspectHar", () => {
         content: { mimeType: "application/json", text: JSON.stringify(body) },
       },
     });
-    expect(formatEntry(entry, true).join("\n")).toContain('"CSC 4103"');
+    const output = formatEntry(entry, true).join("\n");
+    expect(output).toContain('"CSC 4103"');
+    expect(output).toContain("nested column 314.1");
+    expect(output).toContain("nested column 314.2");
+    expect(output).not.toContain("SENSITIVE NAME");
+    expect(output).toContain('"MATH 1550"');
   });
 
   it("limits cell mode to the requested endpoint path", () => {

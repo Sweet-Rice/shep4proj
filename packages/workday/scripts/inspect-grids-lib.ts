@@ -142,13 +142,23 @@ function formatCellsEntry(entry: HarEntry): string[] {
     lines.push(`  grid: ${typeof node.label === "string" ? node.label : "(no label)"} rows=${gridRowCount(node)}`);
     const columns = Array.isArray(node.columns) ? node.columns : [];
     const rows = Array.isArray(node.rows) ? node.rows : [];
+    const columnIds = new Set<string>();
     for (const column of columns) {
       if (!isPlainObject(column) || typeof column.columnId !== "string") continue;
+      columnIds.add(column.columnId);
       lines.push(`    column ${column.columnId} ${typeof column.label === "string" ? column.label : "(no label)"}`);
-      for (const row of rows) {
-        if (!isPlainObject(row) || !isPlainObject(row.cellsMap)) continue;
-        const cell = row.cellsMap[column.columnId];
-        if (cell !== undefined) lines.push(...renderCell(cell, `      row ${String(row.rowIndex)}: `, new Set()));
+    }
+    for (const row of rows) {
+      if (!isPlainObject(row) || !isPlainObject(row.cellsMap)) continue;
+      const rowPrefix = `      row ${String(row.rowIndex)}: `;
+      for (const [columnId, cell] of Object.entries(row.cellsMap)) {
+        if (columnIds.has(columnId)) continue;
+        lines.push(`    nested column ${columnId}`);
+        lines.push(...renderCell(cell, rowPrefix, new Set()));
+      }
+      for (const columnId of columnIds) {
+        const cell = row.cellsMap[columnId];
+        if (cell !== undefined) lines.push(...renderCell(cell, rowPrefix, new Set()));
       }
     }
   }
