@@ -75,6 +75,15 @@ each completed course counts at most once. Requirement results retain the catalo
 order. Fixed groups are **unsatisfied** with no matched courses, **partially satisfied**
 with some, and **satisfied** when all are complete.
 
+The **Plan** tab maps out future terms. Add a term, pick a catalog course and term, then
+choose **Add to plan**; drag a course card (or use its move buttons) to another term. A
+course placed before its prerequisites shows an inline **Missing prerequisite** error; only
+prerequisites marked as corequisites may be planned in the same term. Each term shows its
+credits against the per-term limit (19 by default, LSU's credit-hour maximum) and warns when
+it exceeds the limit. Edit the limit with **Credit limit per semester**. The plan and limit
+are stored locally and survive restarts; controls stay disabled until the saved plan loads
+and while a save is in progress, and a failed save restores the previous plan with an error.
+
 ### Windows (PowerShell)
 
 ```powershell
