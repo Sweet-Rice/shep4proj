@@ -5,8 +5,8 @@ export { EndpointNotAllowedError } from "./errors.js";
 export { guardedFetch } from "./guarded-fetch.js";
 export type {
   AllowedEndpoint,
+  FetchImplementation,
   GuardedRequest,
   GuardedResponse,
   HttpMethod,
-  PageLike,
 } from "./types.js";

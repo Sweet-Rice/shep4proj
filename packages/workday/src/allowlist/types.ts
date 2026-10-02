@@ -15,7 +15,7 @@ export interface AllowedEndpoint {
   readonly description: string;
 }
 
-/** A request the caller wants to make from inside a Workday page. */
+/** A request the guard wants to make. */
 export interface GuardedRequest {
   readonly method: HttpMethod;
   readonly url: string;
@@ -23,17 +23,19 @@ export interface GuardedRequest {
   readonly headers?: Readonly<Record<string, string>>;
 }
 
-/** The result of a guarded call, once it has run inside the page. */
+/** The result of a guarded call. */
 export interface GuardedResponse {
   readonly status: number;
   readonly json: unknown;
 }
 
-/**
- * Minimal slice of Playwright's `Page` needed to run a guarded fetch from
- * inside a Workday page. Kept separate from `playwright-core` so this
- * module is unit-testable without a real browser.
- */
-export interface PageLike {
-  evaluate<Arg, R>(pageFunction: (arg: Arg) => R | Promise<R>, arg: Arg): Promise<R>;
-}
+/** Fetch adapter accepted by guardedFetch; authorization happens before it is called. */
+export type FetchImplementation = (
+  url: string,
+  init: {
+    method: HttpMethod;
+    headers?: Readonly<Record<string, string>>;
+    body?: string;
+    credentials?: "include";
+  },
+) => Promise<{ status: number; json(): Promise<unknown> }>;

@@ -4,20 +4,13 @@ import { assertAllowed } from "./assert-allowed.js";
 import { DENY_PATTERNS } from "./deny-patterns.js";
 import { EndpointNotAllowedError } from "./errors.js";
 import { guardedFetch } from "./guarded-fetch.js";
-import type { AllowedEndpoint, PageLike } from "./types.js";
-
+import type { AllowedEndpoint } from "./types.js";
 const academicRecord: AllowedEndpoint = {
   id: "academic-record-get",
   method: "GET",
   pattern: /^https:\/\/example\.myworkday\.com\/api\/academic-record\/[^/]+$/,
   description: "Read the student's completed-course academic record.",
 };
-
-function makeFakePage(): PageLike & { evaluate: ReturnType<typeof vi.fn> } {
-  return {
-    evaluate: vi.fn().mockResolvedValue({ status: 200, json: { ok: true } }),
-  };
-}
 
 describe("assertAllowed", () => {
   it("rejects everything when the allowlist is empty", () => {
@@ -71,6 +64,19 @@ describe("assertAllowed", () => {
       expect(message).not.toContain("super-secret-123");
       expect(message).not.toContain("studentId");
     }
+  });
+});
+
+describe("ALLOWED_ENDPOINTS: app-root-get", () => {
+  it("allows only GET on the LSU app-root endpoint", () => {
+    const appRoot = ALLOWED_ENDPOINTS.find((endpoint) => endpoint.id === "app-root-get");
+    expect(appRoot).toBeDefined();
+    expect(() =>
+      assertAllowed("GET", "https://www.myworkday.com/lsu/app-root", [appRoot!]),
+    ).not.toThrow();
+    expect(() =>
+      assertAllowed("POST", "https://www.myworkday.com/lsu/app-root", [appRoot!]),
+    ).toThrow(EndpointNotAllowedError);
   });
 });
 
@@ -152,14 +158,14 @@ describe("ALLOWED_ENDPOINTS: academic-progress-get", () => {
 });
 
 describe("ALLOWED_ENDPOINTS: current-registrations-get", () => {
-  it("rejects the unconfirmed task/2998$28771.htmld variant until directly observed", () => {
+  it("allows the direct task/2998$28771.htmld GET for the importer to try", () => {
     expect(() =>
       assertAllowed(
         "GET",
         "https://www.myworkday.com/lsu/generic-hub/task/2998$28771.htmld?clientRequestID=22222222-2222-4222-8222-222222222222",
         ALLOWED_ENDPOINTS,
       ),
-    ).toThrow(EndpointNotAllowedError);
+    ).not.toThrow();
   });
 
   it("allows the shared page-context-id/<contextId>.htmld variant (same pattern as academic-record-get)", () => {
@@ -221,50 +227,44 @@ describe("ALLOWED_ENDPOINTS: current-registrations-get", () => {
 });
 
 describe("guardedFetch", () => {
-  it("calls page.evaluate for an allowed request", async () => {
-    const page = makeFakePage();
-
+  it("calls the supplied session fetch for an allowed request", async () => {
+    const fetch = vi.fn(async () => ({ status: 200, json: async () => ({ ok: true }) }));
     const result = await guardedFetch(
-      page,
+      fetch,
       { method: "GET", url: "https://example.myworkday.com/api/academic-record/12345" },
       [academicRecord],
     );
-
-    expect(page.evaluate).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledOnce();
     expect(result).toEqual({ status: 200, json: { ok: true } });
   });
 
-  it("never calls page.evaluate when the request is rejected", async () => {
-    const page = makeFakePage();
-
+  it("never calls the fetch implementation when the request is rejected", async () => {
+    const fetch = vi.fn();
     await expect(
       guardedFetch(
-        page,
+        fetch,
         { method: "GET", url: "https://example.myworkday.com/api/not-allowlisted" },
         [academicRecord],
       ),
     ).rejects.toThrow(EndpointNotAllowedError);
-
-    expect(page.evaluate).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
   });
 
-  it("never calls page.evaluate when the URL matches a deny pattern", async () => {
-    const page = makeFakePage();
+  it("never calls the fetch implementation when the URL matches a deny pattern", async () => {
+    const fetch = vi.fn();
     const registrationEndpoint: AllowedEndpoint = {
       id: "sneaky-registration",
       method: "POST",
       pattern: /^https:\/\/example\.myworkday\.com\/api\/registration\/[^/]+$/,
       description: "Should never actually be allowed.",
     };
-
     await expect(
       guardedFetch(
-        page,
+        fetch,
         { method: "POST", url: "https://example.myworkday.com/api/registration/12345" },
         [registrationEndpoint],
       ),
     ).rejects.toThrow(EndpointNotAllowedError);
-
-    expect(page.evaluate).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
   });
 });
