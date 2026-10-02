@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi, type Mock } from "vitest";
 
 const state = vi.hoisted(() => ({
   apiBaseUrl: undefined as string | undefined,
@@ -6,6 +6,12 @@ const state = vi.hoisted(() => ({
   watchCount: 0,
   appHandlers: new Map<string, () => void>(),
   quit: vi.fn(),
+  notifications: [] as { options: unknown; show: Mock }[],
+  seatOpeningNotification: vi.fn((watch: { courseCode: string }) => ({
+    title: `title for ${watch.courseCode}`,
+    body: "body",
+  })),
+  startWatchChecker: vi.fn((_options: unknown) => ({ check: vi.fn(), stop: vi.fn() })),
 }));
 
 vi.mock("electron", () => ({
@@ -26,6 +32,9 @@ vi.mock("electron", () => ({
   nativeImage: { createFromPath: () => ({ resize: () => ({}) }) },
   Notification: class {
     show = vi.fn();
+    constructor(options: unknown) {
+      state.notifications.push({ options, show: this.show });
+    }
   },
   Tray: class {
     destroy = vi.fn();
@@ -59,8 +68,8 @@ vi.mock("./store/watches.js", () => ({
   createWatchStore: () => ({ list: () => Array.from({ length: state.watchCount }, () => ({})) }),
 }));
 vi.mock("./watch-checker.js", () => ({
-  seatOpeningNotification: () => ({ title: "", body: "" }),
-  startWatchChecker: () => ({ check: vi.fn(), stop: vi.fn() }),
+  seatOpeningNotification: state.seatOpeningNotification,
+  startWatchChecker: state.startWatchChecker,
 }));
 vi.mock("./watches.js", () => ({
   createWatchClient: (baseUrl: string) => {
@@ -75,10 +84,15 @@ function setPlatform(platform: NodeJS.Platform): void {
   Object.defineProperty(process, "platform", { value: platform, configurable: true });
 }
 
-async function closeAllWindows(): Promise<void> {
-  // The entrypoint registers handlers on import, so each test loads a fresh copy.
+async function loadMain(): Promise<void> {
+  // The entrypoint registers handlers on import, so each test loads a fresh copy. The
+  // window-all-closed handler is the last registration made once the app is ready.
   await import("./index.js");
   await vi.waitFor(() => expect(state.appHandlers.has("window-all-closed")).toBe(true));
+}
+
+async function closeAllWindows(): Promise<void> {
+  await loadMain();
   state.appHandlers.get("window-all-closed")!();
 }
 
@@ -92,6 +106,9 @@ afterEach(() => {
   state.watchCount = 0;
   state.appHandlers.clear();
   state.quit.mockClear();
+  state.notifications.length = 0;
+  state.seatOpeningNotification.mockClear();
+  state.startWatchChecker.mockClear();
 });
 
 describe("main API URL wiring", () => {
@@ -105,6 +122,26 @@ describe("main API URL wiring", () => {
 
     expect(state.apiBaseUrl).toBe("https://runtime.example");
     expect(state.watchApiBaseUrl).toBe("https://runtime.example");
+  });
+});
+
+describe("seat opening notifications", () => {
+  it("starts one watch checker whose notify shows the seat-opening notification", async () => {
+    await loadMain();
+
+    expect(state.startWatchChecker).toHaveBeenCalledTimes(1);
+    const options = state.startWatchChecker.mock.calls[0]![0] as {
+      notify: (watch: unknown) => void;
+    };
+    expect(state.notifications).toHaveLength(0);
+
+    const status = { courseCode: "CSC 4330" };
+    options.notify(status);
+
+    expect(state.seatOpeningNotification).toHaveBeenCalledWith(status);
+    expect(state.notifications).toHaveLength(1);
+    expect(state.notifications[0]!.options).toEqual({ title: "title for CSC 4330", body: "body" });
+    expect(state.notifications[0]!.show).toHaveBeenCalledTimes(1);
   });
 });
 
