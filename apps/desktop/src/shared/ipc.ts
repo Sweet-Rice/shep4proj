@@ -1,4 +1,5 @@
 import type {
+  AcademicPeriodId,
   Course,
   CourseCode,
   CourseDetail,
@@ -6,6 +7,7 @@ import type {
   DegreeProgram,
   DegreeSummary,
   Plan,
+  Section,
 } from "@jevschedule/shared";
 import type { TranscriptParseResult } from "@jevschedule/workday";
 
@@ -22,6 +24,7 @@ export const IPC_CHANNELS = {
   catalogCourses: "catalog:courses",
   catalogCourseDetails: "catalog:course-details",
   catalogCourseHistory: "catalog:course-history",
+  catalogSections: "catalog:sections",
   catalogDegrees: "catalog:degrees",
   catalogDegree: "catalog:degree",
 } as const;
@@ -47,6 +50,7 @@ export interface JevscheduleApi {
     listCourses(): Promise<Course[]>;
     getCourseDetails(codes: CourseCode[]): Promise<Record<CourseCode, CourseDetail>>;
     getCourseHistory(code: CourseCode): Promise<CourseOfferingHistory[]>;
+    listSections(courseCode: CourseCode, term: AcademicPeriodId): Promise<Section[]>;
     listDegrees(): Promise<DegreeSummary[]>;
     getDegree(id: string): Promise<DegreeProgram>;
   };

@@ -34,6 +34,7 @@ describe("registerIpcHandlers", () => {
     listCourses: ReturnType<typeof vi.fn>;
     getCourseDetails: ReturnType<typeof vi.fn>;
     getCourseHistory: ReturnType<typeof vi.fn>;
+    listSections: ReturnType<typeof vi.fn>;
     listDegrees: ReturnType<typeof vi.fn>;
     getDegree: ReturnType<typeof vi.fn>;
   };
@@ -45,6 +46,7 @@ describe("registerIpcHandlers", () => {
       listCourses: vi.fn().mockResolvedValue([]),
       getCourseDetails: vi.fn().mockResolvedValue({}),
       getCourseHistory: vi.fn().mockResolvedValue([]),
+      listSections: vi.fn().mockResolvedValue([]),
       listDegrees: vi.fn().mockResolvedValue([]),
       getDegree: vi.fn().mockResolvedValue({}),
     };
@@ -61,11 +63,13 @@ describe("registerIpcHandlers", () => {
     ipc.invoke(IPC_CHANNELS.catalogCourseHistory, "CSC 1350");
     ipc.invoke(IPC_CHANNELS.catalogDegrees);
     ipc.invoke(IPC_CHANNELS.catalogDegree, "csc-software-engineering-2026-2027");
+    ipc.invoke(IPC_CHANNELS.catalogSections, "CSC 1350", "LSUAM_FALL_2026");
     expect(catalog.listCourses).toHaveBeenCalledOnce();
     expect(catalog.getCourseDetails).toHaveBeenCalledWith(codes);
     expect(catalog.getCourseHistory).toHaveBeenCalledWith("CSC 1350");
     expect(catalog.listDegrees).toHaveBeenCalledOnce();
     expect(catalog.getDegree).toHaveBeenCalledWith("csc-software-engineering-2026-2027");
+    expect(catalog.listSections).toHaveBeenCalledWith("CSC 1350", "LSUAM_FALL_2026");
   });
 
   it.each([
@@ -77,6 +81,8 @@ describe("registerIpcHandlers", () => {
     [IPC_CHANNELS.catalogDegrees, ["extra"]],
     [IPC_CHANNELS.catalogDegree, ["CSC-degree"]],
     [IPC_CHANNELS.catalogDegree, ["csc degree"]],
+    [IPC_CHANNELS.catalogSections, ["CSC 1350", "fall-2026"]],
+    [IPC_CHANNELS.catalogSections, ["invalid", "LSUAM_FALL_2026"]],
   ])("rejects invalid catalog arguments for %s", (channel, args) => {
     expect(() => ipc.invoke(channel, ...args)).toThrow();
   });

@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { DegreeProgramSchema, type Course, type DegreeProgram } from "@jevschedule/shared";
+import {
+  DegreeProgramSchema,
+  type Course,
+  type DegreeProgram,
+  type Section,
+} from "@jevschedule/shared";
 import { createCatalogClient, DEFAULT_API_BASE_URL, resolveApiBaseUrl } from "./catalog.js";
 
 const course: Course = {
@@ -33,6 +38,19 @@ const degree: DegreeProgram = DegreeProgramSchema.parse({
 });
 const response = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+const section: Section = {
+  term: "LSUAM_FALL_2026",
+  courseCode: "CSC 1350",
+  sectionNumber: "001",
+  sectionType: "LEC",
+  credits: { min: 3, max: 3, note: null },
+  instructor: "A. Professor",
+  location: "Taylor Hall",
+  deliveryMode: "On Campus",
+  enrollment: 20,
+  capacity: 30,
+  meetings: [{ days: ["Mon"], startMinute: 600, endMinute: 650 }],
+};
 
 describe("resolveApiBaseUrl", () => {
   it("prefers a non-empty runtime URL over the build-time URL", () => {
@@ -190,6 +208,35 @@ describe("createCatalogClient", () => {
     expect(fetchImpl).toHaveBeenCalledOnce();
     expect(fetchImpl).toHaveBeenCalledWith(
       "http://127.0.0.1:3000/degrees/csc-software-engineering-2026-2027",
+    );
+  });
+
+  it("fetches term sections without caching and validates the response", async () => {
+    const fetchImpl = vi.fn(async () => response({ sections: [section] }));
+    const client = createCatalogClient(DEFAULT_API_BASE_URL, fetchImpl as typeof fetch);
+
+    await expect(client.listSections("CSC 1350", "LSUAM_FALL_2026")).resolves.toEqual([section]);
+    await client.listSections("CSC 1350", "LSUAM_FALL_2026");
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "http://127.0.0.1:3000/sections?course=CSC-1350&term=LSUAM_FALL_2026",
+    );
+
+    const malformedClient = createCatalogClient(
+      DEFAULT_API_BASE_URL,
+      vi.fn(async () =>
+        response({ sections: [{ ...section, sectionNumber: "bad" }] }),
+      ) as typeof fetch,
+    );
+    await expect(malformedClient.listSections("CSC 1350", "LSUAM_FALL_2026")).rejects.toThrow();
+  });
+
+  it("reports an unreachable server when sections cannot be fetched", async () => {
+    const fetchImpl = vi.fn().mockRejectedValue(new Error("offline"));
+    const client = createCatalogClient(DEFAULT_API_BASE_URL, fetchImpl as typeof fetch);
+    await expect(client.listSections("CSC 1350", "LSUAM_FALL_2026")).rejects.toThrow(
+      "Course catalog server unreachable at http://127.0.0.1:3000",
     );
   });
 
