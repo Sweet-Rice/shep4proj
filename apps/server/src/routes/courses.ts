@@ -1,11 +1,12 @@
 import type { FastifyInstance } from "fastify";
-import { and, asc, eq, max } from "drizzle-orm";
+import { and, asc, eq, inArray, max } from "drizzle-orm";
 import { CatalogYearSchema, type Course, type CourseDetail } from "@jevschedule/shared";
 import type { Db } from "../db/client.js";
 import { courses, sectionArchive, type CourseRow } from "../db/schema.js";
 
 const DEPT_REGEX = /^[A-Z]{2,4}$/;
 const COURSE_ID_REGEX = /^[A-Z]{2,4}-\d{4}[A-Z]{0,2}$/;
+const MAX_BATCH_CODES = 500;
 
 interface CoursesQuery {
   dept?: unknown;
@@ -18,6 +19,15 @@ interface CourseParams {
 
 interface CourseQuery {
   catalogYear?: unknown;
+}
+
+interface CourseDetailsBody {
+  codes?: unknown;
+  catalogYear?: unknown;
+}
+
+function normalizeId(id: string): string {
+  return id.trim().toUpperCase().replace(" ", "-");
 }
 
 function toCourse(row: CourseRow): Course {
@@ -146,6 +156,41 @@ export function registerCourseRoutes(app: FastifyInstance, deps: { db: Db }): vo
       return reply.send(toCourseDetail(row));
     },
   );
+
+  /**
+   * Batch form of GET /courses/:id. Codes may be "CSC 4330" or "CSC-4330" in any
+   * case. Unknown codes are omitted from `courses`, not reported as errors.
+   */
+  app.post<{ Body: CourseDetailsBody | null }>("/courses/details", async (request, reply) => {
+    const { codes: rawCodes, catalogYear: rawCatalogYear } = request.body ?? {};
+    if (
+      !Array.isArray(rawCodes) ||
+      !rawCodes.every((c) => typeof c === "string" && COURSE_ID_REGEX.test(normalizeId(c)))
+    ) {
+      return reply.status(400).send({ error: "invalid codes" });
+    }
+
+    const codes = [...new Set(rawCodes.map((c: string) => normalizeId(c).replace("-", " ")))];
+    if (codes.length > MAX_BATCH_CODES) {
+      return reply.status(400).send({ error: `too many codes (max ${MAX_BATCH_CODES})` });
+    }
+
+    const { catalogYear, error } = await resolveCatalogYear(db, rawCatalogYear);
+    if (error) {
+      return reply.status(400).send({ error });
+    }
+    if (!catalogYear || codes.length === 0) {
+      return reply.send({ courses: [] });
+    }
+
+    const rows = await db
+      .select()
+      .from(courses)
+      .where(and(eq(courses.catalogYear, catalogYear), inArray(courses.code, codes)))
+      .orderBy(asc(courses.code));
+
+    return reply.send({ courses: rows.map(toCourseDetail) });
+  });
 
   app.get<{ Params: CourseParams }>("/courses/:id/history", async (request, reply) => {
     const rawId = request.params.id;
