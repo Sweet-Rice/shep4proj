@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { termToPeriodId, type AcademicPeriodId, type CourseCode } from "@jevschedule/shared";
 import { useCatalogCourses } from "../hooks/useCatalog.js";
 import { usePlan } from "../hooks/usePlan.js";
-import { useScheduleBuilder } from "../hooks/useScheduleBuilder.js";
+import { getSectionKey, useScheduleBuilder } from "../hooks/useScheduleBuilder.js";
 import { useSections } from "../hooks/useSections.js";
 import { SectionList } from "./SectionList.js";
 import { WeeklyCalendar } from "./WeeklyCalendar.js";
@@ -21,6 +21,17 @@ export function ScheduleScreen() {
     terms.find(({ periodId }) => periodId === selectedTerm)?.periodId ?? terms[0]?.periodId ?? null;
   const { sectionsByCourse, loading, error } = useSections(courseCodes, term);
   const builder = useScheduleBuilder();
+  const termSections = useMemo(
+    () => builder.sections.filter((section) => section.term === term),
+    [builder.sections, term],
+  );
+  const termConflicts = useMemo(
+    () =>
+      new Set(
+        termSections.map(getSectionKey).filter((sectionKey) => builder.conflicts.has(sectionKey)),
+      ),
+    [termSections, builder.conflicts],
+  );
   const availableCourses = courses.filter((course) => !courseCodes.includes(course.code));
 
   function addCourse() {
@@ -103,8 +114,8 @@ export function ScheduleScreen() {
             />
           ))}
           <WeeklyCalendar
-            sections={builder.sections.filter((section) => section.term === term)}
-            conflictingSectionKeys={builder.conflicts}
+            sections={termSections}
+            conflictingSectionKeys={termConflicts}
             onRemoveSection={builder.removeSection}
           />
         </>

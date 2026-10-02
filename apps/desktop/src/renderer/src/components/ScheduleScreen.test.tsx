@@ -253,6 +253,38 @@ describe("ScheduleScreen", () => {
     expect(screen.queryByTestId("meeting-block-CSC 4330-Tue")).not.toBeInTheDocument();
   });
 
+  it("hides another term's conflict banner and restores it when switching back", async () => {
+    const user = userEvent.setup();
+    const spring = { season: "Spring" as const, year: 2027, courses: [] };
+    setup({ planTerms: [...plan.terms, spring] });
+    render(<ScheduleScreen />);
+
+    const termSelect = await screen.findByRole("combobox", { name: "Term" });
+    for (const code of ["CSC 4330", "CSC 1350"]) {
+      await user.selectOptions(screen.getByRole("combobox", { name: "Add course" }), code);
+      await user.click(screen.getByRole("button", { name: "Add course" }));
+      await user.click(
+        await within(
+          await screen.findByRole("region", { name: `Sections for ${code}` }),
+        ).findByRole("button", { name: "Add to schedule" }),
+      );
+    }
+    expect(screen.getByTestId("schedule-conflict-banner")).toBeInTheDocument();
+
+    await user.selectOptions(termSelect, "LSUAM_SPRING_2027");
+    expect(await screen.findByText("003-LEC")).toBeInTheDocument();
+    expect(screen.queryByTestId("schedule-conflict-banner")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("meeting-block-CSC 4330-Mon")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("meeting-block-CSC 1350-Mon")).not.toBeInTheDocument();
+
+    await user.selectOptions(termSelect, "LSUAM_FALL_2026");
+    expect(await screen.findByTestId("schedule-conflict-banner")).toHaveTextContent(
+      "Schedule Conflict Detected (2 sections overlap)",
+    );
+    expect(screen.getAllByTestId("meeting-block-CSC 4330-Mon")).toHaveLength(1);
+    expect(screen.getAllByTestId("meeting-block-CSC 1350-Mon")).toHaveLength(1);
+  }, 15_000);
+
   it("shows the server error for section requests", async () => {
     const user = userEvent.setup();
     setup({ rejectSections: true });
