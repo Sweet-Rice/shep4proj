@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { CourseCode } from "@jevschedule/shared";
 import type { TranscriptParseResult as PdfParseResult } from "@jevschedule/workday";
+import type { WorkdayImportReview } from "../../../shared/ipc.js";
 import {
   ImportReviewScreen,
   SAMPLE_PARSE_RESULT,
@@ -18,29 +19,28 @@ function transcriptApi(): { select(): Promise<PdfParseResult | null> } | null {
   return globalWindow.window?.jevschedule?.transcript ?? null;
 }
 
+function workdayApi() {
+  return globalThis.window?.jevschedule?.workday ?? null;
+}
+
 export interface ImportProgressFlowProps {
   initialStage?: ImportStage;
   parseResult?: TranscriptParseResult;
   onImportComplete?: (courses: CourseCode[]) => void;
-  onFallbackUpload?: () => void;
-  /** Hide unfinished direct-import demo controls in the installed app. */
-  uploadOnly?: boolean;
 }
 
 export function ImportProgressFlow({
   initialStage = "idle",
   parseResult = SAMPLE_PARSE_RESULT,
   onImportComplete,
-  onFallbackUpload,
-  uploadOnly = false,
 }: ImportProgressFlowProps) {
   const [stage, setStage] = useState<ImportStage>(initialStage);
   const [importedCourses, setImportedCourses] = useState<CourseCode[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [uploadedResult, setUploadedResult] = useState<TranscriptParseResult | null>(null);
+  const [workdayReview, setWorkdayReview] = useState<WorkdayImportReview | null>(null);
 
   const selectTranscript = async () => {
-    onFallbackUpload?.();
     const api = transcriptApi();
     if (!api) {
       setErrorMessage("Transcript upload is available in the desktop app.");
@@ -64,33 +64,45 @@ export function ImportProgressFlow({
     }
   };
 
-  const startWorkdayImport = () => {
-    setStage("signing_in");
-    setErrorMessage(null);
-
-    setTimeout(() => {
-      setStage("fetching");
-      setTimeout(() => {
-        setStage("review");
-      }, 50);
-    }, 50);
-  };
-
-  const simulateFailure = () => {
-    setStage("signing_in");
-    setErrorMessage(null);
-    setTimeout(() => {
+  const startWorkdayImport = async () => {
+    const api = workdayApi();
+    if (!api) {
+      setErrorMessage("Workday import is available in the desktop app.");
       setStage("failure");
-      setErrorMessage("Unable to sign in or fetch record from Workday.");
-    }, 50);
+      return;
+    }
+    setStage("signing_in");
+    setErrorMessage(null);
+    setWorkdayReview(null);
+    const unsubscribe = api.onProgress((progress) => {
+      if (progress.stage === "signing-in") setStage("signing_in");
+      else if (progress.stage === "fetching") setStage("fetching");
+      else if (progress.stage === "error") {
+        setErrorMessage(progress.message ?? "Could not import records from Workday.");
+        setStage("failure");
+      }
+    });
+    try {
+      const review = await api.start();
+      setWorkdayReview(review);
+      setStage("review");
+    } catch {
+      setStage("failure");
+      setErrorMessage((current) => current ?? "Could not import records from Workday.");
+    } finally {
+      unsubscribe();
+    }
   };
 
-  const handleReviewConfirm = (selectedCourses: CourseCode[]) => {
+  const handleReviewConfirm = async (selectedCourses: CourseCode[]) => {
+    if (workdayReview) {
+      const api = workdayApi();
+      if (!api) throw new Error("Workday import is unavailable");
+      await api.confirm({ ...workdayReview, completed: selectedCourses });
+    }
     setImportedCourses(selectedCourses);
     setStage("done");
-    if (onImportComplete) {
-      onImportComplete(selectedCourses);
-    }
+    onImportComplete?.(selectedCourses);
   };
 
   const handleReviewCancel = () => {
@@ -102,22 +114,16 @@ export function ImportProgressFlow({
       {stage === "idle" && (
         <div className="flow-card idle-card" data-testid="stage-idle">
           <h3>Import Academic Record</h3>
-          <p>
-            {uploadOnly
-              ? "Select a PDF transcript, then review the completed courses before saving them."
-              : "Import your completed courses directly from Workday or via transcript review."}
-          </p>
+          <p>Import your completed courses directly from Workday or via transcript review.</p>
           <div className="flow-actions">
-            {!uploadOnly && (
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={startWorkdayImport}
-                data-testid="start-import-btn"
-              >
-                Start Workday Import
-              </button>
-            )}
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => void startWorkdayImport()}
+              data-testid="start-import-btn"
+            >
+              Start Workday Import
+            </button>
             <button
               type="button"
               className="btn btn-secondary"
@@ -126,16 +132,6 @@ export function ImportProgressFlow({
             >
               Select Transcript PDF
             </button>
-            {!uploadOnly && (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={simulateFailure}
-                data-testid="simulate-failure-btn"
-              >
-                Simulate Failure
-              </button>
-            )}
           </div>
         </div>
       )}
@@ -166,7 +162,18 @@ export function ImportProgressFlow({
       {stage === "review" && (
         <div className="flow-card review-card" data-testid="stage-review">
           <ImportReviewScreen
-            parseResult={uploadedResult ?? parseResult}
+            parseResult={
+              workdayReview
+                ? {
+                    parsedCourses: workdayReview.completed.map((code) => ({
+                      code,
+                      selected: true,
+                    })),
+                    unrecognizedLines: [],
+                  }
+                : (uploadedResult ?? parseResult)
+            }
+            saveToStore={!workdayReview}
             onConfirm={handleReviewConfirm}
             onCancel={handleReviewCancel}
           />
@@ -208,14 +215,14 @@ export function ImportProgressFlow({
               type="button"
               className="btn btn-primary"
               onClick={() => void selectTranscript()}
-              data-testid="upload-instead-btn"
+              data-testid="select-transcript-fallback-btn"
             >
-              Upload Transcript Instead
+              Select Transcript PDF
             </button>
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={startWorkdayImport}
+              onClick={() => void startWorkdayImport()}
               data-testid="try-again-btn"
             >
               Try Again

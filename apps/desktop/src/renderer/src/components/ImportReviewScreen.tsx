@@ -31,6 +31,7 @@ export interface ImportReviewScreenProps {
   parseResult?: TranscriptParseResult;
   onConfirm?: (selectedCourses: CourseCode[]) => Promise<void> | void;
   onCancel?: () => void;
+  saveToStore?: boolean;
 }
 
 interface JevScheduleGlobal {
@@ -52,6 +53,7 @@ export function ImportReviewScreen({
   parseResult = SAMPLE_PARSE_RESULT,
   onConfirm,
   onCancel,
+  saveToStore = true,
 }: ImportReviewScreenProps) {
   const [selectedCodes, setSelectedCodes] = useState<Set<CourseCode>>(() => {
     const initial = new Set<CourseCode>();
@@ -93,10 +95,10 @@ export function ImportReviewScreen({
     const selectedList = Array.from(selectedCodes);
 
     try {
-      const api = getCompletedApi();
-      if (api) {
-        for (const code of selectedList) {
-          await api.set(code, true);
+      if (saveToStore) {
+        const api = getCompletedApi();
+        if (api) {
+          for (const code of selectedList) await api.set(code, true);
         }
       }
 
