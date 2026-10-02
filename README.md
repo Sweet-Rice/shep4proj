@@ -36,8 +36,9 @@ actual number shown, for example, “Showing 50 of 2629 courses.”
 ## Importing your courses
 
 The first Workday import opens an in-app sign-in popup. Sign in through LSU SSO and Duo
-yourself; after authentication, JevSchedule reads the course history and shows a review
-before anything is saved. Your Workday sign-in stays available to later imports until you
+yourself; the popup stays open until JevSchedule has read your Workday session, or until you
+close it. JevSchedule then reads the course history and shows a review before anything is
+saved. Your Workday sign-in stays available to later imports until you
 quit JevSchedule. The official audit is shown on Degree progress after confirmation when
 available; the catalog-based plan remains available if the audit is unavailable. If you
 prefer, or Workday's page format is not recognized, upload a transcript PDF instead.

@@ -6,12 +6,12 @@ This live test requires an LSU Workday account and Duo. Never save screenshots, 
 
 1. Start JevSchedule and open **Courses**.
 2. Select **Start Workday Import**. On a fresh app run, confirm exactly one modal popup opens inside JevSchedule and shows the Microsoft or LSU sign-in page.
-3. Confirm the popup has no tabs, address bar, menu bar, developer tools, or right-click context menu. Complete LSU SSO and Duo.
-4. Confirm the initial Workday `/lsu/d/...` shell does not close the popup by itself. The app probes `/lsu/app-root` through the popup's session and closes only after the response contains a non-empty session token and client version.
+3. Confirm the popup has no tabs, address bar, menu bar, developer tools, or right-click context menu. Complete LSU SSO and Duo. If Microsoft or Duo opens its own MFA window, confirm it opens with the same restrictions and closing it leaves the sign-in popup open.
+4. Confirm the popup stays open through every sign-in step, including the initial Workday `/lsu/d/...` shell and sign-in pages that try to close their window. The app probes `/lsu/app-root` through the popup's session and closes the popup only after the response contains a non-empty session token and client version.
 5. Confirm the import fetches the allowlisted course records and reaches review, or shows a clean error with the transcript-PDF fallback. No course is saved until the user confirms the review.
 6. Start another import before quitting JevSchedule. Confirm the existing session is reused and no sign-in popup opens while its token is valid.
 7. If the session is expired, confirm the app opens one fresh sign-in popup. If a course-data GET returns 401/403, confirm the current attempt is cleared and the importer retries once after fresh sign-in.
-8. Close the popup manually during sign-in. Confirm the import becomes cancelled without leaving a popup or hanging progress state. Separately wait for the configured timeout (five minutes by default) and confirm the popup closes.
+8. Close the popup with its close button during sign-in. Confirm the import shows a clean error with Try Again, the app keeps running, and no popup or MFA window is left behind. Confirm the popup has no timeout: it stays open until sign-in completes or you close it.
 9. Quit JevSchedule. Confirm its in-memory Workday session is cleared. Restart the app and confirm the next import requires sign-in again.
 
 ## Data and privacy checks
