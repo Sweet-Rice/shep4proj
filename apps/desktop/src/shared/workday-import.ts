@@ -1,4 +1,10 @@
-import { CourseCodeSchema, type CourseCode, type PlanTerm, type Season } from "@jevschedule/shared";
+import {
+  CourseCodeSchema,
+  toCatalogCode,
+  type CourseCode,
+  type PlanTerm,
+  type Season,
+} from "@jevschedule/shared";
 import type { TranscriptParseResult } from "@jevschedule/workday";
 import type { AcademicRecordResult } from "@jevschedule/workday/academic-record";
 import type { CurrentRegistrationsResult } from "@jevschedule/workday/current-registrations";
@@ -7,10 +13,10 @@ const COMPLETED_GRADE = /^(?:[ABCD][+-]?|P|Pass)$/i;
 
 /** Whether `grade` earns credit, so the course can enter the completed store. */
 export function isCompletedGrade(grade: string): boolean {
-  return COMPLETED_GRADE.test(grade);
+  return COMPLETED_GRADE.test(grade.trim());
 }
 
-/** A parsed course left out of the store. Carries only the course code, never row text. */
+/** A parsed course left out of the store. Carries its code and sanitized grade reason, never other row text. */
 export interface SkippedCourse {
   code: string;
   reason: string;
@@ -48,12 +54,23 @@ interface ImportRow {
   outcome: Outcome;
 }
 
-const NO_CREDIT = { skip: "grade does not earn credit" };
+/** The local review reason for a grade outside the supported credit and in-progress values. */
+export function noCreditGradeReason(grade: string): string {
+  const displayGrade = grade.trim().replace(/\p{C}/gu, "").slice(0, 12);
+  return `grade "${displayGrade}" does not earn credit`;
+}
 
-/** A null grade (academic record) or "IP" (transcript) means the course is still under way. */
+/** Whether the source marks a course as currently in progress or has not posted a grade. */
+export function isInProgressGrade(grade: string | null): boolean {
+  const normalized = grade?.trim() ?? "";
+  return normalized === "" || /^(?:IP|In Progress|--)$/i.test(normalized);
+}
+
+/** Null, blank, and common in-progress grades mean the course is still under way. */
 function gradeOutcome(grade: string | null): Outcome {
-  if (grade === null || grade.toUpperCase() === "IP") return "in-progress";
-  return isCompletedGrade(grade) ? "completed" : NO_CREDIT;
+  const normalized = grade?.trim() ?? "";
+  if (isInProgressGrade(normalized)) return "in-progress";
+  return isCompletedGrade(normalized) ? "completed" : { skip: noCreditGradeReason(normalized) };
 }
 
 function toStoreImport(rows: ImportRow[]): StoreImport {
@@ -61,26 +78,27 @@ function toStoreImport(rows: ImportRow[]): StoreImport {
   const terms = new Map<string, PlanTerm>();
   const skipped: SkippedCourse[] = [];
   for (const { code: rawCode, term, outcome } of rows) {
-    if (typeof outcome === "object") {
-      skipped.push({ code: rawCode, reason: outcome.skip });
-      continue;
-    }
-    const code = CourseCodeSchema.safeParse(rawCode);
-    if (!code.success) {
+    const parsedCode = CourseCodeSchema.safeParse(rawCode);
+    if (!parsedCode.success) {
       skipped.push({ code: rawCode, reason: "unrecognized course code format" });
       continue;
     }
+    const code = toCatalogCode(parsedCode.data);
+    if (typeof outcome === "object") {
+      skipped.push({ code, reason: outcome.skip });
+      continue;
+    }
     if (outcome === "completed") {
-      completed.add(code.data);
+      completed.add(code);
       continue;
     }
     if (term === null) {
-      skipped.push({ code: code.data, reason: "in-progress term unknown" });
+      skipped.push({ code, reason: "in-progress term unknown" });
       continue;
     }
     const key = `${term.season} ${term.year}`;
     const planTerm = terms.get(key) ?? { season: term.season, year: term.year, courses: [] };
-    if (!planTerm.courses.includes(code.data)) planTerm.courses.push(code.data);
+    if (!planTerm.courses.includes(code)) planTerm.courses.push(code);
     terms.set(key, planTerm);
   }
   return { completed: [...completed].sort(), inProgress: [...terms.values()], skipped };
@@ -101,12 +119,7 @@ export function mapAcademicRecord(record: AcademicRecordResult): StoreImport {
     ...record.transferCredits.map(({ code, grade }) => ({
       code,
       term: null,
-      outcome:
-        grade === null
-          ? { skip: "transfer credit has no grade" }
-          : isCompletedGrade(grade)
-            ? ("completed" as const)
-            : NO_CREDIT,
+      outcome: gradeOutcome(grade),
     })),
   ]);
 }

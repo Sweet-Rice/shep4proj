@@ -8,7 +8,7 @@ export type { Course, CourseKey, Credits } from "./course.js";
 
 export { CatalogYearSchema } from "./catalog-year.js";
 export type { CatalogYear } from "./catalog-year.js";
-export { CourseCodeSchema } from "./course-code.js";
+export { CourseCodeSchema, toCatalogCode } from "./course-code.js";
 export type { CourseCode } from "./course-code.js";
 export { LetterGradeSchema } from "./grade.js";
 export type { LetterGrade } from "./grade.js";

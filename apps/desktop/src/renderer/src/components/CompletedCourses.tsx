@@ -1,5 +1,10 @@
 import { useState, type FormEvent } from "react";
-import { CourseCodeSchema, getRequiredUnmetPrereqs, type CourseCode } from "@jevschedule/shared";
+import {
+  CourseCodeSchema,
+  getRequiredUnmetPrereqs,
+  toCatalogCode,
+  type CourseCode,
+} from "@jevschedule/shared";
 import { useCatalogCourses } from "../hooks/useCatalog.js";
 import { useCompletedCourses } from "../hooks/useCompletedCourses.js";
 import { CourseSearch } from "./CourseSearch.js";
@@ -62,13 +67,14 @@ export function CompletedCourses() {
       setInputError("Enter a course code such as CSC 1350 (2–4 letters, a space, and 4 digits).");
       return;
     }
-    if (!courses.some((course) => course.code === parsed.data)) {
-      setInputError(`${parsed.data} is not in the LSU course catalog.`);
+    const code = toCatalogCode(parsed.data);
+    if (!courses.some((course) => course.code === code)) {
+      setInputError(`${code} is not in the LSU course catalog.`);
       return;
     }
     setInputError(null);
-    setSelected(parsed.data);
-    setInput(parsed.data);
+    setSelected(code);
+    setInput(code);
   }
 
   return (

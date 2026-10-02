@@ -79,7 +79,7 @@ describe("mapAcademicRecord", () => {
         "CSC 1350",
         "CSC 1351",
         "CSC 2259",
-        "CSC 4999G",
+        "CSC 4999",
         "ENGL 1000",
         "ENGL 1001",
         "MATH 1431",
@@ -88,13 +88,18 @@ describe("mapAcademicRecord", () => {
         "MATH 2065",
       ],
       inProgress: [{ season: "Fall", year: 2026, courses: ["CSC 3102"] }],
-      skipped: [{ code: "ENGL 1001", reason: "grade does not earn credit" }],
+      skipped: [{ code: "ENGL 1001", reason: 'grade "Withdrawal" does not earn credit' }],
     });
   });
-  it("imports a suffixed course code when it earns credit", () => {
-    const result = mapAcademicRecord(record([recordCourse("CSC 4999G", "A", "completed")]));
+  it("normalizes suffixed codes before storing and deduplicating", () => {
+    const result = mapAcademicRecord(
+      record([
+        recordCourse("CSC 4103G", "A", "completed"),
+        recordCourse("CSC 4103", "A-", "completed"),
+      ]),
+    );
 
-    expect(result.completed).toEqual(["CSC 4999G"]);
+    expect(result.completed).toEqual(["CSC 4103"]);
     expect(result.skipped).toEqual([]);
   });
 
@@ -110,10 +115,10 @@ describe("mapAcademicRecord", () => {
     );
 
     expect(result.completed).toEqual(["CSC 1350"]);
-    expect(result.skipped.map((course) => course.code)).toEqual([
-      "CSC 1351",
-      "CSC 2259",
-      "CSC 3102",
+    expect(result.skipped).toEqual([
+      { code: "CSC 1351", reason: 'grade "F" does not earn credit' },
+      { code: "CSC 2259", reason: 'grade "Withdrawal" does not earn credit' },
+      { code: "CSC 3102", reason: 'grade "Audit" does not earn credit' },
     ]);
   });
 
@@ -141,6 +146,37 @@ describe("mapAcademicRecord", () => {
       { season: "Fall", year: 2026, courses: ["CSC 3102"] },
     ]);
   });
+  it("treats blank and common in-progress grades as in progress", () => {
+    const result = mapAcademicRecord(
+      record([
+        recordCourse("CSC 3501", "", "in-progress"),
+        recordCourse("CSC 3304", " In Progress ", "in-progress"),
+        recordCourse("HNRS 2021", "--", "in-progress"),
+      ]),
+    );
+
+    expect(result.inProgress).toEqual([
+      { season: "Fall", year: 2026, courses: ["CSC 3501", "CSC 3304", "HNRS 2021"] },
+    ]);
+    expect(result.skipped).toEqual([]);
+  });
+
+  it("shows trimmed grade values on no-credit transfer skips", () => {
+    const transfer = (code: string, grade: string | null): TransferCredit => {
+      const [subject = "", number = ""] = code.split(" ");
+      return { code, subject, number, title: "", creditHours: 3, grade, source: null };
+    };
+    const result = mapAcademicRecord({
+      courses: [],
+      transferCredits: [transfer("CHEM 1201", " F "), transfer("BIOL 1201", " AU ")],
+      unrecognizedRows: [],
+    });
+
+    expect(result.skipped).toEqual([
+      { code: "CHEM 1201", reason: 'grade "F" does not earn credit' },
+      { code: "BIOL 1201", reason: 'grade "AU" does not earn credit' },
+    ]);
+  });
 
   it("counts transfer credit only when its grade earns credit", () => {
     const transfer = (code: string, grade: string | null): TransferCredit => {
@@ -150,6 +186,7 @@ describe("mapAcademicRecord", () => {
     const result = mapAcademicRecord({
       courses: [],
       transferCredits: [
+        transfer("CSC 4103G", "A"),
         transfer("MATH 1550", "Pass"),
         transfer("CHEM 1201", "F"),
         transfer("BIOL 1201", null),
@@ -157,11 +194,11 @@ describe("mapAcademicRecord", () => {
       unrecognizedRows: [],
     });
 
-    expect(result.completed).toEqual(["MATH 1550"]);
+    expect(result.completed).toEqual(["CSC 4103", "MATH 1550"]);
     expect(result.inProgress).toEqual([]);
     expect(result.skipped).toEqual([
-      { code: "CHEM 1201", reason: "grade does not earn credit" },
-      { code: "BIOL 1201", reason: "transfer credit has no grade" },
+      { code: "CHEM 1201", reason: 'grade "F" does not earn credit' },
+      { code: "BIOL 1201", reason: "in-progress term unknown" },
     ]);
   });
 
@@ -179,7 +216,7 @@ describe("mapAcademicRecord", () => {
 });
 
 describe("mapTranscript", () => {
-  it("keeps suffixed course codes and IP rows while excluding failed or withdrawn rows", () => {
+  it("normalizes suffixed codes from a transcript and excludes non-credit grades", () => {
     const result = mapTranscript({
       courses: [
         { code: "CSC 1350", term: { season: "Fall", year: 2024 }, grade: "A-" },
@@ -194,13 +231,29 @@ describe("mapTranscript", () => {
     });
 
     expect(result).toEqual({
-      completed: ["CSC 1350", "CSC 4103G", "MATH 1021"],
+      completed: ["CSC 1350", "CSC 4103", "MATH 1021"],
       inProgress: [{ season: "Fall", year: 2026, courses: ["CSC 3102"] }],
       skipped: [
-        { code: "CSC 1351", reason: "grade does not earn credit" },
-        { code: "CSC 4562", reason: "grade does not earn credit" },
+        { code: "CSC 1351", reason: 'grade "F" does not earn credit' },
+        { code: "CSC 4562", reason: 'grade "Withdrawal" does not earn credit' },
       ],
     });
+  });
+  it("strips non-printable grade characters and truncates displayed grades", () => {
+    const result = mapTranscript({
+      courses: [
+        {
+          code: "CSC 3501",
+          term: { season: "Fall", year: 2026 },
+          grade: " W\u0000ABCDEFGHIJKL ",
+        },
+      ],
+      unrecognizedLines: [],
+    });
+
+    expect(result.skipped).toEqual([
+      { code: "CSC 3501", reason: 'grade "WABCDEFGHIJK" does not earn credit' },
+    ]);
   });
 
   it("matches IP case-insensitively, like the transcript parser", () => {
@@ -287,7 +340,7 @@ describe("mapCurrentRegistrations", () => {
     });
 
     for (const result of [fromRegistrations, fromTranscript]) {
-      expect(result.inProgress).toEqual([{ season: "Fall", year: 2026, courses: ["CSC 4103G"] }]);
+      expect(result.inProgress).toEqual([{ season: "Fall", year: 2026, courses: ["CSC 4103"] }]);
       expect(result.skipped).toEqual([]);
     }
   });

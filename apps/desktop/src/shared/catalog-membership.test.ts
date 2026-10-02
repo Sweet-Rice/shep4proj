@@ -14,8 +14,8 @@ describe("restrictReviewToCatalog", () => {
         { season: "Spring", year: 2027, courses: ["ENGL 9999"] },
       ],
       skipped: [
-        { code: "HIST 9999", reason: "grade does not earn credit" },
-        { code: "HIST 9999", reason: "grade does not earn credit" },
+        { code: "HIST 9999", reason: 'grade "W" does not earn credit' },
+        { code: "HIST 9999", reason: 'grade "W" does not earn credit' },
       ],
     };
 
@@ -23,7 +23,7 @@ describe("restrictReviewToCatalog", () => {
       completed: ["CSC 1350"],
       inProgress: [{ season: "Fall", year: 2026, courses: ["CSC 4330"] }],
       skipped: [
-        { code: "HIST 9999", reason: "grade does not earn credit" },
+        { code: "HIST 9999", reason: 'grade "W" does not earn credit' },
         { code: "MATH 9999", reason: NOT_IN_CATALOG_REASON },
         { code: "ENGL 9999", reason: NOT_IN_CATALOG_REASON },
       ],
