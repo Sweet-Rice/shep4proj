@@ -36,7 +36,7 @@
 }
 .area-summary {
   display: grid;
-  grid-template-columns: minmax(190px, 1fr) minmax(100px, 2fr) auto auto 16px;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(160px, 1fr) 9.5em 9em 16px;
   gap: var(--space-4);
   align-items: center;
   list-style: none;
@@ -61,6 +61,7 @@
   font-size: var(--text-lg);
   font-weight: 600;
   color: var(--text);
+  white-space: nowrap;
 }
 .area-progress-bar {
   height: 8px;
@@ -165,6 +166,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+@media (max-width: 1100px) {
+  .area-summary {
+    grid-template-columns: minmax(160px, 1.2fr) minmax(120px, 1fr) 8em 8em 16px;
+    gap: var(--space-2);
+  }
+  .area-name {
+    white-space: normal;
+  }
 }
 @media (max-width: 760px) {
   .area-summary {
