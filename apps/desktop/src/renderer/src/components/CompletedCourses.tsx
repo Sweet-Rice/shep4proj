@@ -87,7 +87,7 @@ export function CompletedCourses() {
       <header className="page-header">
         <h1>Completed courses</h1>
         <p className="page-subtitle">
-          Search the LSU catalog and mark what you have finished. Everything stays on this device.
+          Search the LSU catalog and track the courses you've finished.
         </p>
       </header>
       <div className="courses-layout">
@@ -120,9 +120,7 @@ export function CompletedCourses() {
                 </span>
               )}
             </div>
-            <p className="muted">
-              Enter a course code to mark it complete or incomplete. Changes stay on this device.
-            </p>
+            <p className="muted">Enter a course code to mark it complete or incomplete.</p>
             <form className="toolbar" onSubmit={selectCourse}>
               <div className="course-entry">
                 <label className="field" htmlFor="course-code">
@@ -163,7 +161,7 @@ export function CompletedCourses() {
                   ? "Saving completion…"
                   : error
                     ? ""
-                    : "Changes saved on this device."}
+                    : ""}
             </p>
             {loaded && codes.length === 0 && (
               <p className="empty-state">
