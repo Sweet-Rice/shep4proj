@@ -7,25 +7,39 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: var(--text-base)/1.5 var(--font);
+  font: var(--weight-regular) var(--text-base)/var(--leading-normal) var(--font);
+  font-feature-settings: "cv11", "ss03";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 h1 {
   font-size: var(--text-2xl);
-  font-weight: 650;
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
   margin: 0 0 var(--space-6);
 }
 h2 {
   font-size: var(--text-lg);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
   margin: 0 0 var(--space-3);
 }
 h3 {
   font-size: var(--text-base);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
   margin: 0;
 }
+a {
+  color: var(--accent);
+}
+::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
 :focus-visible {
-  outline: 2px solid var(--focus);
+  outline: var(--focus-ring);
   outline-offset: 2px;
 }
 .app-content ul {
@@ -38,6 +52,14 @@ h3 {
 .block-title,
 .eligible-course-code {
   font-family: var(--font-mono);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   color: var(--accent-strong);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
