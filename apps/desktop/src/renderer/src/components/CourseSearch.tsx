@@ -172,8 +172,8 @@ function CourseOfferingDisclosure({ code }: { code: CourseCode }) {
             <p>Loading offering history…</p>
           ) : error ? (
             <p role="alert">
-              Course catalog unavailable. Start the server (pnpm dev) to search courses; you can
-              still enter codes below.
+              Course catalog unavailable. The JevSchedule server may be waking up, which can take up
+              to a minute. You can still enter codes below.
             </p>
           ) : terms.length > 0 ? (
             <p>
