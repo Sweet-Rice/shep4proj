@@ -29,6 +29,11 @@ export const MIGRATIONS: readonly string[] = [
      id INTEGER PRIMARY KEY CHECK (id = 1),
      credit_limit INTEGER NOT NULL CHECK (credit_limit > 0)
    ) STRICT`,
+  `CREATE TABLE academic_progress_audit (
+     id INTEGER PRIMARY KEY CHECK (id = 1),
+     imported_at TEXT NOT NULL,
+     result_json TEXT NOT NULL
+   ) STRICT`,
 ];
 
 /** Thrown when the database was written by a newer app version than this one. */

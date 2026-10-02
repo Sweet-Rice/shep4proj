@@ -11,6 +11,7 @@ import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createCatalogClient, resolveApiBaseUrl } from "./catalog.js";
 import { isAppRendererUrl, registerIpcHandlers } from "./ipc.js";
+import { createAcademicProgressStore } from "./store/academic-progress.js";
 import { createCompletedStore } from "./store/completed.js";
 import { openLocalDb } from "./store/db.js";
 import { createPlanStore } from "./store/plan.js";
@@ -56,6 +57,7 @@ void app.whenReady().then(() => {
       catalog: createCatalogClient(
         resolveApiBaseUrl(process.env.JEVSCHEDULE_API_URL, import.meta.env.MAIN_VITE_API_URL),
       ),
+      academicProgress: createAcademicProgressStore(db),
     },
     (event) => isAppRendererUrl(event.senderFrame?.url, rendererUrl),
     async () => {

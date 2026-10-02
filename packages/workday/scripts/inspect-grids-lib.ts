@@ -99,45 +99,111 @@ export function panelStackLabels(candidate: GridCandidate): string[] {
   });
 }
 
-/** Renders one matching HAR entry's grid structure as plain text lines. Returns `[]` for a non-matching or unparsable entry. */
-export function formatEntry(entry: HarEntry): string[] {
+/** Cell-shape dump. String values are represented only by length, except course codes. */
+function valueShape(value: unknown): string {
+  if (typeof value === "string") {
+    return /^[A-Z]{2,4} \d{4}[A-Z]{0,2}$/.test(value)
+      ? JSON.stringify(value)
+      : `<string len=${value.length}>`;
+  }
+  if (value === null) return "null";
+  if (Array.isArray(value)) return `array(len=${value.length})`;
+  if (typeof value === "object") return "object";
+  return typeof value;
+}
+
+function renderCell(value: unknown, indent: string, seen: Set<object>): string[] {
+  if (!isPlainObject(value)) return [`${indent}${valueShape(value)}`];
+  if (seen.has(value)) return [`${indent}object (cycle)`];
+  seen.add(value);
+  const lines = [`${indent}keys: ${Object.keys(value).sort().join(", ") || "(none)"}`];
+  for (const [key, child] of Object.entries(value)) {
+    if (key === "text" || key === "value") lines.push(`${indent}${key}: ${valueShape(child)}`);
+    else if (Array.isArray(child)) {
+      lines.push(`${indent}${key}: array(len=${child.length})`);
+      for (const item of child) lines.push(...renderCell(item, `${indent}  `, seen));
+    } else if (isPlainObject(child)) {
+      lines.push(`${indent}${key}: object`);
+      lines.push(...renderCell(child, `${indent}  `, seen));
+    } else lines.push(`${indent}${key}: ${valueShape(child)}`);
+  }
+  seen.delete(value);
+  return lines;
+}
+
+function formatCellsEntry(entry: HarEntry): string[] {
   const urlPath = redactedPathOnly(entry.request.url);
   if (!isInterestingPath(urlPath) || !isJsonContentType(entry)) return [];
-
   const bodyText = entry.response?.content?.text;
   if (typeof bodyText !== "string" || bodyText.trim() === "") return [];
+  let json: unknown;
+  try {
+    json = JSON.parse(bodyText);
+  } catch {
+    return [];
+  }
+  const lines = [`${entry.request.method} ${urlPath}`];
+  for (const candidate of findGrids(json, "", { panelWidgets: [...PANEL_WIDGETS] })) {
+    const node = candidate.node;
+    lines.push(
+      `  grid: ${typeof node.label === "string" ? node.label : "(no label)"} rows=${gridRowCount(node)}`,
+    );
+    const columns = Array.isArray(node.columns) ? node.columns : [];
+    const rows = Array.isArray(node.rows) ? node.rows : [];
+    const columnIds = new Set<string>();
+    for (const column of columns) {
+      if (!isPlainObject(column) || typeof column.columnId !== "string") continue;
+      columnIds.add(column.columnId);
+      lines.push(
+        `    column ${column.columnId} ${typeof column.label === "string" ? column.label : "(no label)"}`,
+      );
+    }
+    for (const row of rows) {
+      if (!isPlainObject(row) || !isPlainObject(row.cellsMap)) continue;
+      const rowPrefix = `      row ${String(row.rowIndex)}: `;
+      for (const [columnId, cell] of Object.entries(row.cellsMap)) {
+        if (columnIds.has(columnId)) continue;
+        lines.push(`    nested column ${columnId}`);
+        lines.push(...renderCell(cell, rowPrefix, new Set()));
+      }
+      for (const columnId of columnIds) {
+        const cell = row.cellsMap[columnId];
+        if (cell !== undefined) lines.push(...renderCell(cell, rowPrefix, new Set()));
+      }
+    }
+  }
+  return lines;
+}
 
+/** Renders one matching HAR entry's grid structure as plain text lines. Returns `[]` for a non-matching or unparsable entry. */
+export function formatEntry(entry: HarEntry, cells = false): string[] {
+  if (cells) return formatCellsEntry(entry);
+  const urlPath = redactedPathOnly(entry.request.url);
+  if (!isInterestingPath(urlPath) || !isJsonContentType(entry)) return [];
+  const bodyText = entry.response?.content?.text;
+  if (typeof bodyText !== "string" || bodyText.trim() === "") return [];
   let json: unknown;
   try {
     json = JSON.parse(bodyText);
   } catch {
     return [`${entry.request.method} ${urlPath} — response body is not valid JSON, skipping`];
   }
-
   const lines: string[] = [`${entry.request.method} ${urlPath}`];
-
-  if (isPlainObject(json) && typeof json.title === "string") {
-    lines.push(`  title: ${json.title}`);
-  }
-
+  if (isPlainObject(json) && typeof json.title === "string") lines.push(`  title: ${json.title}`);
   const grids = findGrids(json, "", { panelWidgets: [...PANEL_WIDGETS] });
   if (grids.length === 0) {
     lines.push("  no grid widgets found");
     return lines;
   }
-
   for (const candidate of grids) {
     const node = candidate.node;
     const label = typeof node.label === "string" ? node.label : "(no label)";
-    const rowCount = gridRowCount(node);
     const columns = columnLabelPairs(node);
     const enclosing = panelStackLabels(candidate);
-
-    lines.push(`  grid: label="${label}" rowCount=${rowCount}`);
+    lines.push(`  grid: label="${label}" rowCount=${gridRowCount(node)}`);
     lines.push(`    columns: ${columns.length > 0 ? columns.join(", ") : "(none)"}`);
     lines.push(`    enclosing panels: ${enclosing.length > 0 ? enclosing.join(" > ") : "(none)"}`);
   }
-
   return lines;
 }
 
@@ -148,17 +214,23 @@ export interface InspectHarResult {
   matchedCount: number;
 }
 
-/** Filters `har`'s entries to `generic-hub`/`.htmld` JSON responses and formats each one. Pure — no I/O, no console output. */
-export function inspectHar(har: Har): InspectHarResult {
+/** Filters and formats matching HAR responses. */
+export function inspectHar(
+  har: Har,
+  options: { cells?: boolean; pathContains?: string } = {},
+): InspectHarResult {
   const lines: string[] = [];
   let matchedCount = 0;
-
   for (const entry of har.log.entries) {
     const urlPath = redactedPathOnly(entry.request.url);
-    if (!isInterestingPath(urlPath) || !isJsonContentType(entry)) continue;
+    if (
+      !isInterestingPath(urlPath) ||
+      !isJsonContentType(entry) ||
+      (options.pathContains && !urlPath.includes(options.pathContains))
+    )
+      continue;
     matchedCount++;
-    lines.push("", ...formatEntry(entry));
+    lines.push("", ...formatEntry(entry, options.cells));
   }
-
   return { lines, matchedCount };
 }

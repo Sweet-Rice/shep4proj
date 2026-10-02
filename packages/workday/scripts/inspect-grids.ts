@@ -30,14 +30,20 @@ function repoRoot(): string {
   return execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
 }
 
-function parseArgs(argv: string[]): { in: string | undefined } {
+function parseArgs(argv: string[]): {
+  in: string | undefined;
+  cells: boolean;
+  pathContains: string | undefined;
+} {
   let inFile: string | undefined;
+  let pathContains: string | undefined;
+  let cells = false;
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === "--in") {
-      inFile = argv[++i];
-    }
+    if (argv[i] === "--in") inFile = argv[++i];
+    else if (argv[i] === "--cells") cells = true;
+    else if (argv[i] === "--path-contains") pathContains = argv[++i];
   }
-  return { in: inFile };
+  return { in: inFile, cells, pathContains };
 }
 
 function findNewestHar(dir: string): string {
@@ -70,11 +76,11 @@ function main(): void {
     throw new Error(`${harPath} does not look like a HAR file (missing log.entries).`);
   }
 
-  const { lines, matchedCount } = inspectHar(parsed);
-  for (const line of lines) {
-    console.log(line);
-  }
-
+  const { lines, matchedCount } = inspectHar(parsed, {
+    cells: args.cells,
+    pathContains: args.pathContains,
+  });
+  for (const line of lines) console.log(line);
   console.log(`\n${matchedCount} matching JSON response(s) under /generic-hub/ or *.htmld.`);
 }
 

@@ -15,6 +15,7 @@ beforeEach(() => {
         save: async () => {},
       },
       transcript: { select: async () => null },
+      academicProgress: { getAudit: async () => null },
       catalog: {
         listCourses: async () => [],
         getCourseDetails: async () => ({}),

@@ -209,3 +209,15 @@
     grid-row: 1 / span 2;
   }
 }
+
+.degree-audit-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.degree-audit-prompt {
+  color: var(--text-muted);
+  margin: 0 0 var(--space-5);
+}

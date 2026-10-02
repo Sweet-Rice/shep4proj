@@ -14,6 +14,10 @@
       "types": "./dist/academic-record/index.d.ts",
       "default": "./dist/academic-record/index.js"
     },
+    "./academic-progress": {
+      "types": "./dist/academic-progress/index.d.ts",
+      "default": "./dist/academic-progress/index.js"
+    },
     "./browser": {
       "types": "./dist/browser/index.d.ts",
       "default": "./dist/browser/index.js"

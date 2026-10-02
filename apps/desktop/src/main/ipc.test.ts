@@ -5,12 +5,17 @@ import {
   type WorkdayImportProgress,
   type WorkdayImportReview,
 } from "../shared/ipc.js";
-import { isAppRendererUrl, registerIpcHandlers, UntrustedIpcSenderError } from "./ipc.js";
+import type { AcademicProgressResult } from "@jevschedule/workday/academic-progress";
 import { CourseNotInCatalogError, NOT_IN_CATALOG_REASON } from "../shared/catalog-membership.js";
+import {
+  createAcademicProgressStore,
+  type AcademicProgressStore,
+} from "./store/academic-progress.js";
 import { createCompletedStore } from "./store/completed.js";
 import { createPlanStore } from "./store/plan.js";
 import { openLocalDb, type LocalDb } from "./store/db.js";
 
+import { isAppRendererUrl, registerIpcHandlers, UntrustedIpcSenderError } from "./ipc.js";
 type Handler = (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown;
 
 /** Records handlers the way `ipcMain.handle` would, and lets tests invoke them. */
@@ -50,6 +55,33 @@ describe("registerIpcHandlers", () => {
     listDegrees: ReturnType<typeof vi.fn>;
     getDegree: ReturnType<typeof vi.fn>;
   };
+  let auditStore: AcademicProgressStore;
+  const academicProgress: AcademicProgressResult = {
+    overall: {
+      definedCredits: 120,
+      inProgressCredits: 3,
+      satisfyingCredits: 90,
+      remainingCredits: 30,
+      status: "In Progress",
+    },
+    requirements: [
+      {
+        name: "Core Writing",
+        status: "satisfied",
+        statusText: "Satisfied",
+        remaining: "0",
+        satisfiedWith: [
+          {
+            code: "ENGL 1001",
+            text: "ENGL 1001 - English Composition",
+            academicPeriod: "Fall Semester 2025",
+            creditHours: 3,
+          },
+        ],
+      },
+    ],
+    unrecognizedRows: [],
+  };
   let workday: { run: ReturnType<typeof vi.fn> };
   const importedReview: WorkdayImportReview = {
     completed: ["CSC 1350"],
@@ -58,9 +90,11 @@ describe("registerIpcHandlers", () => {
       { season: "Spring", year: 2027, courses: ["CSC 1350"] },
     ],
     skipped: [],
+    academicProgress,
   };
   beforeEach(() => {
     db = openLocalDb(":memory:");
+    auditStore = createAcademicProgressStore(db);
     ipc = fakeIpcMain();
     trusted = true;
     catalog = {
@@ -79,7 +113,12 @@ describe("registerIpcHandlers", () => {
     };
     registerIpcHandlers(
       ipc,
-      { completed: createCompletedStore(db), plan: createPlanStore(db), catalog },
+      {
+        completed: createCompletedStore(db),
+        plan: createPlanStore(db),
+        catalog,
+        academicProgress: auditStore,
+      },
       () => trusted,
       undefined,
       { workday },
@@ -148,6 +187,13 @@ describe("registerIpcHandlers", () => {
       skipped: [{ code: "MATH 9999", reason: NOT_IN_CATALOG_REASON }],
     });
   });
+  it("keeps the import review usable when the academic progress audit is unavailable", async () => {
+    workday.run.mockResolvedValue({ ...importedReview, academicProgress: null });
+    await expect(ipc.invoke(IPC_CHANNELS.workdayImport)).resolves.toMatchObject({
+      academicProgress: null,
+    });
+    expect(ipc.invoke(IPC_CHANNELS.academicProgressGet)).toBeNull();
+  });
 
   it("rejects Workday import and confirm from untrusted senders without touching anything", () => {
     trusted = false;
@@ -162,10 +208,11 @@ describe("registerIpcHandlers", () => {
     expect(ipc.invoke(IPC_CHANNELS.planGet)).toMatchObject({ terms: [] });
   });
 
-  it("stores nothing on Workday import and persists only on confirm", async () => {
+  it("stores nothing on Workday import and persists the audit only on confirm", async () => {
     await ipc.invoke(IPC_CHANNELS.workdayImport);
     expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual([]);
     expect(ipc.invoke(IPC_CHANNELS.planGet)).toMatchObject({ terms: [] });
+    expect(ipc.invoke(IPC_CHANNELS.academicProgressGet)).toBeNull();
     await ipc.invoke(IPC_CHANNELS.workdayConfirm, importedReview);
     expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual(["CSC 1350"]);
     expect(ipc.invoke(IPC_CHANNELS.planGet)).toMatchObject({
@@ -173,6 +220,10 @@ describe("registerIpcHandlers", () => {
         { season: "Fall", year: 2026, courses: ["CSC 4330"] },
         { season: "Spring", year: 2027, courses: ["CSC 1350"] },
       ],
+    });
+    expect(ipc.invoke(IPC_CHANNELS.academicProgressGet)).toMatchObject({
+      importedAt: expect.any(String),
+      result: academicProgress,
     });
   });
   it("rejects Workday confirmation before writing any non-catalog course", async () => {

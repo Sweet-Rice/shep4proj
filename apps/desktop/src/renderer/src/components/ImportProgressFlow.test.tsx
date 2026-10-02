@@ -47,6 +47,7 @@ describe("ImportProgressFlow", () => {
     expect(screen.getByTestId("stage-fetching")).toBeInTheDocument();
     await act(async () => resolveStart(review));
     expect(await screen.findByTestId("stage-review")).toBeInTheDocument();
+    expect(screen.getByText("Academic progress unavailable.")).toBeInTheDocument();
     expect(start).toHaveBeenCalledOnce();
   });
 
