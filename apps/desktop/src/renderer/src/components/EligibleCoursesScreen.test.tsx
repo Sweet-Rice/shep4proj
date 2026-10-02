@@ -207,7 +207,7 @@ describe("EligibleCoursesScreen", () => {
     render(<EligibleCoursesScreen />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Could not reach the JevSchedule server. Start it with pnpm dev and reopen this tab.",
+      "Couldn't reach the JevSchedule server. It may be waking up, which can take up to a minute. Try again.",
     );
     expect(screen.queryByRole("region")).not.toBeInTheDocument();
   });
@@ -217,7 +217,7 @@ describe("EligibleCoursesScreen", () => {
     render(<EligibleCoursesScreen />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Could not reach the JevSchedule server. Start it with pnpm dev and reopen this tab.",
+      "Couldn't reach the JevSchedule server. It may be waking up, which can take up to a minute. Try again.",
     );
     expect(screen.queryByRole("region")).not.toBeInTheDocument();
   });

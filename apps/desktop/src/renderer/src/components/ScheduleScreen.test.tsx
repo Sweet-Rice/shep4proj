@@ -295,7 +295,7 @@ describe("ScheduleScreen", () => {
     await user.click(screen.getByRole("button", { name: "Add course" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Could not reach the JevSchedule server. Start it with pnpm dev and reopen this tab.",
+      "Couldn't reach the JevSchedule server. It may be waking up, which can take up to a minute. Try again.",
     );
   });
 
@@ -305,7 +305,7 @@ describe("ScheduleScreen", () => {
 
     await screen.findByRole("combobox", { name: "Term" });
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Could not reach the JevSchedule server. Start it with pnpm dev and reopen this tab.",
+      "Couldn't reach the JevSchedule server. It may be waking up, which can take up to a minute. Try again.",
     );
     expect(screen.getAllByRole("alert")).toHaveLength(1);
   });

@@ -1,6 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Course, CourseCode, CourseDetail, CourseOfferingHistory } from "@jevschedule/shared";
 
+/** Matches the cap the main process enforces on one course-details request. */
+const COURSE_DETAILS_CHUNK_SIZE = 500;
+
+async function fetchCourseDetailsInChunks(
+  codes: readonly CourseCode[],
+): Promise<Record<CourseCode, CourseDetail>> {
+  // Sequential on purpose: the main process already fans each chunk out over several HTTP workers.
+  const merged: Record<CourseCode, CourseDetail> = {};
+  for (let i = 0; i < codes.length; i += COURSE_DETAILS_CHUNK_SIZE) {
+    const chunk = codes.slice(i, i + COURSE_DETAILS_CHUNK_SIZE);
+    Object.assign(merged, await window.jevschedule.catalog.getCourseDetails(chunk));
+  }
+  return merged;
+}
+
 function asError(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error));
 }
@@ -57,7 +72,7 @@ export function useCourseDetails(codes: readonly CourseCode[]): {
       };
     }
     setLoading(true);
-    window.jevschedule.catalog.getCourseDetails(normalizedCodes).then(
+    fetchCourseDetailsInChunks(normalizedCodes).then(
       (result) => {
         if (cancelled) return;
         setDetails(result);

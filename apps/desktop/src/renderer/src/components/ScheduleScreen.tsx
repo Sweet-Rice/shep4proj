@@ -132,8 +132,8 @@ export function ScheduleScreen() {
               {loading && <p role="status">Loading sections…</p>}
               {(error || catalogError) && (
                 <p role="alert">
-                  Could not reach the JevSchedule server. Start it with pnpm dev and reopen this
-                  tab.
+                  Couldn't reach the JevSchedule server. It may be waking up, which can take up to a
+                  minute. Try again.
                 </p>
               )}
               {courseCodes.map((code) => (

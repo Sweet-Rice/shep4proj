@@ -56,8 +56,8 @@ export function DegreeProgressScreen() {
 
       {degreeError && (
         <p role="alert" className="error-message">
-          Could not load the degree program from the server. Start it with pnpm dev and reopen this
-          tab.
+          Couldn't reach the JevSchedule server to load the degree program. It may be waking up,
+          which can take up to a minute. Try again.
         </p>
       )}
       {completedError && (
