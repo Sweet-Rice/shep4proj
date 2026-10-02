@@ -129,7 +129,7 @@ function collectInline(node: DomNode, out: Array<string | DomElement>): void {
  * flat inline content. Italic (`<em>`) runs carry the prerequisite line and
  * notes, and the bare text between them is the description:
  *
- * - an empty `<em>` is ignored;
+ * - an empty `<em>` is ignored and ends any pending optional label;
  * - an `<em>` ending in `:` is a label and the next non-empty `<em>` (or
  *   unwrapped inline text/anchors for `Prereq.:`) is its value. `Prereq.:`
  *   fills {@link CourseDetail.prerequisiteText} and
@@ -141,9 +141,9 @@ function collectInline(node: DomNode, out: Array<string | DomElement>): void {
  * Whitespace is collapsed everywhere and non-breaking spaces count as spaces.
  *
  * Pure and network-free. Throws {@link CatalogShapeError} when the heading is
- * missing or malformed, a label has no value, the prerequisite label appears
- * twice, or a prerequisite link's `aria-label` is not a course code, rather
- * than returning a partial course.
+ * missing or malformed, the prerequisite label appears twice, or a
+ * prerequisite link's `aria-label` is not a course code, rather than returning
+ * a partial course. Empty optional labels are ignored.
  */
 export function parseCourseDetail(html: string): CourseDetail {
   const $ = load(html);
@@ -210,6 +210,7 @@ export function parseCourseDetail(html: string): CourseDetail {
 
     const text = collapse(visibleText(item));
     if (text === "") {
+      pendingLabel = null;
       continue;
     }
     if (pendingLabel === null) {
@@ -340,9 +341,7 @@ export function parseCourseDetail(html: string): CourseDetail {
     }
   }
 
-  if (pendingLabel !== null) {
-    throw new CatalogShapeError(`${code}: label "${pendingLabel}" has no value`);
-  }
+  // Labels are optional; a label with no value does not make the course unusable.
   let description = collapse(descriptionParts.join(""));
   if (description !== "") {
     const seeIndex = notes.findIndex((n) => /^See$/i.test(n));
