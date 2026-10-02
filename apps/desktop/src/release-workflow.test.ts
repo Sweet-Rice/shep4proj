@@ -49,9 +49,7 @@ describe("release.yml workflow configuration", () => {
     expect(guardIndex).toBeGreaterThan(-1);
     expect(guardIndex).toBeLessThan(buildIndex);
     expect(guardStep).toContain("if: ${{ vars.JEVSCHEDULE_API_URL == '' }}");
-    expect(guardStep).toContain(
-      'echo "Set the JEVSCHEDULE_API_URL repository variable" && exit 1',
-    );
+    expect(guardStep).toContain('echo "Set the JEVSCHEDULE_API_URL repository variable" && exit 1');
     expect(installerIndex).toBeGreaterThan(guardIndex);
     expect(installerStep).toContain("MAIN_VITE_API_URL: ${{ vars.JEVSCHEDULE_API_URL }}");
   });
