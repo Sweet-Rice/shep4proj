@@ -6,7 +6,7 @@ export function getTestDatabaseUrl(): string | undefined {
 }
 
 export async function truncateCourses(db: Db): Promise<void> {
-  await db.execute(sql`TRUNCATE courses RESTART IDENTITY`);
+  await db.execute(sql`TRUNCATE courses, catalog_department_scrapes RESTART IDENTITY`);
 }
 
 export async function truncateSections(db: Db): Promise<void> {

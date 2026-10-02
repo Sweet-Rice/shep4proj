@@ -45,6 +45,16 @@ export const courses = pgTable(
 
 export type CourseRow = typeof courses.$inferSelect;
 export type NewCourseRow = typeof courses.$inferInsert;
+export const catalogDepartmentScrapes = pgTable(
+  "catalog_department_scrapes",
+  {
+    catalogYear: text("catalog_year").notNull(),
+    dept: text("dept").notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }).notNull(),
+    failedCount: integer("failed_count").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.catalogYear, table.dept] })],
+);
 
 // One row per section per term, from the public Course Offerings portal (US-11). No foreign
 // key to courses: sections include codes the catalog doesn't list (e.g. CSC 4330G, #196) and

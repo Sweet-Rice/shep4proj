@@ -57,6 +57,13 @@
       "when": 1790925615760,
       "tag": "0007_workable_hannibal_king",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790934376356,
+      "tag": "0008_glossy_sunfire",
+      "breakpoints": true
     }
   ]
 }
