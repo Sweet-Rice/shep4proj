@@ -1,0 +1,11 @@
+{
+  "body": {
+    "widget": "panel",
+    "content": {
+      "widget": "grid",
+      "label": "Overall Academic Progress",
+      "columns": [{ "columnId": "168.3", "label": "Credit Hours Defined" }],
+      "rows": [{ "rowIndex": 1, "cellsMap": { "168.3": { "value": 120 } } }]
+    }
+  }
+}

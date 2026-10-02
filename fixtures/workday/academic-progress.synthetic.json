@@ -1,0 +1,96 @@
+{
+  "title": "Academic Progress",
+  "body": {
+    "widget": "panel",
+    "sections": {
+      "widget": "panelList",
+      "items": [
+        {
+          "widget": "grid",
+          "label": "Overall Academic Progress",
+          "columns": [
+            { "columnId": "168.3", "label": "Credit Hours Defined" },
+            { "columnId": "168.4", "label": "Credit Hours in Progress" },
+            { "columnId": "168.5", "label": "Credit Hours Satisfying" },
+            { "columnId": "168.6", "label": "Remaining" },
+            { "columnId": "168.7", "label": "Status" }
+          ],
+          "rows": [
+            {
+              "rowIndex": 1,
+              "cellsMap": {
+                "168.3": { "value": 120, "text": "120" },
+                "168.4": { "value": 12, "text": "12" },
+                "168.5": { "value": 90, "text": "90" },
+                "168.6": { "value": "30 credits remaining" },
+                "168.7": { "instances": [{ "text": "In Progress" }] }
+              }
+            }
+          ]
+        },
+        {
+          "widget": "grid",
+          "columns": [
+            { "columnId": "320.1", "label": "Requirement" },
+            { "columnId": "320.2", "label": "Status" },
+            { "columnId": "320.3", "label": "Remaining" },
+            { "columnId": "320.4", "label": "Satisfied With" }
+          ],
+          "rows": [
+            {
+              "rowIndex": 1,
+              "cellsMap": {
+                "320.1": { "instances": [{ "text": "Core Writing" }] },
+                "320.2": { "instances": [{ "text": "Satisfied" }] },
+                "320.3": { "value": 0 },
+                "320.4": { "text": "" },
+                "314.1": { "label": "Registrations Used", "instances": [{ "text": "CSC 4330G - Advanced Algorithms" }] },
+                "314.2": { "label": "Academic Period", "instances": [{ "text": "Fall Semester 2026" }] },
+                "314.3": { "label": "Credit Hours", "value": 3 }
+              }
+            },
+            {
+              "rowIndex": 2,
+              "cellsMap": {
+                "320.1": { "instances": [{ "text": "Quantitative Analysis" }] },
+                "320.2": { "instances": [{ "text": "In Progress" }] },
+                "320.3": { "value": 1 },
+                "314.1": { "label": "Registrations Used", "instances": [{ "text": "MATH 1550 - Calculus I" }] },
+                "314.2": { "label": "Academic Period", "instances": [{ "text": "Spring Semester 2026" }] },
+                "314.3": { "label": "Credit Hours", "value": 4 }
+              }
+            },
+            {
+              "rowIndex": 3,
+              "cellsMap": {
+                "320.1": { "instances": [{ "text": "Natural Science" }] },
+                "320.2": { "instances": [{ "text": "Not Satisfied" }] },
+                "320.3": { "text": "6 hours" },
+                "314.1": { "label": "Registrations Used", "instances": [{ "text": "BIO 0000 - Not a catalog course" }] },
+                "314.2": { "label": "Academic Period", "instances": [{ "text": "" }] },
+                "314.3": { "label": "Credit Hours", "value": 0 }
+              }
+            },
+            {
+              "rowIndex": 4,
+              "cellsMap": {
+                "320.1": { "instances": [{ "text": "Program Elective" }] },
+                "320.2": { "instances": [{ "text": "Completed" }] },
+                "320.3": { "text": "0" }
+              }
+            },
+            {
+              "rowIndex": 5,
+              "cellsMap": {
+                "320.1": { "instances": [{ "text": "Review Area" }] },
+                "320.2": { "instances": [{ "text": "Pending Review" }] },
+                "320.3": { "text": "" },
+                "999.1": { "text": "STUDENT NAME: Avery Example; STUDENT ID: 123456789" }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
