@@ -2,6 +2,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { CatalogFetcher } from "@jevschedule/scraper";
 import { createDb, type Db } from "../db/client.js";
 import { courses } from "../db/schema.js";
 import { getTestDatabaseUrl, truncateCourses } from "../test-support/db.js";
@@ -68,5 +69,74 @@ describe.skipIf(!getTestDatabaseUrl())("runCatalogScrape integration", () => {
 
     const restored = (await db.select().from(courses).where(eq(courses.code, "CSC 4330")))[0];
     expect(restored?.title).toBe("Software Systems Development");
+  });
+  it("skips fresh codes without requesting their detail pages", async () => {
+    await truncateCourses(db);
+    const requested: string[] = [];
+    const fixtureFetcher = createFixtureFetcher(fixtureDir);
+    const skippedCode = "CSC 1350";
+    const skippedCoid = FIXTURE_DETAIL_COIDS[skippedCode];
+    if (skippedCoid === undefined) throw new Error("missing fixture COID");
+    const fetcher: CatalogFetcher = {
+      fetchHtml: async (url) => {
+        if (url.includes("coid=")) requested.push(url);
+        return fixtureFetcher.fetchHtml(url);
+      },
+      close: async () => {},
+    };
+
+    const result = await runCatalogScrape({
+      db,
+      fetcher,
+      catalogYear: "2026-2027",
+      catoid: "35",
+      navoid: "3486",
+      prefix: "CSC",
+      codes: Object.keys(FIXTURE_DETAIL_COIDS),
+      skipCodes: new Set([skippedCode]),
+    });
+
+    expect(result.skipped).toBe(1);
+    expect(requested.some((url) => url.includes(skippedCoid))).toBe(false);
+  });
+
+  it("persists each parsed course before continuing after a detail fetch failure", async () => {
+    await truncateCourses(db);
+    const fixtureFetcher = createFixtureFetcher(fixtureDir);
+    const codes = Object.keys(FIXTURE_DETAIL_COIDS) as (keyof typeof FIXTURE_DETAIL_COIDS)[];
+    const thirdCode = codes[2];
+    if (thirdCode === undefined) throw new Error("missing third fixture code");
+    const thirdCoid = FIXTURE_DETAIL_COIDS[thirdCode];
+    if (thirdCoid === undefined) throw new Error("missing third fixture COID");
+    let rowsBeforeFailure = -1;
+    const requested: string[] = [];
+    const fetcher: CatalogFetcher = {
+      fetchHtml: async (url) => {
+        if (url.includes("coid=")) {
+          requested.push(url);
+          if (url.includes(thirdCoid)) {
+            rowsBeforeFailure = (await db.select().from(courses)).length;
+            throw new Error("third detail failed");
+          }
+        }
+        return fixtureFetcher.fetchHtml(url);
+      },
+      close: async () => {},
+    };
+
+    const result = await runCatalogScrape({
+      db,
+      fetcher,
+      catalogYear: "2026-2027",
+      catoid: "35",
+      navoid: "3486",
+      prefix: "CSC",
+      codes,
+    });
+
+    expect(rowsBeforeFailure).toBe(2);
+    expect(requested).toHaveLength(5);
+    expect(result.failed).toEqual([{ code: thirdCode, error: "third detail failed" }]);
+    expect((await db.select().from(courses)).map((row) => row.code)).toHaveLength(4);
   });
 });

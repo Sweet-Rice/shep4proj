@@ -58,8 +58,14 @@ export async function runCatalogScrape(o: {
   navoid: string;
   prefix: string;
   codes?: readonly string[];
+  skipCodes?: ReadonlySet<string>;
   log?: (m: string) => void;
-}): Promise<{ listed: number; upserted: number; failed: { code: string; error: string }[] }> {
+}): Promise<{
+  listed: number;
+  upserted: number;
+  skipped: number;
+  failed: { code: string; error: string }[];
+}> {
   // 1. Fetch catalog pages until one is short; fail closed if the listing never ends.
   const entries: CourseListEntry[] = [];
   let page = 1;
@@ -99,17 +105,16 @@ export async function runCatalogScrape(o: {
     targetEntries = targetEntries.filter((entry) => codeSet.has(entry.code));
   }
 
-  // 4. For each entry sequentially:
-  //    a. detailUrl = courseDetailUrl({ catoid: o.catoid, coid: entry.coid });
-  //    b. html = await o.fetcher.fetchHtml(detailUrl);
-  //    c. detail = parseCourseDetail(html);
-  //    d. if detail.code !== entry.code, record failed { code: entry.code, error: `Detail code mismatch: expected ${entry.code}, got ${detail.code}` }
-  //    e. row = toCourseRow(entry, detail, o.catalogYear); validRows.push(row)
-  //    catch per-course errors into failed.
+  // 4. Fetch and persist each target sequentially, retaining earlier successes after failures.
   const failed: { code: string; error: string }[] = [];
-  const validRows: NewCourseRow[] = [];
+  let upserted = 0;
+  let skipped = 0;
 
   for (const entry of targetEntries) {
+    if (o.skipCodes?.has(entry.code)) {
+      skipped++;
+      continue;
+    }
     try {
       const detailUrl = courseDetailUrl({ catoid: o.catoid, coid: entry.coid });
       o.log?.(`Fetching course detail for ${entry.code}: ${detailUrl}`);
@@ -123,21 +128,12 @@ export async function runCatalogScrape(o: {
         continue;
       }
       const row = toCourseRow(entry, detail, o.catalogYear);
-      validRows.push(row);
+      upserted += await upsertCourses(o.db, [row]);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       failed.push({ code: entry.code, error: message });
     }
   }
 
-  // 5. If validRows.length > 0, upsert all valid rows with one upsertCourses call inside o.db.transaction.
-  let upserted = 0;
-  if (validRows.length > 0) {
-    upserted = await o.db.transaction(async (tx) => {
-      return await upsertCourses(tx as unknown as Db, validRows);
-    });
-  }
-
-  // Return { listed, upserted, failed }.
-  return { listed, upserted, failed };
+  return { listed, upserted, skipped, failed };
 }
