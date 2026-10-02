@@ -24,7 +24,12 @@ export function createAcademicProgressStore(db: LocalDb): AcademicProgressStore 
   return {
     getAudit() {
       const row = select.get();
-      return row ? { importedAt: row.imported_at, result: JSON.parse(row.result_json) as AcademicProgressResult } : null;
+      return row
+        ? {
+            importedAt: row.imported_at,
+            result: JSON.parse(row.result_json) as AcademicProgressResult,
+          }
+        : null;
     },
     saveAudit(result, importedAt = new Date().toISOString()) {
       upsert.run(importedAt, JSON.stringify(result));

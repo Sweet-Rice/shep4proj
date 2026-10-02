@@ -186,14 +186,19 @@ describe("formatEntry / inspectHar", () => {
     const body = {
       widget: "grid",
       columns: [{ columnId: "1", label: "Course" }],
-      rows: [{
-        rowIndex: 0,
-        cellsMap: {
-          "1": { text: "CSC 4103" },
-          "314.1": { label: "Registrations Used", instances: [{ text: "SENSITIVE NAME - CSC 4103" }] },
-          "314.2": { text: "MATH 1550" },
+      rows: [
+        {
+          rowIndex: 0,
+          cellsMap: {
+            "1": { text: "CSC 4103" },
+            "314.1": {
+              label: "Registrations Used",
+              instances: [{ text: "SENSITIVE NAME - CSC 4103" }],
+            },
+            "314.2": { text: "MATH 1550" },
+          },
         },
-      }],
+      ],
     };
     const entry = buildEntry({
       response: {
@@ -213,7 +218,10 @@ describe("formatEntry / inspectHar", () => {
   it("limits cell mode to the requested endpoint path", () => {
     const first = buildEntry();
     const second = buildEntry({
-      request: { method: "GET", url: "https://www.myworkday.com/lsu/generic-hub/task/2998$43459.htmld" },
+      request: {
+        method: "GET",
+        url: "https://www.myworkday.com/lsu/generic-hub/task/2998$43459.htmld",
+      },
     });
     const { lines, matchedCount } = inspectHar(buildHar([first, second]), {
       cells: true,

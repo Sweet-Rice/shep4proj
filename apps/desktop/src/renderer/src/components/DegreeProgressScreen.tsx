@@ -22,7 +22,8 @@ export function DegreeProgressScreen() {
 
   useEffect(() => {
     let active = true;
-    void window.jevschedule.academicProgress.getAudit()
+    void window.jevschedule.academicProgress
+      .getAudit()
       .then((stored) => {
         if (active) setAudit(stored);
       })
@@ -87,7 +88,9 @@ export function DegreeProgressScreen() {
               </button>
             </div>
           ) : (
-            <p className="degree-audit-prompt">Import from Workday to see your official degree audit.</p>
+            <p className="degree-audit-prompt">
+              Import from Workday to see your official degree audit.
+            </p>
           )}
           {audit && !showCatalogPlan ? <WorkdayAcademicProgressView audit={audit} /> : catalogView}
         </>

@@ -1,24 +1,38 @@
 import { z } from "zod";
 
 import { findGrids, isPlainObject, type GridCandidate } from "../workday-json/find-grids.ts";
-import { WorkdayShapeError, type AcademicProgressResult, type AcademicRequirementStatus } from "./types.ts";
+import {
+  WorkdayShapeError,
+  type AcademicProgressResult,
+  type AcademicRequirementStatus,
+} from "./types.ts";
 
-const ProgressCellSchema = z.object({
-  label: z.unknown().optional(),
-  text: z.unknown().optional(),
-  value: z.unknown().optional(),
-  instances: z.array(z.object({ text: z.unknown().optional() }).passthrough()).optional(),
-}).passthrough();
-const ProgressRowSchema = z.object({
-  rowIndex: z.number(),
-  cellsMap: z.record(z.string(), ProgressCellSchema),
-}).passthrough();
-const ProgressGridSchema = z.object({
-  widget: z.literal("grid"),
-  label: z.string().optional(),
-  columns: z.array(z.object({ columnId: z.union([z.string(), z.number()]), label: z.string().optional() }).passthrough()),
-  rows: z.array(ProgressRowSchema),
-}).passthrough();
+const ProgressCellSchema = z
+  .object({
+    label: z.unknown().optional(),
+    text: z.unknown().optional(),
+    value: z.unknown().optional(),
+    instances: z.array(z.object({ text: z.unknown().optional() }).passthrough()).optional(),
+  })
+  .passthrough();
+const ProgressRowSchema = z
+  .object({
+    rowIndex: z.number(),
+    cellsMap: z.record(z.string(), ProgressCellSchema),
+  })
+  .passthrough();
+const ProgressGridSchema = z
+  .object({
+    widget: z.literal("grid"),
+    label: z.string().optional(),
+    columns: z.array(
+      z
+        .object({ columnId: z.union([z.string(), z.number()]), label: z.string().optional() })
+        .passthrough(),
+    ),
+    rows: z.array(ProgressRowSchema),
+  })
+  .passthrough();
 
 type Grid = z.infer<typeof ProgressGridSchema>;
 type Row = Grid["rows"][number];
@@ -36,32 +50,45 @@ function parseGrid(candidate: GridCandidate): Grid {
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     const suffix = issue?.path.join(".");
-    shapeError(`Grid at ${candidate.path} has an unexpected shape`, suffix ? `${candidate.path}.${suffix}` : candidate.path);
+    shapeError(
+      `Grid at ${candidate.path} has an unexpected shape`,
+      suffix ? `${candidate.path}.${suffix}` : candidate.path,
+    );
   }
   return parsed.data;
 }
 
 function resolveColumnId(grid: Grid, label: string, fallbackId: string): string | undefined {
-  return grid.columns.find((column) => column.label?.trim().toLowerCase() === label.toLowerCase())?.columnId.toString()
-    ?? (grid.columns.some((column) => column.columnId.toString() === fallbackId) ? fallbackId : undefined);
+  return (
+    grid.columns
+      .find((column) => column.label?.trim().toLowerCase() === label.toLowerCase())
+      ?.columnId.toString() ??
+    (grid.columns.some((column) => column.columnId.toString() === fallbackId)
+      ? fallbackId
+      : undefined)
+  );
 }
 
 function resolveCellId(row: Row, label: string, fallbackId: string): string {
-  return Object.entries(row.cellsMap).find(([, cell]) =>
-    typeof cell.label === "string" && cell.label.trim().toLowerCase() === label.toLowerCase()
-  )?.[0] ?? fallbackId;
+  return (
+    Object.entries(row.cellsMap).find(
+      ([, cell]) =>
+        typeof cell.label === "string" && cell.label.trim().toLowerCase() === label.toLowerCase(),
+    )?.[0] ?? fallbackId
+  );
 }
 
 function cellText(cell: Cell | undefined): string | null {
   if (!cell) return null;
   const instanceText = cell.instances?.find((instance) => typeof instance.text === "string")?.text;
-  const text = typeof instanceText === "string"
-    ? instanceText
-    : typeof cell.text === "string"
-      ? cell.text
-      : typeof cell.value === "string" || typeof cell.value === "number"
-        ? String(cell.value)
-        : null;
+  const text =
+    typeof instanceText === "string"
+      ? instanceText
+      : typeof cell.text === "string"
+        ? cell.text
+        : typeof cell.value === "string" || typeof cell.value === "number"
+          ? String(cell.value)
+          : null;
   return typeof text === "string" && text.trim() !== "" ? text.trim() : null;
 }
 
@@ -77,10 +104,18 @@ function cellNumber(cell: Cell | undefined): number | null {
 }
 
 function statusFromText(text: string): AcademicRequirementStatus {
-  const normalized = text.trim().toLowerCase().replace(/[\s_]+/g, " ");
+  const normalized = text
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, " ");
   if (["satisfied", "complete", "completed"].includes(normalized)) return "satisfied";
   if (["in progress", "in-progress", "inprogress"].includes(normalized)) return "in-progress";
-  if (["not satisfied", "not-satisfied", "not complete", "not completed", "incomplete"].includes(normalized)) return "not-satisfied";
+  if (
+    ["not satisfied", "not-satisfied", "not complete", "not completed", "incomplete"].includes(
+      normalized,
+    )
+  )
+    return "not-satisfied";
   return "unknown";
 }
 
@@ -97,23 +132,32 @@ function satisfyingRows(row: Row): AcademicProgressResult["requirements"][number
   const code = baseCourseCode(registrationText);
   if (!code) return [];
   const period = cellText(row.cellsMap[resolveCellId(row, "Academic Period", "314.2")]);
-  return [{
-    code,
-    text: registrationText,
-    academicPeriod: period,
-    creditHours: cellNumber(row.cellsMap[resolveCellId(row, "Credit Hours", "314.3")]),
-  }];
+  return [
+    {
+      code,
+      text: registrationText,
+      academicPeriod: period,
+      creditHours: cellNumber(row.cellsMap[resolveCellId(row, "Credit Hours", "314.3")]),
+    },
+  ];
 }
 
 function requirementGrid(candidates: GridCandidate[]): GridCandidate | undefined {
   return candidates.find((candidate) => {
     if (!isPlainObject(candidate.node) || !Array.isArray(candidate.node.columns)) return false;
-    return candidate.node.columns.some((column) => isPlainObject(column) && (column.label === "Requirement" || String(column.columnId) === "320.1"));
+    return candidate.node.columns.some(
+      (column) =>
+        isPlainObject(column) &&
+        (column.label === "Requirement" || String(column.columnId) === "320.1"),
+    );
   });
 }
 
 function overallGrid(candidates: GridCandidate[]): GridCandidate | undefined {
-  return candidates.find((candidate) => isPlainObject(candidate.node) && candidate.node.label === "Overall Academic Progress");
+  return candidates.find(
+    (candidate) =>
+      isPlainObject(candidate.node) && candidate.node.label === "Overall Academic Progress",
+  );
 }
 
 function parseOverall(candidate: GridCandidate): AcademicProgressResult["overall"] {
@@ -128,7 +172,10 @@ function parseOverall(candidate: GridCandidate): AcademicProgressResult["overall
     status: resolveColumnId(grid, "Status", "168.7"),
   };
   if (Object.values(columns).some((column) => column === undefined)) {
-    shapeError("Overall academic progress grid is missing required columns", `${candidate.path}.columns`);
+    shapeError(
+      "Overall academic progress grid is missing required columns",
+      `${candidate.path}.columns`,
+    );
   }
   return {
     definedCredits: cellNumber(row.cellsMap[columns.defined!]),
@@ -139,7 +186,10 @@ function parseOverall(candidate: GridCandidate): AcademicProgressResult["overall
   };
 }
 
-function parseRequirements(candidate: GridCandidate): { requirements: AcademicProgressResult["requirements"]; unrecognizedRows: AcademicProgressResult["unrecognizedRows"] } {
+function parseRequirements(candidate: GridCandidate): {
+  requirements: AcademicProgressResult["requirements"];
+  unrecognizedRows: AcademicProgressResult["unrecognizedRows"];
+} {
   const grid = parseGrid(candidate);
   const columns = {
     name: resolveColumnId(grid, "Requirement", "320.1"),
@@ -155,7 +205,10 @@ function parseRequirements(candidate: GridCandidate): { requirements: AcademicPr
     const name = cellText(row.cellsMap[columns.name!]);
     const statusText = cellText(row.cellsMap[columns.status!]);
     if (!name || !statusText) {
-      unrecognizedRows.push({ rowIndex: row.rowIndex, reason: !name ? "missing requirement name" : "missing requirement status" });
+      unrecognizedRows.push({
+        rowIndex: row.rowIndex,
+        reason: !name ? "missing requirement name" : "missing requirement status",
+      });
       continue;
     }
     requirements.push({
@@ -170,7 +223,10 @@ function parseRequirements(candidate: GridCandidate): { requirements: AcademicPr
 }
 
 export function parseAcademicProgress(json: unknown): AcademicProgressResult {
-  const root = z.object({ body: z.record(z.string(), z.unknown()) }).passthrough().safeParse(json);
+  const root = z
+    .object({ body: z.record(z.string(), z.unknown()) })
+    .passthrough()
+    .safeParse(json);
   if (!root.success) shapeError('Response is missing a "body" object', "body");
   const candidates = findGrids(root.data.body, "body");
   const overallCandidate = overallGrid(candidates);
@@ -184,5 +240,3 @@ export function parseAcademicProgress(json: unknown): AcademicProgressResult {
     ...parsedRequirements,
   };
 }
-
-

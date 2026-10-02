@@ -16,18 +16,22 @@ const audit: StoredAcademicProgress = {
       remainingCredits: 30,
       status: "In Progress",
     },
-    requirements: [{
-      name: "Core Writing",
-      status: "satisfied",
-      statusText: "Satisfied",
-      remaining: "0",
-      satisfiedWith: [{
-        code: "ENGL 1001",
-        text: "ENGL 1001 - English Composition",
-        academicPeriod: "Fall Semester 2025",
-        creditHours: 3,
-      }],
-    }],
+    requirements: [
+      {
+        name: "Core Writing",
+        status: "satisfied",
+        statusText: "Satisfied",
+        remaining: "0",
+        satisfiedWith: [
+          {
+            code: "ENGL 1001",
+            text: "ENGL 1001 - English Composition",
+            academicPeriod: "Fall Semester 2025",
+            creditHours: 3,
+          },
+        ],
+      },
+    ],
     unrecognizedRows: [],
   },
 };
@@ -40,7 +44,10 @@ describe("WorkdayAcademicProgressView", () => {
     render(<WorkdayAcademicProgressView audit={audit} />);
 
     expect(screen.getByText(/From Workday · imported/)).toBeInTheDocument();
-    expect(screen.getByRole("progressbar", { name: "Workday satisfying credits" })).toHaveAttribute("aria-valuenow", "75");
+    expect(screen.getByRole("progressbar", { name: "Workday satisfying credits" })).toHaveAttribute(
+      "aria-valuenow",
+      "75",
+    );
     const requirement = screen.getByTestId("workday-requirement-0");
     expect(within(requirement).getByText("Satisfied")).toBeInTheDocument();
     await user.click(within(requirement).getByText("Core Writing"));

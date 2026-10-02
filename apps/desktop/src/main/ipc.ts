@@ -44,18 +44,22 @@ const AcademicProgressResultSchema = z.object({
     remainingCredits: z.number().nullable(),
     status: z.string().nullable(),
   }),
-  requirements: z.array(z.object({
-    name: z.string(),
-    status: z.enum(["satisfied", "in-progress", "not-satisfied", "unknown"]),
-    statusText: z.string(),
-    remaining: z.string().nullable(),
-    satisfiedWith: z.array(z.object({
-      code: CourseCodeSchema.nullable(),
-      text: z.string(),
-      academicPeriod: z.string().nullable(),
-      creditHours: z.number().nullable(),
-    })),
-  })),
+  requirements: z.array(
+    z.object({
+      name: z.string(),
+      status: z.enum(["satisfied", "in-progress", "not-satisfied", "unknown"]),
+      statusText: z.string(),
+      remaining: z.string().nullable(),
+      satisfiedWith: z.array(
+        z.object({
+          code: CourseCodeSchema.nullable(),
+          text: z.string(),
+          academicPeriod: z.string().nullable(),
+          creditHours: z.number().nullable(),
+        }),
+      ),
+    }),
+  ),
   unrecognizedRows: z.array(z.object({ rowIndex: z.number(), reason: z.string() })),
 });
 const WorkdayReviewSchema = z.object({

@@ -30,7 +30,11 @@ function repoRoot(): string {
   return execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
 }
 
-function parseArgs(argv: string[]): { in: string | undefined; cells: boolean; pathContains: string | undefined } {
+function parseArgs(argv: string[]): {
+  in: string | undefined;
+  cells: boolean;
+  pathContains: string | undefined;
+} {
   let inFile: string | undefined;
   let pathContains: string | undefined;
   let cells = false;
@@ -72,7 +76,10 @@ function main(): void {
     throw new Error(`${harPath} does not look like a HAR file (missing log.entries).`);
   }
 
-  const { lines, matchedCount } = inspectHar(parsed, { cells: args.cells, pathContains: args.pathContains });
+  const { lines, matchedCount } = inspectHar(parsed, {
+    cells: args.cells,
+    pathContains: args.pathContains,
+  });
   for (const line of lines) console.log(line);
   console.log(`\n${matchedCount} matching JSON response(s) under /generic-hub/ or *.htmld.`);
 }

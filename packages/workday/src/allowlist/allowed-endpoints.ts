@@ -25,7 +25,8 @@ export const ALLOWED_ENDPOINTS: readonly AllowedEndpoint[] = [
     id: "academic-progress-get",
     method: "GET",
     pattern: /^https:\/\/www\.myworkday\.com\/lsu\/generic-hub\/task\/2998\$43459\.htmld(\?.*)?$/,
-    description: "Read the student's official degree requirement statuses, credit progress, remaining requirements, and courses used to satisfy them.",
+    description:
+      "Read the student's official degree requirement statuses, credit progress, remaining requirements, and courses used to satisfy them.",
   },
   {
     id: "current-registrations-get",

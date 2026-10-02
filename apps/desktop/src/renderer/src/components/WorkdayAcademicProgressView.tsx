@@ -26,7 +26,8 @@ export function WorkdayAcademicProgressView({ audit }: { audit: StoredAcademicPr
   const total = overall.definedCredits ?? 0;
   const satisfying = overall.satisfyingCredits ?? 0;
   const inProgress = overall.inProgressCredits ?? 0;
-  const percent = total > 0 ? Math.min(100, Math.max(0, Math.round((satisfying / total) * 100))) : 0;
+  const percent =
+    total > 0 ? Math.min(100, Math.max(0, Math.round((satisfying / total) * 100))) : 0;
 
   return (
     <div className="degree-progress-container" data-testid="workday-academic-progress">
@@ -62,19 +63,31 @@ export function WorkdayAcademicProgressView({ audit }: { audit: StoredAcademicPr
             >
               <summary className="area-summary">
                 <span className="area-name">{requirement.name}</span>
-                <span className={`badge ${STATUS_BADGE_CLASS[requirement.status]}`}>{requirement.statusText}</span>
-                {requirement.remaining ? <span className="area-count">Remaining: {requirement.remaining}</span> : null}
+                <span className={`badge ${STATUS_BADGE_CLASS[requirement.status]}`}>
+                  {requirement.statusText}
+                </span>
+                {requirement.remaining ? (
+                  <span className="area-count">Remaining: {requirement.remaining}</span>
+                ) : null}
               </summary>
               <div className="area-details">
-                <section className="area-course-group" aria-label={`Courses satisfying ${requirement.name}`}>
+                <section
+                  className="area-course-group"
+                  aria-label={`Courses satisfying ${requirement.name}`}
+                >
                   <h4>Satisfied with</h4>
                   {requirement.satisfiedWith.length === 0 ? (
                     <p className="area-empty">No satisfying courses listed.</p>
                   ) : (
                     <ul>
                       {requirement.satisfiedWith.map((course, courseIndex) => (
-                        <li className="area-course-completed" key={`${course.code ?? course.text}-${courseIndex}`}>
-                          {course.code ? <span className="course-code-text">{course.code}</span> : null}
+                        <li
+                          className="area-course-completed"
+                          key={`${course.code ?? course.text}-${courseIndex}`}
+                        >
+                          {course.code ? (
+                            <span className="course-code-text">{course.code}</span>
+                          ) : null}
                           {course.text}
                           {course.academicPeriod ? ` · ${course.academicPeriod}` : ""}
                           {course.creditHours === null ? "" : ` · ${course.creditHours} credits`}

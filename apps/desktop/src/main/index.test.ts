@@ -44,6 +44,9 @@ vi.mock("./ipc.js", () => ({
 }));
 vi.mock("./store/completed.js", () => ({ createCompletedStore: () => ({}) }));
 vi.mock("./store/db.js", () => ({ openLocalDb: () => ({ close: vi.fn() }) }));
+vi.mock("./store/academic-progress.js", () => ({
+  createAcademicProgressStore: () => ({ getAudit: vi.fn(), saveAudit: vi.fn() }),
+}));
 vi.mock("./store/plan.js", () => ({ createPlanStore: () => ({}) }));
 
 afterEach(() => {

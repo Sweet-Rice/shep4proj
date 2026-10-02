@@ -14,18 +14,22 @@ const audit: AcademicProgressResult = {
     remainingCredits: 30,
     status: "In Progress",
   },
-  requirements: [{
-    name: "Core Writing",
-    status: "satisfied",
-    statusText: "Satisfied",
-    remaining: "0",
-    satisfiedWith: [{
-      code: "ENGL 1001",
-      text: "ENGL 1001 - English Composition",
-      academicPeriod: "Fall Semester 2025",
-      creditHours: 3,
-    }],
-  }],
+  requirements: [
+    {
+      name: "Core Writing",
+      status: "satisfied",
+      statusText: "Satisfied",
+      remaining: "0",
+      satisfiedWith: [
+        {
+          code: "ENGL 1001",
+          text: "ENGL 1001 - English Composition",
+          academicPeriod: "Fall Semester 2025",
+          creditHours: 3,
+        },
+      ],
+    },
+  ],
   unrecognizedRows: [],
 };
 

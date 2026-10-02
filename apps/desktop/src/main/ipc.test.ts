@@ -7,7 +7,10 @@ import {
 } from "../shared/ipc.js";
 import type { AcademicProgressResult } from "@jevschedule/workday/academic-progress";
 import { CourseNotInCatalogError, NOT_IN_CATALOG_REASON } from "../shared/catalog-membership.js";
-import { createAcademicProgressStore, type AcademicProgressStore } from "./store/academic-progress.js";
+import {
+  createAcademicProgressStore,
+  type AcademicProgressStore,
+} from "./store/academic-progress.js";
 import { createCompletedStore } from "./store/completed.js";
 import { createPlanStore } from "./store/plan.js";
 import { openLocalDb, type LocalDb } from "./store/db.js";
@@ -54,14 +57,29 @@ describe("registerIpcHandlers", () => {
   };
   let auditStore: AcademicProgressStore;
   const academicProgress: AcademicProgressResult = {
-    overall: { definedCredits: 120, inProgressCredits: 3, satisfyingCredits: 90, remainingCredits: 30, status: "In Progress" },
-    requirements: [{
-      name: "Core Writing",
-      status: "satisfied",
-      statusText: "Satisfied",
-      remaining: "0",
-      satisfiedWith: [{ code: "ENGL 1001", text: "ENGL 1001 - English Composition", academicPeriod: "Fall Semester 2025", creditHours: 3 }],
-    }],
+    overall: {
+      definedCredits: 120,
+      inProgressCredits: 3,
+      satisfyingCredits: 90,
+      remainingCredits: 30,
+      status: "In Progress",
+    },
+    requirements: [
+      {
+        name: "Core Writing",
+        status: "satisfied",
+        statusText: "Satisfied",
+        remaining: "0",
+        satisfiedWith: [
+          {
+            code: "ENGL 1001",
+            text: "ENGL 1001 - English Composition",
+            academicPeriod: "Fall Semester 2025",
+            creditHours: 3,
+          },
+        ],
+      },
+    ],
     unrecognizedRows: [],
   };
   let workday: { run: ReturnType<typeof vi.fn> };
@@ -95,7 +113,12 @@ describe("registerIpcHandlers", () => {
     };
     registerIpcHandlers(
       ipc,
-      { completed: createCompletedStore(db), plan: createPlanStore(db), catalog, academicProgress: auditStore },
+      {
+        completed: createCompletedStore(db),
+        plan: createPlanStore(db),
+        catalog,
+        academicProgress: auditStore,
+      },
       () => trusted,
       undefined,
       { workday },
@@ -166,10 +189,11 @@ describe("registerIpcHandlers", () => {
   });
   it("keeps the import review usable when the academic progress audit is unavailable", async () => {
     workday.run.mockResolvedValue({ ...importedReview, academicProgress: null });
-    await expect(ipc.invoke(IPC_CHANNELS.workdayImport)).resolves.toMatchObject({ academicProgress: null });
+    await expect(ipc.invoke(IPC_CHANNELS.workdayImport)).resolves.toMatchObject({
+      academicProgress: null,
+    });
     expect(ipc.invoke(IPC_CHANNELS.academicProgressGet)).toBeNull();
   });
-
 
   it("rejects Workday import and confirm from untrusted senders without touching anything", () => {
     trusted = false;

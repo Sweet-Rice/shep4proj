@@ -102,7 +102,9 @@ export function panelStackLabels(candidate: GridCandidate): string[] {
 /** Cell-shape dump. String values are represented only by length, except course codes. */
 function valueShape(value: unknown): string {
   if (typeof value === "string") {
-    return /^[A-Z]{2,4} \d{4}[A-Z]{0,2}$/.test(value) ? JSON.stringify(value) : `<string len=${value.length}>`;
+    return /^[A-Z]{2,4} \d{4}[A-Z]{0,2}$/.test(value)
+      ? JSON.stringify(value)
+      : `<string len=${value.length}>`;
   }
   if (value === null) return "null";
   if (Array.isArray(value)) return `array(len=${value.length})`;
@@ -135,18 +137,26 @@ function formatCellsEntry(entry: HarEntry): string[] {
   const bodyText = entry.response?.content?.text;
   if (typeof bodyText !== "string" || bodyText.trim() === "") return [];
   let json: unknown;
-  try { json = JSON.parse(bodyText); } catch { return []; }
+  try {
+    json = JSON.parse(bodyText);
+  } catch {
+    return [];
+  }
   const lines = [`${entry.request.method} ${urlPath}`];
   for (const candidate of findGrids(json, "", { panelWidgets: [...PANEL_WIDGETS] })) {
     const node = candidate.node;
-    lines.push(`  grid: ${typeof node.label === "string" ? node.label : "(no label)"} rows=${gridRowCount(node)}`);
+    lines.push(
+      `  grid: ${typeof node.label === "string" ? node.label : "(no label)"} rows=${gridRowCount(node)}`,
+    );
     const columns = Array.isArray(node.columns) ? node.columns : [];
     const rows = Array.isArray(node.rows) ? node.rows : [];
     const columnIds = new Set<string>();
     for (const column of columns) {
       if (!isPlainObject(column) || typeof column.columnId !== "string") continue;
       columnIds.add(column.columnId);
-      lines.push(`    column ${column.columnId} ${typeof column.label === "string" ? column.label : "(no label)"}`);
+      lines.push(
+        `    column ${column.columnId} ${typeof column.label === "string" ? column.label : "(no label)"}`,
+      );
     }
     for (const row of rows) {
       if (!isPlainObject(row) || !isPlainObject(row.cellsMap)) continue;
@@ -205,15 +215,22 @@ export interface InspectHarResult {
 }
 
 /** Filters and formats matching HAR responses. */
-export function inspectHar(har: Har, options: { cells?: boolean; pathContains?: string } = {}): InspectHarResult {
+export function inspectHar(
+  har: Har,
+  options: { cells?: boolean; pathContains?: string } = {},
+): InspectHarResult {
   const lines: string[] = [];
   let matchedCount = 0;
   for (const entry of har.log.entries) {
     const urlPath = redactedPathOnly(entry.request.url);
-    if (!isInterestingPath(urlPath) || !isJsonContentType(entry) || (options.pathContains && !urlPath.includes(options.pathContains))) continue;
+    if (
+      !isInterestingPath(urlPath) ||
+      !isJsonContentType(entry) ||
+      (options.pathContains && !urlPath.includes(options.pathContains))
+    )
+      continue;
     matchedCount++;
     lines.push("", ...formatEntry(entry, options.cells));
   }
   return { lines, matchedCount };
 }
-
