@@ -82,4 +82,38 @@ describe("planner tool definitions", () => {
     expect(invalid.proposal).toBeNull();
     expect(invalid.validation.issues.map(({ type }) => type)).toEqual(["credit_limit"]);
   });
+
+  it("rejects plans that repeat a term or a course, which JSON Schema cannot express", () => {
+    const tools = createPlannerTools();
+    const details = {
+      "CSC 1350": {
+        code: "CSC 1350" as const,
+        credits: { min: 4, max: 4, note: null },
+        prereq: { tree: null, needsReview: false },
+      },
+    };
+    const duplicateCourse: ValidationPlan = {
+      creditLimit: 18,
+      terms: [
+        { season: "Fall", year: 2027, courses: ["CSC 1350"] },
+        { season: "Spring", year: 2028, courses: ["CSC 1350"] },
+      ],
+      courseDetails: details,
+    };
+    const duplicateTerm: ValidationPlan = {
+      creditLimit: 18,
+      terms: [
+        { season: "Fall", year: 2027, courses: ["CSC 1350"] },
+        { season: "Fall", year: 2027, courses: [] },
+      ],
+      courseDetails: details,
+    };
+
+    for (const plan of [duplicateCourse, duplicateTerm]) {
+      const result = proposePlan(tools, plan, []);
+      expect(result.proposal).toBeNull();
+      expect(result.schemaErrors).toHaveLength(1);
+    }
+    expect(proposePlan(tools, { ...duplicateCourse, terms: [] }, []).schemaErrors).toEqual([]);
+  });
 });
