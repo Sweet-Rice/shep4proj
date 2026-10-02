@@ -173,6 +173,44 @@ describe("formatEntry / inspectHar", () => {
     expect(joined).not.toContain("001");
     expect(joined).not.toContain("002");
   });
+  it("prints cell structure and value types without exposing non-code values", () => {
+    const output = formatEntry(buildEntry(), true).join("\n");
+    expect(output).toContain("instances: array(len=1)");
+    expect(output).toContain("text: <string len=36>");
+    expect(output).not.toContain("SUPER SECRET STUDENT NAME");
+    expect(output).not.toContain("ANOTHER NAME");
+    expect(output).not.toContain("001");
+  });
+
+  it("exposes only a string that exactly matches the course-code pattern", () => {
+    const body = {
+      widget: "grid",
+      columns: [{ columnId: "1", label: "Course" }],
+      rows: [{ rowIndex: 0, cellsMap: { "1": { text: "CSC 4103" } } }],
+    };
+    const entry = buildEntry({
+      response: {
+        status: 200,
+        headers: [{ name: "Content-Type", value: "application/json" }],
+        content: { mimeType: "application/json", text: JSON.stringify(body) },
+      },
+    });
+    expect(formatEntry(entry, true).join("\n")).toContain('"CSC 4103"');
+  });
+
+  it("limits cell mode to the requested endpoint path", () => {
+    const first = buildEntry();
+    const second = buildEntry({
+      request: { method: "GET", url: "https://www.myworkday.com/lsu/generic-hub/task/2998$43459.htmld" },
+    });
+    const { lines, matchedCount } = inspectHar(buildHar([first, second]), {
+      cells: true,
+      pathContains: "2998$43459",
+    });
+    expect(matchedCount).toBe(1);
+    expect(lines.join("\n")).toContain("2998$43459");
+    expect(lines.join("\n")).not.toContain("TOKEN");
+  });
 
   it("prints the top-level title when present", () => {
     const lines = formatEntry(buildEntry());
