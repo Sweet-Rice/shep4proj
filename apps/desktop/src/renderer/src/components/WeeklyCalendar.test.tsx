@@ -90,6 +90,21 @@ describe("WeeklyCalendar & formatMinuteToTime", () => {
     expect(screen.getByTestId(`conflict-badge-${cscSectionKey}`)).toBeInTheDocument();
   });
 
+  it("does not flag sections from different terms", () => {
+    const fallSection = overlappingSections[0]!;
+    const springSection: Section = { ...fallSection, term: "LSUAM_SPRING_2027" };
+
+    render(<WeeklyCalendar sections={[fallSection, springSection]} />);
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    const meetingBlocks = screen.getAllByTestId("meeting-block-CSC 1350-Mon");
+    expect(meetingBlocks).toHaveLength(2);
+    expect(screen.queryByTestId(`conflict-badge-${cscSectionKey}`)).not.toBeInTheDocument();
+    for (const block of meetingBlocks) {
+      expect(block).not.toHaveClass("conflict");
+    }
+  });
+
   it("calls onRemoveSection when remove button is clicked", async () => {
     const user = userEvent.setup();
     const handleRemove = vi.fn();
