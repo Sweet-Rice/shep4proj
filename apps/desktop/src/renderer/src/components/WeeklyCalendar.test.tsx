@@ -95,6 +95,24 @@ describe("WeeklyCalendar & formatMinuteToTime", () => {
     expect(screen.queryByTestId("time-label-21")).not.toBeInTheDocument();
   });
 
+  it("extends the time grid upward for meetings before the default start", () => {
+    const early: Section = {
+      ...overlappingSections[0]!,
+      meetings: [{ days: ["Tue"], startMinute: 430, endMinute: 500 }], // 7:10 - 8:20 AM
+    };
+    render(<WeeklyCalendar sections={[early]} />);
+
+    expect(screen.getByTestId("time-label-7")).toBeInTheDocument();
+    expect(screen.queryByTestId("time-label-6")).not.toBeInTheDocument();
+  });
+
+  it("uses singular wording for one section and one credit", () => {
+    const single: Section = { ...overlappingSections[0]!, credits: { min: 1, max: 1 } };
+    render(<WeeklyCalendar sections={[single]} />);
+
+    expect(screen.getByText("1 section · 1 credit")).toBeInTheDocument();
+  });
+
   it("renders weekly calendar container with Mon-Fri headers and time grid", () => {
     render(<WeeklyCalendar sections={calendarSections} />);
 
