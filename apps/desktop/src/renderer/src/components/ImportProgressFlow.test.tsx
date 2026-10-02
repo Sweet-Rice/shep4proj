@@ -105,4 +105,30 @@ describe("ImportProgressFlow", () => {
     expect(transcript.select).toHaveBeenCalledOnce();
     expect(screen.getByText("Fall 2024")).toBeInTheDocument();
   });
+
+  it("keeps the failure message when the transcript picker is cancelled", async () => {
+    const user = userEvent.setup();
+    const select = vi.fn().mockResolvedValue(null);
+    installWorkdayApi({
+      transcript: { select },
+      workday: {
+        start: vi.fn(async () => {
+          throw new Error("closed");
+        }),
+        confirm: vi.fn(),
+        onProgress: vi.fn((listener: (progress: WorkdayImportProgress) => void) => {
+          listener({ stage: "error", message: "Could not import records from Workday." });
+          return vi.fn();
+        }),
+      },
+    });
+    render(<ImportProgressFlow />);
+    await user.click(screen.getByTestId("start-import-btn"));
+    await screen.findByText("Could not import records from Workday.");
+    await user.click(screen.getByTestId("select-transcript-fallback-btn"));
+    await waitFor(() => expect(select).toHaveBeenCalledOnce());
+    expect(await screen.findByTestId("failure-message")).toHaveTextContent(
+      "Could not import records from Workday.",
+    );
+  });
 });

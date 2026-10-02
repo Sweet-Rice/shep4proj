@@ -49,13 +49,13 @@ export function ImportProgressFlow({
     }
     const previousStage = stage;
     setStage("uploading");
-    setErrorMessage(null);
     try {
       const result = await api.select();
       if (result === null) {
         setStage(previousStage);
         return;
       }
+      setErrorMessage(null);
       setUploadedResult(toTranscriptReview(result));
       setStage("review");
     } catch {
