@@ -7,8 +7,8 @@ export interface CourseListEntry {
   /** Course code such as `CSC 1350`. */
   code: string;
   title: string;
-  /** Credits exactly as the catalog prints them: `4`, `1-3`, `1-12 per sem.`. */
-  creditsText: string;
+  /** Credits exactly as the catalog prints them, or null when the list omits them. */
+  creditsText: string | null;
   /** Acalog course id, used to fetch the course detail page. */
   coid: string;
   /** Owning department, from the `<h2>` heading the row is listed under. */
@@ -17,9 +17,10 @@ export interface CourseListEntry {
 
 /**
  * `CSC 1350 Computer Science I for Majors (4)` -> code, title, credits text.
- * Shared with the course detail parser, whose page heading uses the same shape.
+ * Some rows omit credits or print a bare trailing credit value such as `3`.
  */
-export const COURSE_ROW_TEXT = /^([A-Z]{2,4} \d{4})\s+(.+?)\s+\(([^)]+)\)$/;
+export const COURSE_ROW_TEXT =
+  /^([A-Za-z]{2,4} \d{4})\s+(.+?)(?:\s+\(([^)]+)\)|\s+(\d+(?:\.\d+)?(?:\s*-\s*\d+(?:\.\d+)?)?))?$/;
 
 /**
  * Parses the catalog course list page (`content.php` with the course filter)
@@ -47,13 +48,11 @@ export function parseCourseList(html: string): CourseListEntry[] {
 
     const text = $(element).text().replace(/\s+/g, " ").trim();
     const match = COURSE_ROW_TEXT.exec(text);
-    const code = match?.[1];
+    const code = match?.[1]?.toUpperCase();
     const title = match?.[2];
-    const creditsText = match?.[3];
-    if (code === undefined || title === undefined || creditsText === undefined) {
-      throw new CatalogShapeError(
-        `course link text does not match "CODE 0000 Title (credits)": "${text}"`,
-      );
+    const creditsText = match?.[3] ?? match?.[4] ?? null;
+    if (code === undefined || title === undefined) {
+      throw new CatalogShapeError(`course link text does not match "CODE 0000 Title": "${text}"`);
     }
 
     const href = $(element).attr("href") ?? "";
@@ -65,7 +64,7 @@ export function parseCourseList(html: string): CourseListEntry[] {
       throw new CatalogShapeError(`course ${code} is not listed under a department heading`);
     }
     if (seenCodes.has(code)) {
-      throw new CatalogShapeError(`course ${code} is listed more than once`);
+      return;
     }
     seenCodes.add(code);
 

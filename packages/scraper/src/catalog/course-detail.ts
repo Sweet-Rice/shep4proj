@@ -7,8 +7,10 @@ export interface CourseDetail {
   /** Course code such as `CSC 1350`. */
   code: string;
   title: string;
-  /** Credits exactly as the catalog prints them: `4`, `1-3`, `1-12 per sem.`. */
+  /** Credit text from the catalog, or the documented 3-credit fallback. */
   creditsText: string;
+  /** True only when the catalog page omitted credits and the parser assumed 3. */
+  creditsAssumed?: true;
   /** Catalog description, without the prerequisite line or notes. */
   description: string;
   /** Text of the `Prereq.:` line, trailing period included; null when absent. */
@@ -128,20 +130,20 @@ function collectInline(node: DomNode, out: Array<string | DomElement>): void {
  * notes, and the bare text between them is the description:
  *
  * - an empty `<em>` is ignored;
-- an `<em>` ending in `:` is a label and the next non-empty `<em>` (or
-  unwrapped inline text/anchors for `Prereq.:`) is its value. `Prereq.:`
-  fills {@link CourseDetail.prerequisiteText} and
-  {@link CourseDetail.prerequisiteCourseCodes}; any other label becomes a
-  note reading `<label> <value>`;
+ * - an `<em>` ending in `:` is a label and the next non-empty `<em>` (or
+ *   unwrapped inline text/anchors for `Prereq.:`) is its value. `Prereq.:`
+ *   fills {@link CourseDetail.prerequisiteText} and
+ *   {@link CourseDetail.prerequisiteCourseCodes}; any other label becomes a
+ *   note reading `<label> <value>`;
  * - every other `<em>` is a note;
  * - text outside the `<em>` runs is the description.
  *
  * Whitespace is collapsed everywhere and non-breaking spaces count as spaces.
  *
  * Pure and network-free. Throws {@link CatalogShapeError} when the heading is
- * missing or malformed, the description is empty, a label has no value, the
- * prerequisite label appears twice, or a prerequisite link's `aria-label` is
- * not a course code, rather than returning a partial course.
+ * missing or malformed, a label has no value, the prerequisite label appears
+ * twice, or a prerequisite link's `aria-label` is not a course code, rather
+ * than returning a partial course.
  */
 export function parseCourseDetail(html: string): CourseDetail {
   const $ = load(html);
@@ -153,14 +155,20 @@ export function parseCourseDetail(html: string): CourseDetail {
 
   const headingText = collapse(heading.text());
   const match = COURSE_ROW_TEXT.exec(headingText);
-  const code = match?.[1];
+  const code = match?.[1]?.toUpperCase();
   const title = match?.[2];
-  const creditsText = match?.[3];
-  if (code === undefined || title === undefined || creditsText === undefined) {
+  const headingCreditsText = match?.[3] ?? match?.[4];
+  if (code === undefined || title === undefined) {
     throw new CatalogShapeError(
-      `course heading does not match "CODE 0000 Title (credits)": "${headingText}"`,
+      `course heading does not match "CODE 0000 Title": "${headingText}"`,
     );
   }
+  const bodyCreditsText = /(?:credit(?:\s+hours?)?|credits?)\s*:\s*(\d+(?:\s*-\s*\d+)?)/i.exec(
+    $("body").text(),
+  )?.[1];
+  const creditsAssumed = headingCreditsText === undefined && bodyCreditsText === undefined;
+  const creditsText =
+    headingCreditsText ?? bodyCreditsText ?? "3 Credits not stated in the LSU catalog; assumed 3.";
 
   const inline: Array<string | DomElement> = [];
   let skippedFirstRule = false;
@@ -350,15 +358,14 @@ export function parseCourseDetail(html: string): CourseDetail {
       description = notes.join(" ");
     }
   }
-  if (description === "") {
-    throw new CatalogShapeError(`${code}: empty description`);
-  }
+  // Catalog graduate research/thesis courses may legitimately have no description.
 
   return {
     code,
     title,
     creditsText,
     description,
+    ...(creditsAssumed ? { creditsAssumed: true as const } : {}),
     prerequisiteText,
     prerequisiteCourseCodes,
     notes,

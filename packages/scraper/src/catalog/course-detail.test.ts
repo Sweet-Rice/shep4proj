@@ -100,6 +100,39 @@ describe("parseCourseDetail fixtures", () => {
       notes: [],
     });
   });
+
+  it.each([
+    ["CHEM 1101", "course-chem-1101.html"],
+    ["EE 7422", "course-ee-7422.html"],
+  ])("%s assumes 3 credits when the catalog states none", (code, file) => {
+    const detail = parseCourseDetail(readFileSync(`${FIXTURE_DIR}${file}`, "utf8"));
+    expect(detail.code).toBe(code);
+    expect(detail.creditsText).toBe("3 Credits not stated in the LSU catalog; assumed 3.");
+    expect(detail.creditsAssumed).toBe(true);
+  });
+
+  it("parses HIST 2025 credits printed bare in the heading", () => {
+    const detail = parseCourseDetail(readFileSync(`${FIXTURE_DIR}course-hist-2025.html`, "utf8"));
+    expect(detail.code).toBe("HIST 2025");
+    expect(detail.creditsText).toBe("3");
+    expect(detail.creditsAssumed).toBeUndefined();
+  });
+
+  it("reads credits explicitly stated in detail-page body text", () => {
+    const detail = parseCourseDetail(page("Credits: 4", "CSC 1000 Sample Course"));
+    expect(detail.creditsText).toBe("4");
+    expect(detail.creditsAssumed).toBeUndefined();
+  });
+
+  it.each([
+    ["PHYS 7353", "course-phys-7353.html", "3"],
+    ["BIOL 4801", "course-biol-4801.html", "1-2"],
+  ])("%s parses with its catalog credits and an empty description", (code, file, creditsText) => {
+    const detail = parseCourseDetail(readFileSync(`${FIXTURE_DIR}${file}`, "utf8"));
+    expect(detail.code).toBe(code);
+    expect(detail.creditsText).toBe(creditsText);
+    expect(detail.description).toBe("");
+  });
 });
 
 describe("parseCourseDetail markup rules", () => {
@@ -253,18 +286,16 @@ describe("parseCourseDetail shape errors", () => {
     );
   });
 
-  it("throws CatalogShapeError naming a heading that is not CODE 0000 Title (credits)", () => {
+  it("throws for a heading that does not start with CODE 0000 Title", () => {
     const message = shapeErrorMessage(() =>
       parseCourseDetail(page("Description.", "Computer Science I")),
     );
-    expect(message).toMatch(/does not match "CODE 0000 Title \(credits\)": "Computer Science I"/);
+    expect(message).toMatch(/does not match "CODE 0000 Title": "Computer Science I"/);
   });
 
-  it("throws CatalogShapeError naming the course when the description is empty", () => {
-    const message = shapeErrorMessage(() =>
-      parseCourseDetail(page("<em>Prereq.:</em> <em>CSC 1254.</em>")),
-    );
-    expect(message).toBe("CSC 1000: empty description");
+  it("accepts an empty description", () => {
+    const detail = parseCourseDetail(page("<em>Prereq.:</em> <em>CSC 1254.</em>"));
+    expect(detail.description).toBe("");
   });
 
   it("throws CatalogShapeError when a label has no value", () => {

@@ -6,9 +6,9 @@ with no login and no student data. See the wiki's
 [Data-Sources → Catalog findings](https://github.com/Sweet-Rice/shep4proj/wiki/Data-Sources#catalog-findings-t-001)
 for how the site behaves.
 
-Each file is the **raw HTTP response body** exactly as LSU served it, not a
-browser-serialized DOM. The files are marked `-text` in `.gitattributes`, so git
-stores the bytes unchanged and the checksums below stay valid.
+The original CSC files are raw HTTP response bodies; the additional fixtures
+captured 2026-10-02 are trimmed to parser-relevant list rows or detail-page
+markup. Files are marked `-text` in `.gitattributes` so their checksums stay stable.
 
 ## Files
 
@@ -23,6 +23,20 @@ All captured 2026-09-24 (UTC).
 | `course-csc-3200.html` | `https://catalog.lsu.edu/preview_course_nopop.php?catoid=35&coid=233370` | 23:42Z | `dbb69e83689b38c1431908c704f3d8a6038d342424f27f95b2537df324b56ee8` |
 | `course-csc-4330.html` | `https://catalog.lsu.edu/preview_course_nopop.php?catoid=35&coid=232623` | 23:20Z | `cf7e5881442734d71fdbf226d0540818bf9361994a06565548119b790dccf08b` |
 | `program-computer-science-bs.html` | `https://catalog.lsu.edu/preview_program.php?catoid=35&poid=14278` | 23:51Z | `62fbe087845f6288802001e1c3e9f63fa3453abdafef3dd21519697c278073c5` |
+
+**Parser-gap fixtures**, captured 2026-10-02 (UTC):
+
+| File | Source URL | sha256 |
+|---|---|---|
+| `chem-course-list.html` | `https://catalog.lsu.edu/content.php?catoid=35&navoid=3486&filter[27]=CHEM&filter[29]=&filter[course_type]=-1&filter[keyword]=&filter[32]=1&filter[cpage]=1&cur_cat_oid=35&expand=&search_database=Filter` | `6cb905e63b30af1afa86cd4d33df17e14851bc31d4e7e006c8b81a2bf6a773fd` |
+| `ee-course-list-page-2.html` | `https://catalog.lsu.edu/content.php?catoid=35&navoid=3486&filter[27]=EE&filter[29]=&filter[course_type]=-1&filter[keyword]=&filter[32]=1&filter[cpage]=2&cur_cat_oid=35&expand=&search_database=Filter` | `7b0943e528e6105ad2dca8436e431b32e3479d3f6d1d9fa83467eaeac5eec18b` |
+| `course-chem-1101.html` | `https://catalog.lsu.edu/preview_course_nopop.php?catoid=35&coid=236828` | `005da5d1b5d53d411c5777f990e71b4b0cd53daf32686d50a18a6f19ff5d49e0` |
+| `course-ee-7422.html` | `https://catalog.lsu.edu/preview_course_nopop.php?catoid=35&coid=232129` | `d635a18985bf35884cfd7adac008acc39beb9bf225c7f6c465826e28baa1a929` |
+| `course-phys-7353.html` | `https://catalog.lsu.edu/preview_course_nopop.php?catoid=35&coid=231474` | `dc546995bd3533f0fe7d170bb21baf4eba7e5697b8b53efeedbaeb15276b54b8` |
+| `course-biol-4801.html` | `https://catalog.lsu.edu/preview_course_nopop.php?catoid=35&coid=233013` | `447f4cdf8736853196262dede674e15dbfd945f516b8ba28b103a3073e1f07c2` |
+| `hist-course-list.html` | `https://catalog.lsu.edu/content.php?catoid=35&navoid=3486&filter[27]=HIST&filter[29]=&filter[course_type]=-1&filter[keyword]=&filter[32]=1&filter[cpage]=1&cur_cat_oid=35&expand=&search_database=Filter` | `bf4752148e8b37696d77731972fc963b3f088fc4f57e77b99a86a7b5dad5ff8a` |
+| `econ-course-list.html` | `https://catalog.lsu.edu/content.php?catoid=35&navoid=3486&filter[27]=ECON&filter[29]=&filter[course_type]=-1&filter[keyword]=&filter[32]=1&filter[cpage]=1&cur_cat_oid=35&expand=&search_database=Filter` | `ac1c5c970b47d526b2b18810b34566ecfba9c551624420b88a769c3da3fe8079` |
+| `course-hist-2025.html` | `https://catalog.lsu.edu/preview_course_nopop.php?catoid=35&coid=233254` | `ee5ce6ed8a43bd59386465f27d8f3749e471bf579c413ad5bbd1406001763da5` |
 
 ## What each fixture covers
 
@@ -61,10 +75,12 @@ requirements text has no "CRITICAL REQUIREMENTS" heading.
   JavaScript challenge (`202`, empty body). These two were loaded in headless
   Chromium through `playwright-core`, which passed the challenge, and the body of the
   final `200` document response was saved.
-- `preview_course_nopop.php` needs no JavaScript. Those pages were fetched with plain
-  HTTP.
-- `robots.txt` sets `Crawl-delay: 120` and disallows `/ajax/`, so requests were
-  spaced at least 120 s apart and no `/ajax/` URL was fetched.
+- The original detail fixtures were fetched with plain HTTP. The 2026-10-02
+  parser-gap pages were fetched through Edge/Chromium so the bounded capture used
+  one browser route for every request.
+- The original capture used the `robots.txt` 120-second crawl delay. The
+  authorized 2026-10-02 fixture capture used at least two seconds between its
+  nine page requests and refused `/ajax/` URLs.
 
 To refresh for a new catalog year, capture the same pages under a new
 `fixtures/catalog/<year>/` directory, taking the current `catoid`/`coid`/`poid`

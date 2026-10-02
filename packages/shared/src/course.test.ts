@@ -32,6 +32,9 @@ describe("CourseSchema", () => {
   it("accepts a catalog course without prerequisites", () => {
     expect(CourseSchema.parse(course)).toEqual(course);
   });
+  it("accepts an empty catalog description", () => {
+    expect(CourseSchema.parse({ ...course, description: "" }).description).toBe("");
+  });
 
   it("keeps original prerequisite wording for later parsing", () => {
     const withPrerequisites = { ...course, prerequisiteText: "MATH 1550 or equivalent" };
