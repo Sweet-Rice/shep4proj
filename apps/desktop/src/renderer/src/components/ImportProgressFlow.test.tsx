@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
-import { userEvent } from "@testing-library/user-event";
+import { userEvent, type UserEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi, type Mock } from "vitest";
 import type { WorkdayImportProgress, WorkdayImportReview } from "../../../shared/ipc.js";
 import { ImportProgressFlow } from "./ImportProgressFlow.js";
 
@@ -130,5 +130,63 @@ describe("ImportProgressFlow", () => {
     expect(await screen.findByTestId("failure-message")).toHaveTextContent(
       "Could not import records from Workday.",
     );
+  });
+
+  describe("after a Workday review has ended", () => {
+    const pdfResult = {
+      courses: [{ code: "CSC 2700", term: { season: "Fall", year: 2024 }, grade: "A" }],
+      unrecognizedLines: [],
+    };
+
+    function installBoth() {
+      const confirm = vi.fn().mockResolvedValue(undefined);
+      const set = vi.fn().mockResolvedValue(undefined);
+      installWorkdayApi({
+        completed: { set },
+        transcript: { select: vi.fn().mockResolvedValue(pdfResult) },
+        workday: {
+          start: vi.fn().mockResolvedValue(review),
+          confirm,
+          onProgress: vi.fn(() => vi.fn()),
+        },
+      });
+      return { confirm, set };
+    }
+
+    async function expectPdfReviewSavesThroughPdfPath(user: UserEvent, confirm: Mock, set: Mock) {
+      await user.click(screen.getByTestId("select-transcript-btn"));
+      await screen.findByTestId("stage-review");
+      expect(screen.getByText("CSC 2700")).toBeInTheDocument();
+      expect(screen.queryByText("CSC 1350")).not.toBeInTheDocument();
+      await user.click(screen.getByTestId("confirm-import-btn"));
+      await screen.findByTestId("stage-done");
+      expect(set).toHaveBeenCalledWith("CSC 2700", true);
+      expect(set).not.toHaveBeenCalledWith("CSC 1350", true);
+      expect(confirm).not.toHaveBeenCalled();
+    }
+
+    it("reviews the PDF courses, not the cancelled Workday ones", async () => {
+      const user = userEvent.setup();
+      const { confirm, set } = installBoth();
+      render(<ImportProgressFlow />);
+      await user.click(screen.getByTestId("start-import-btn"));
+      await screen.findByTestId("stage-review");
+      await user.click(screen.getByTestId("cancel-import-btn"));
+      await screen.findByTestId("stage-idle");
+      await expectPdfReviewSavesThroughPdfPath(user, confirm, set);
+    });
+
+    it("reviews the PDF courses, not the already-confirmed Workday ones", async () => {
+      const user = userEvent.setup();
+      const { confirm, set } = installBoth();
+      render(<ImportProgressFlow />);
+      await user.click(screen.getByTestId("start-import-btn"));
+      await screen.findByTestId("stage-review");
+      await user.click(screen.getByTestId("confirm-import-btn"));
+      await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
+      await user.click(await screen.findByTestId("finish-btn"));
+      confirm.mockClear();
+      await expectPdfReviewSavesThroughPdfPath(user, confirm, set);
+    });
   });
 });

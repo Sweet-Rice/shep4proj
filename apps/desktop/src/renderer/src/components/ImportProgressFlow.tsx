@@ -55,6 +55,7 @@ export function ImportProgressFlow({
         setStage(previousStage);
         return;
       }
+      setWorkdayReview(null);
       setErrorMessage(null);
       setUploadedResult(toTranscriptReview(result));
       setStage("review");
@@ -106,6 +107,7 @@ export function ImportProgressFlow({
   };
 
   const handleReviewCancel = () => {
+    setWorkdayReview(null);
     setStage("idle");
   };
 
@@ -193,7 +195,10 @@ export function ImportProgressFlow({
           <button
             type="button"
             className="btn btn-primary"
-            onClick={() => setStage("idle")}
+            onClick={() => {
+              setWorkdayReview(null);
+              setStage("idle");
+            }}
             data-testid="finish-btn"
           >
             Done
