@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { findConflicts, type Section, type Weekday } from "@jevschedule/shared";
 import { getSectionKey } from "../hooks/useScheduleBuilder.js";
+import { assignMeetingLanes } from "./meeting-lanes.js";
 
 export const CALENDAR_DAYS: Weekday[] = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
@@ -26,6 +27,8 @@ interface CalendarMeetingSlot {
   day: Weekday;
   startMinute: number;
   endMinute: number;
+  laneIndex: number;
+  laneCount: number;
 }
 
 export function WeeklyCalendar({
@@ -58,11 +61,22 @@ export function WeeklyCalendar({
             day,
             startMinute: meeting.startMinute,
             endMinute: meeting.endMinute,
+            laneIndex: 0,
+            laneCount: 1,
           });
         }
       });
     });
   });
+
+  for (const day of CALENDAR_DAYS) {
+    const slotsForDay = meetingSlots.filter((slot) => slot.day === day);
+    const assignedLanes = assignMeetingLanes(slotsForDay);
+    slotsForDay.forEach((slot, index) => {
+      slot.laneIndex = assignedLanes[index]!.laneIndex;
+      slot.laneCount = assignedLanes[index]!.laneCount;
+    });
+  }
 
   const hours: number[] = [];
   for (let h = startHour; h <= endHour; h++) {
@@ -142,18 +156,24 @@ export function WeeklyCalendar({
                 return (
                   <div
                     key={`${section.courseCode}-${section.sectionNumber}-${day}-${idx}`}
-                    className={`meeting-block ${isConflict ? "conflict" : ""}`}
+                    className={`meeting-block ${slot.laneCount > 1 ? "multi-lane" : ""} ${isConflict ? "conflict" : ""}`}
                     data-testid={`meeting-block-${section.courseCode}-${day}`}
                     style={{
                       top: `${Math.max(0, topPercent)}%`,
                       height: `${Math.max(4, heightPercent)}%`,
+                      left: `calc(${(slot.laneIndex * 100) / slot.laneCount}% + 2px)`,
+                      width: `calc(${100 / slot.laneCount}% - 4px)`,
                     }}
                   >
                     <div className="block-header">
                       <span className="block-title">{section.courseCode}</span>
                       {isConflict && (
-                        <span className="conflict-badge" data-testid={`conflict-badge-${key}`}>
-                          ⚠ Conflict
+                        <span
+                          className="conflict-badge"
+                          data-testid={`conflict-badge-${key}`}
+                          aria-label="Conflict"
+                        >
+                          <span aria-hidden="true">⚠</span>
                         </span>
                       )}
                     </div>

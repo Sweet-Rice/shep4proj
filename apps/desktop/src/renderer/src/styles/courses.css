@@ -18,11 +18,17 @@
 }
 .course-entry {
   display: flex;
+  align-items: flex-end;
   gap: var(--space-2);
 }
 .course-entry input {
   flex: 1;
   min-width: 0;
+  height: 34px;
+}
+.course-entry > button {
+  height: 34px !important;
+  flex: 0 0 auto;
 }
 .completed-courses li {
   display: flex;
@@ -37,6 +43,8 @@
 }
 .course-entry .field input {
   width: 100%;
+  height: 34px;
+  flex: none;
 }
 .input-group {
   position: relative;
