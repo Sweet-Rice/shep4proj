@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from "react";
+import { useEffect, useRef, type KeyboardEvent } from "react";
 import type { CourseCode } from "@jevschedule/shared";
 
 export interface MarkPrereqsDialogProps {
@@ -18,7 +18,19 @@ export function MarkPrereqsDialog({
   onDecline,
   onCancel,
 }: MarkPrereqsDialogProps) {
-  if (!isOpen || unfulfilledPrereqs.length === 0) {
+  const visible = isOpen && unfulfilledPrereqs.length > 0;
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!visible) return;
+    const trigger = document.activeElement;
+    dialogRef.current?.focus();
+    return () => {
+      if (trigger instanceof HTMLElement) trigger.focus();
+    };
+  }, [visible]);
+
+  if (!visible) {
     return null;
   }
 
@@ -31,6 +43,8 @@ export function MarkPrereqsDialog({
 
   return (
     <div
+      ref={dialogRef}
+      tabIndex={-1}
       className="modal-backdrop"
       onKeyDown={handleKeyDown}
       role="dialog"
