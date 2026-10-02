@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CourseCode } from "@jevschedule/shared";
-import { useCatalogCourses, useCourseDetails } from "../hooks/useCatalog.js";
+import { useCatalogCourses, useCourseDetails, useCourseHistory } from "../hooks/useCatalog.js";
 import { useCompletedCourses } from "../hooks/useCompletedCourses.js";
 import { usePlan } from "../hooks/usePlan.js";
 import { SemesterBoard } from "./SemesterBoard.js";
@@ -24,6 +24,7 @@ export function PlanScreen() {
   const { courses, loading: catalogLoading, error: catalogError } = useCatalogCourses();
   const plannedCodes = useMemo(() => plan.terms.flatMap((term) => term.courses), [plan.terms]);
   const { details } = useCourseDetails(plannedCodes);
+  const { history: courseHistory } = useCourseHistory(plannedCodes);
   const [creditLimitInput, setCreditLimitInput] = useState(String(plan.creditLimit));
   const [creditLimitError, setCreditLimitError] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<CourseCode | "">("");
@@ -157,6 +158,7 @@ export function PlanScreen() {
       {loaded && (
         <SemesterBoard
           plan={plan}
+          courseHistory={courseHistory}
           onMoveCourse={(sourceTermIndex, sourceCourseIndex, destTermIndex, destCourseIndex) => {
             void moveCourse(
               sourceTermIndex,

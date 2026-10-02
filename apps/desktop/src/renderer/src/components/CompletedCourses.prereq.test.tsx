@@ -52,6 +52,7 @@ function renderScreen(
       catalog: {
         listCourses: async () => courses,
         getCourseDetails,
+        getCourseHistory: async () => [],
         listDegrees: async () => [],
         getDegree: async () => {
           throw new Error("none");

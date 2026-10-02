@@ -24,8 +24,8 @@ export class UntrustedIpcSenderError extends Error {
 const CompletedSetArgsSchema = z.tuple([CourseCodeSchema, z.boolean()]);
 const PlanSaveArgsSchema = z.tuple([PlanSchema]);
 const CatalogCourseDetailsArgsSchema = z.tuple([z.array(CourseCodeSchema).max(500)]);
+const CatalogCourseHistoryArgsSchema = z.tuple([CourseCodeSchema]);
 const CatalogDegreeArgsSchema = z.tuple([z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)]);
-
 /**
  * Whether `frameUrl` is the app's own renderer at `rendererUrl`: the same origin for the dev
  * server, or the same file (ignoring query and hash) for the packaged `file://` build.
@@ -84,6 +84,10 @@ export function registerIpcHandlers(
   handle(IPC_CHANNELS.catalogCourseDetails, (args) => {
     const [codes] = CatalogCourseDetailsArgsSchema.parse(args);
     return stores.catalog.getCourseDetails(codes);
+  });
+  handle(IPC_CHANNELS.catalogCourseHistory, (args) => {
+    const [code] = CatalogCourseHistoryArgsSchema.parse(args);
+    return stores.catalog.getCourseHistory(code);
   });
   handle(IPC_CHANNELS.catalogDegrees, (args) => {
     z.tuple([]).parse(args);

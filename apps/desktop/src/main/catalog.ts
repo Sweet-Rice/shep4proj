@@ -6,6 +6,7 @@ import {
   type Course,
   type CourseCode,
   type CourseDetail,
+  type CourseOfferingHistory,
   type DegreeProgram,
   type DegreeSummary,
 } from "@jevschedule/shared";
@@ -14,6 +15,7 @@ import { z } from "zod";
 export interface CatalogClient {
   listCourses(): Promise<Course[]>;
   getCourseDetails(codes: readonly CourseCode[]): Promise<Record<CourseCode, CourseDetail>>;
+  getCourseHistory(code: CourseCode): Promise<CourseOfferingHistory[]>;
   listDegrees(): Promise<DegreeSummary[]>;
   getDegree(id: string): Promise<DegreeProgram>;
 }
@@ -29,6 +31,15 @@ export function resolveApiBaseUrl(
 
 const CoursesResponseSchema = z.object({ courses: z.array(CourseSchema) });
 const DegreesResponseSchema = z.object({ degrees: z.array(DegreeSummarySchema) });
+const CourseHistoryResponseSchema = z.object({
+  history: z.array(
+    z.object({
+      term: z.string(),
+      sectionCount: z.number().int(),
+      capturedAt: z.string(),
+    }),
+  ),
+});
 
 export function createCatalogClient(
   baseUrl: string,
@@ -49,6 +60,7 @@ export function createCatalogClient(
   let coursesCache: Course[] | undefined;
   let degreesCache: DegreeSummary[] | undefined;
   const courseDetails = new Map<CourseCode, CourseDetail>();
+  const courseHistory = new Map<CourseCode, CourseOfferingHistory[]>();
   const degrees = new Map<string, DegreeProgram>();
 
   async function request(path: string): Promise<Response> {
@@ -102,6 +114,24 @@ export function createCatalogClient(
         const detail = courseDetails.get(code);
         if (detail) result[code] = detail;
       }
+      return result;
+    },
+    async getCourseHistory(code) {
+      const cached = courseHistory.get(code);
+      if (cached) return cached;
+      const pathCode = code.replace(" ", "-");
+      const path = `/courses/${pathCode}/history`;
+      const response = await request(path);
+      if (response.status === 404) {
+        courseHistory.set(code, []);
+        return [];
+      }
+      if (!response.ok) {
+        throw new Error(`Course catalog request failed: GET ${path} returned ${response.status}`);
+      }
+      const { history } = CourseHistoryResponseSchema.parse(await response.json());
+      const result = history.map(({ term, sectionCount }) => ({ term, sectionCount }));
+      courseHistory.set(code, result);
       return result;
     },
     async listDegrees() {

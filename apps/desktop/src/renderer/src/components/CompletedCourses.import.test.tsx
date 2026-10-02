@@ -30,6 +30,7 @@ describe("transcript upload in the installed desktop screen", () => {
         catalog: {
           listCourses: async () => [],
           getCourseDetails: async () => ({}),
+          getCourseHistory: async () => [],
           listDegrees: async () => [],
           getDegree: async () => {
             throw new Error("none");
@@ -65,6 +66,7 @@ describe("transcript upload in the installed desktop screen", () => {
         catalog: {
           listCourses: async () => [catalogCourse],
           getCourseDetails: async () => ({}),
+          getCourseHistory: async () => [],
           listDegrees: async () => [],
           getDegree: async () => {
             throw new Error("none");

@@ -2,6 +2,7 @@ import type {
   Course,
   CourseCode,
   CourseDetail,
+  CourseOfferingHistory,
   DegreeProgram,
   DegreeSummary,
   Plan,
@@ -20,6 +21,7 @@ export const IPC_CHANNELS = {
   transcriptSelect: "transcript:select",
   catalogCourses: "catalog:courses",
   catalogCourseDetails: "catalog:course-details",
+  catalogCourseHistory: "catalog:course-history",
   catalogDegrees: "catalog:degrees",
   catalogDegree: "catalog:degree",
 } as const;
@@ -44,6 +46,7 @@ export interface JevscheduleApi {
   catalog: {
     listCourses(): Promise<Course[]>;
     getCourseDetails(codes: CourseCode[]): Promise<Record<CourseCode, CourseDetail>>;
+    getCourseHistory(code: CourseCode): Promise<CourseOfferingHistory[]>;
     listDegrees(): Promise<DegreeSummary[]>;
     getDegree(id: string): Promise<DegreeProgram>;
   };

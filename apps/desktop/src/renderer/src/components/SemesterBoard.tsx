@@ -2,10 +2,12 @@ import { useState } from "react";
 import {
   type CompletedInput,
   type CourseCode,
+  type CourseOfferingHistory,
   type Plan,
   type PlanValidationIssue,
   type Season,
   type ValidationPlan,
+  typicalTerms,
 } from "@jevschedule/shared";
 import { plannerTools } from "../services/plannerTools.js";
 
@@ -22,6 +24,7 @@ export interface SemesterBoardProps {
   onRemoveTerm?: (termIndex: number) => void;
   /** Catalog data is required to check actual credits and prerequisites. */
   courseDetails?: ValidationPlan["courseDetails"];
+  courseHistory?: Record<CourseCode, CourseOfferingHistory[]>;
   completed?: CompletedInput[] | Set<CourseCode>;
 }
 
@@ -38,6 +41,7 @@ export function SemesterBoard({
   onAddTerm,
   onRemoveTerm,
   courseDetails,
+  courseHistory,
   completed = [],
 }: SemesterBoardProps) {
   const [dragData, setDragData] = useState<DraggedCourseData | null>(null);
@@ -178,6 +182,11 @@ export function SemesterBoard({
                     const courseIssues = issues.filter(
                       (issue) => "courseCode" in issue && issue.courseCode === code,
                     );
+                    const offeredSeasons: string[] = typicalTerms(courseHistory?.[code] ?? []).map(
+                      ({ season }) => season,
+                    );
+                    const isAtypicallyOffered =
+                      offeredSeasons.length > 0 && !offeredSeasons.includes(term.season);
                     return (
                       <div
                         key={`${code}-${courseIndex}`}
@@ -213,6 +222,12 @@ export function SemesterBoard({
                                   : null}
                           </p>
                         ))}
+                        {isAtypicallyOffered && (
+                          <p className="course-validation-warning">
+                            Not offered in {term.season} terms so far (seen:{" "}
+                            {offeredSeasons.join(", ")}).
+                          </p>
+                        )}
 
                         <div className="course-card-actions">
                           {termIndex > 0 && (

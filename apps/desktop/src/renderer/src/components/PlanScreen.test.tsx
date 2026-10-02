@@ -3,7 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
-import type { Course, CourseCode, CourseDetail, Plan } from "@jevschedule/shared";
+import type {
+  Course,
+  CourseCode,
+  CourseDetail,
+  CourseOfferingHistory,
+  Plan,
+} from "@jevschedule/shared";
 import type { JevscheduleApi } from "../../../shared/ipc.js";
 import { PlanScreen } from "./PlanScreen.js";
 
@@ -13,6 +19,7 @@ const mockCompletedGet = vi.fn<() => Promise<CourseCode[]>>();
 const mockCatalogList = vi.fn<() => Promise<Course[]>>();
 const mockCourseDetails =
   vi.fn<(codes: CourseCode[]) => Promise<Record<CourseCode, CourseDetail>>>();
+const mockCourseHistory = vi.fn<(code: CourseCode) => Promise<CourseOfferingHistory[]>>();
 const course = (code: CourseCode, title: string, credits = 3): Course => ({
   catalogYear: "2026-2027",
   code,
@@ -52,6 +59,7 @@ beforeEach(() => {
     }
     return result;
   });
+  mockCourseHistory.mockResolvedValue([]);
   Object.assign(window, {
     jevschedule: {
       completed: { get: mockCompletedGet, set: async () => {} },
@@ -60,6 +68,7 @@ beforeEach(() => {
       catalog: {
         listCourses: mockCatalogList,
         getCourseDetails: mockCourseDetails,
+        getCourseHistory: mockCourseHistory,
         listDegrees: async () => [],
         getDegree: async () => {
           throw new Error("none");
@@ -105,6 +114,28 @@ describe("PlanScreen", () => {
         terms: [{ season: "Fall", year: 2026, courses: ["CSC 4330"] }],
       });
     });
+  });
+
+  it("warns on a planned course whose history lacks the term's season", async () => {
+    mockPlanGet.mockResolvedValueOnce({
+      creditLimit: 19,
+      terms: [
+        { season: "Fall", year: 2026, courses: ["CSC 3102"] },
+        { season: "Spring", year: 2027, courses: ["CSC 4330"] },
+      ],
+    });
+    mockCourseHistory.mockResolvedValue([{ term: "LSUAM_FALL_2026", sectionCount: 2 }]);
+    render(<PlanScreen />);
+
+    const springCard = await screen.findByTestId("course-card-CSC 4330");
+    await waitFor(() => {
+      expect(springCard.querySelector(".course-validation-warning")).toHaveTextContent(
+        /^Not offered in Spring terms so far \(seen: Fall\)\.$/,
+      );
+    });
+    expect(
+      screen.getByTestId("course-card-CSC 3102").querySelector(".course-validation-warning"),
+    ).toBeNull();
   });
 
   it("adds a catalog course to Fall 2026 and persists the plan", async () => {

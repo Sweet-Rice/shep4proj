@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, renderHook, waitFor } from "@testing-library/react";
-import type { Course, CourseCode, CourseDetail } from "@jevschedule/shared";
-import { useCatalogCourses, useCourseDetails } from "./useCatalog.js";
+import type { Course, CourseCode, CourseDetail, CourseOfferingHistory } from "@jevschedule/shared";
+import { useCatalogCourses, useCourseDetails, useCourseHistory } from "./useCatalog.js";
 
 afterEach(() => {
   cleanup();
@@ -76,5 +76,23 @@ describe("catalog hooks", () => {
       expect(result.current.details["CSC 1351"]).toEqual(updatedDetail);
       expect(result.current.loading).toBe(false);
     });
+  });
+
+  it("fetches and returns history once per distinct planned code", async () => {
+    const history: CourseOfferingHistory[] = [{ term: "LSUAM_FALL_2026", sectionCount: 2 }];
+    const getCourseHistory = vi.fn().mockResolvedValue(history);
+    Object.assign(window, { jevschedule: { catalog: { getCourseHistory } } });
+    const { result } = renderHook(() =>
+      useCourseHistory(["CSC 1350", "CSC 1350", "CSC 3102"] as CourseCode[]),
+    );
+
+    await waitFor(() => {
+      expect(result.current.history["CSC 1350"]).toEqual(history);
+      expect(result.current.history["CSC 3102"]).toEqual(history);
+      expect(result.current.loading).toBe(false);
+    });
+    expect(getCourseHistory).toHaveBeenCalledTimes(2);
+    expect(getCourseHistory).toHaveBeenCalledWith("CSC 1350");
+    expect(getCourseHistory).toHaveBeenCalledWith("CSC 3102");
   });
 });

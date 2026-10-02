@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Course, CourseCode, CourseDetail } from "@jevschedule/shared";
+import type { Course, CourseCode, CourseDetail, CourseOfferingHistory } from "@jevschedule/shared";
 
 function asError(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error));
@@ -75,4 +75,54 @@ export function useCourseDetails(codes: readonly CourseCode[]): {
   }, [codesKey, normalizedCodes]);
 
   return { details, loading, error };
+}
+
+export function useCourseHistory(codes: readonly CourseCode[]): {
+  history: Record<CourseCode, CourseOfferingHistory[]>;
+  loading: boolean;
+  error: Error | null;
+} {
+  const codesKey = useMemo(() => [...new Set(codes)].sort().join("|"), [codes]);
+  const normalizedCodes = useMemo(
+    () => (codesKey ? (codesKey.split("|") as CourseCode[]) : []),
+    [codesKey],
+  );
+  const [history, setHistory] = useState<Record<CourseCode, CourseOfferingHistory[]>>({});
+  const [loading, setLoading] = useState(normalizedCodes.length > 0);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setHistory({});
+    setError(null);
+    if (normalizedCodes.length === 0) {
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+    setLoading(true);
+    Promise.all(
+      normalizedCodes.map(async (code) => {
+        const courseHistory = await window.jevschedule.catalog.getCourseHistory(code);
+        return [code, courseHistory] as const;
+      }),
+    ).then(
+      (entries) => {
+        if (cancelled) return;
+        setHistory(Object.fromEntries(entries) as Record<CourseCode, CourseOfferingHistory[]>);
+        setLoading(false);
+      },
+      (reason: unknown) => {
+        if (cancelled) return;
+        setError(asError(reason));
+        setLoading(false);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [codesKey, normalizedCodes]);
+
+  return { history, loading, error };
 }
