@@ -117,4 +117,19 @@ describe("DegreeProgressView", () => {
     ).toHaveTextContent("CSC 1350");
     expect(Number(overallProgress.getAttribute("aria-valuenow"))).toBeGreaterThan(overallBefore);
   });
+
+  it("shows 0% instead of NaN when the degree requires no credits", () => {
+    render(
+      <DegreeProgressView
+        degree={{ ...sampleDegree, totalCredits: 0, requirements: [] }}
+        completed={new Set()}
+        onToggleCourse={() => {}}
+        catalog={catalog}
+      />,
+    );
+    expect(screen.getByTestId("credits-summary")).not.toHaveTextContent("NaN");
+    expect(screen.getByTestId("credits-summary")).toHaveTextContent("0 / 0 credits (0%)");
+    const overall = screen.getByRole("progressbar", { name: "Overall degree progress" });
+    expect(overall).toHaveAttribute("aria-valuenow", "0");
+  });
 });
