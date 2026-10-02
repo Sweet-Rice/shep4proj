@@ -1,10 +1,15 @@
-import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify";
+import Fastify, {
+  type FastifyError,
+  type FastifyInstance,
+  type FastifyServerOptions,
+} from "fastify";
 import type { Db } from "./db/client.js";
 import { loadDegreePrograms } from "./degrees/load.js";
 import { registerCourseRoutes } from "./routes/courses.js";
 import { registerDegreeRoutes } from "./routes/degrees.js";
 import { registerSectionRoutes } from "./routes/sections.js";
 import { registerWatchRoutes } from "./routes/watches.js";
+import { redactIds } from "./request-log.js";
 
 /** Body returned by `GET /health`. */
 export interface HealthResponse {
@@ -54,6 +59,28 @@ export function buildServer(opts: ServerOptions = {}): FastifyInstance {
     registerSectionRoutes(app, { db });
     registerWatchRoutes(app, { db });
   }
+
+  // Fastify's defaults log and reply with the raw error message and the unmatched path. Those
+  // quote query parameters and URLs, which carry a watch's bearer ID, so replace both.
+  app.setErrorHandler((error: FastifyError, request, reply) => {
+    const statusCode = error.statusCode ?? 500;
+    if (statusCode < 500) return reply.send(error);
+    request.log.error(
+      {
+        err: {
+          type: error.name,
+          message: redactIds(error.message),
+          stack: error.stack && redactIds(error.stack),
+        },
+      },
+      "request failed",
+    );
+    return reply.status(statusCode).send({ error: "Internal Server Error" });
+  });
+  app.setNotFoundHandler((request, reply) => {
+    request.log.info("route not found");
+    return reply.status(404).send({ error: "Not Found" });
+  });
 
   return app;
 }
