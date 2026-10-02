@@ -311,6 +311,21 @@ describe("SemesterBoard", () => {
     expect(target).not.toHaveClass("drop-target");
   });
 
+  it("clears the drop target when a drag ends without a drop", () => {
+    const onMoveCourse = vi.fn();
+    render(<SemesterBoard plan={samplePlan} onMoveCourse={onMoveCourse} />);
+    const card = screen.getByTestId("course-card-CSC 1350");
+    const target = screen.getByTestId("term-column-1");
+    fireEvent.dragStart(card, { dataTransfer: { setData: vi.fn(), effectAllowed: "move" } });
+    fireEvent.dragOver(target, { dataTransfer: {} });
+    expect(target).toHaveClass("drop-target");
+    fireEvent.dragEnd(card);
+    for (const column of screen.getAllByTestId(/^term-column-/)) {
+      expect(column).not.toHaveClass("drop-target");
+    }
+    expect(onMoveCourse).not.toHaveBeenCalled();
+  });
+
   it("removes a course from its term with the icon button and shows its credits", () => {
     const handleRemove = vi.fn();
     render(
