@@ -20,6 +20,13 @@ export interface CatalogClient {
 
 export const DEFAULT_API_BASE_URL = "http://127.0.0.1:3000";
 
+export function resolveApiBaseUrl(
+  runtime: string | undefined,
+  buildTime: string | undefined,
+): string {
+  return runtime || buildTime || DEFAULT_API_BASE_URL;
+}
+
 const CoursesResponseSchema = z.object({ courses: z.array(CourseSchema) });
 const DegreesResponseSchema = z.object({ degrees: z.array(DegreeSummarySchema) });
 

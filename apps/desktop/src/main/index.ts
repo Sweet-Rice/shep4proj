@@ -3,7 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import { parseTranscriptPdf } from "@jevschedule/workday";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { createCatalogClient, DEFAULT_API_BASE_URL } from "./catalog.js";
+import { createCatalogClient, resolveApiBaseUrl } from "./catalog.js";
 import { isAppRendererUrl, registerIpcHandlers } from "./ipc.js";
 import { createCompletedStore } from "./store/completed.js";
 import { openLocalDb } from "./store/db.js";
@@ -41,7 +41,9 @@ void app.whenReady().then(() => {
     {
       completed: createCompletedStore(db),
       plan: createPlanStore(db),
-      catalog: createCatalogClient(process.env.JEVSCHEDULE_API_URL ?? DEFAULT_API_BASE_URL),
+      catalog: createCatalogClient(
+        resolveApiBaseUrl(process.env.JEVSCHEDULE_API_URL, import.meta.env.MAIN_VITE_API_URL),
+      ),
     },
     (event) => isAppRendererUrl(event.senderFrame?.url, rendererUrl),
     async () => {
