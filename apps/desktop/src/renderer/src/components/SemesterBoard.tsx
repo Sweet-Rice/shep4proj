@@ -182,12 +182,11 @@ export function SemesterBoard({
                     const courseIssues = issues.filter(
                       (issue) => "courseCode" in issue && issue.courseCode === code,
                     );
-                    const history = courseHistory?.[code] ?? [];
-                    const offeredSeasons: string[] = typicalTerms(history).map(
+                    const offeredSeasons: string[] = typicalTerms(courseHistory?.[code] ?? []).map(
                       ({ season }) => season,
                     );
                     const isAtypicallyOffered =
-                      history.length > 0 && !offeredSeasons.includes(term.season);
+                      offeredSeasons.length > 0 && !offeredSeasons.includes(term.season);
                     return (
                       <div
                         key={`${code}-${courseIndex}`}

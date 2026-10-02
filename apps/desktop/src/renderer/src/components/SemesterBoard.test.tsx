@@ -90,6 +90,33 @@ describe("SemesterBoard", () => {
     );
   });
 
+  it("does not warn when history has no Fall, Spring, or Summer terms", () => {
+    const plan: Plan = {
+      creditLimit: 12,
+      terms: [
+        { season: "Spring", year: 2027, courses: ["CSC 1350"] },
+        { season: "Winter", year: 2027, courses: ["CSC 1351"] },
+      ],
+    };
+    render(
+      <SemesterBoard
+        plan={plan}
+        courseHistory={{
+          "CSC 1350": [{ term: "LSUAM_WINTER_2026", sectionCount: 2 }],
+          "CSC 1351": [{ term: "LSUAM_WINTER_2026", sectionCount: 2 }],
+        }}
+        onMoveCourse={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByTestId("course-card-CSC 1350").querySelector(".course-validation-warning"),
+    ).toBeNull();
+    expect(
+      screen.getByTestId("course-card-CSC 1351").querySelector(".course-validation-warning"),
+    ).toBeNull();
+  });
+
   it("moves course between terms when Move buttons are clicked", async () => {
     const user = userEvent.setup();
     const handleMove = vi.fn();
