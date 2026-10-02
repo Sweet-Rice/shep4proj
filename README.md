@@ -7,11 +7,11 @@ architecture, and backlog.
 
 ## Install
 
-Download v1.1.0 from [GitHub Releases](https://github.com/Sweet-Rice/shep4proj/releases):
+Download v1.2.0 from [GitHub Releases](https://github.com/Sweet-Rice/shep4proj/releases):
 
-- Windows: `JevSchedule.Setup.1.1.0.exe` (NSIS installer; you can choose the install
+- Windows: `JevSchedule.Setup.1.2.0.exe` (NSIS installer; you can choose the install
   directory). If SmartScreen warns, choose **More info → Run anyway**.
-- Linux: `JevSchedule-1.1.0.AppImage`.
+- Linux: `JevSchedule-1.2.0.AppImage`.
 - macOS: there is no macOS release build; build from source using the dev setup below.
 
 The installers connect to the hosted JevSchedule server automatically. To use another
