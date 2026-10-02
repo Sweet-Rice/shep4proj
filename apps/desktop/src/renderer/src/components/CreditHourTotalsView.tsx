@@ -11,9 +11,9 @@ export function CreditHourTotalsView({ evaluation }: CreditHourTotalsViewProps) 
 
   return (
     <div className="credit-hour-totals-container" data-testid="credit-hour-totals">
-      <h3>Credit-Hour Summary</h3>
+      <h3 className="visually-hidden">Credit-Hour Summary</h3>
       <div className="overall-totals-card" data-testid="overall-totals-card">
-        <div className="totals-header">
+        <div className="totals-header visually-hidden">
           <h4>Overall Degree Progress</h4>
           <span
             className={`totals-badge ${totals.overall.isSatisfied ? "satisfied" : "in-progress"}`}

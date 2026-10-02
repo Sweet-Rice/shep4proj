@@ -47,9 +47,17 @@ export function DegreeProgressView({
           {degree.concentration} ({degree.catalogYear})
         </p>
         <div className="overall-status" data-testid="overall-status">
-          <span className={`status-badge ${evaluation.isSatisfied ? "satisfied" : "in-progress"}`}>
-            {evaluation.isSatisfied ? "Degree Satisfied" : "In Progress"}
-          </span>
+          <div className="overall-status-row">
+            <span
+              className={`status-badge ${evaluation.isSatisfied ? "satisfied" : "in-progress"}`}
+            >
+              {evaluation.isSatisfied ? "Degree Satisfied" : "In Progress"}
+            </span>
+            <span className="credits-summary" data-testid="credits-summary">
+              {evaluation.totalCreditsFulfilled} / {evaluation.totalCreditsRequired} credits (
+              {percentComplete}%)
+            </span>
+          </div>
           <div className="progress-bar-container">
             <div
               className="progress-bar-fill"
@@ -61,10 +69,6 @@ export function DegreeProgressView({
               aria-valuemax={100}
             />
           </div>
-          <span className="credits-summary" data-testid="credits-summary">
-            {evaluation.totalCreditsFulfilled} / {evaluation.totalCreditsRequired} credits (
-            {percentComplete}%)
-          </span>
         </div>
       </header>
       <CreditHourTotalsView evaluation={evaluation} />

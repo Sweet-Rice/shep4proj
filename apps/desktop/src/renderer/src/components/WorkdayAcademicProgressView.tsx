@@ -34,7 +34,15 @@ export function WorkdayAcademicProgressView({ audit }: { audit: StoredAcademicPr
       <header className="degree-header">
         <h2>From Workday · imported {formatImportedDate(audit.importedAt)}</h2>
         <div className="overall-status">
-          <span className="status-badge in-progress">{overall.status ?? "Academic progress"}</span>
+          <div className="overall-status-row">
+            <span className="status-badge in-progress">
+              {overall.status ?? "Academic progress"}
+            </span>
+            <span className="credits-summary">
+              {satisfying} of {total} satisfying credits · {inProgress} in progress
+              {overall.remainingCredits === null ? "" : ` · ${overall.remainingCredits} remaining`}
+            </span>
+          </div>
           <div className="progress-bar-container">
             <div
               className="progress-bar-fill"
@@ -46,10 +54,6 @@ export function WorkdayAcademicProgressView({ audit }: { audit: StoredAcademicPr
               style={{ width: `${percent}%` }}
             />
           </div>
-          <span className="credits-summary">
-            {satisfying} of {total} satisfying credits · {inProgress} in progress
-            {overall.remainingCredits === null ? "" : ` · ${overall.remainingCredits} remaining`}
-          </span>
         </div>
       </header>
       <section className="requirements-list" aria-label="Workday degree requirements">
@@ -61,7 +65,7 @@ export function WorkdayAcademicProgressView({ audit }: { audit: StoredAcademicPr
               data-testid={`workday-requirement-${index}`}
               key={`${requirement.name}-${index}`}
             >
-              <summary className="area-summary">
+              <summary className="area-summary area-summary-simple">
                 <span className="area-name">{requirement.name}</span>
                 <span className={`badge ${STATUS_BADGE_CLASS[requirement.status]}`}>
                   {requirement.statusText}
