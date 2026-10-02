@@ -163,6 +163,44 @@ describe("EligibleCoursesScreen", () => {
     expect(mockCourseDetails).toHaveBeenCalledWith(["CSC 1350", "CSC 4999"]);
   });
 
+  it("keeps a course blocked by an uncompleted corequisite, since no term is planned here", async () => {
+    const user = userEvent.setup();
+    const withCoreq: CourseDetail = {
+      ...course("CSC 2259", "Discrete Structures"),
+      prereq: {
+        tree: { type: "COURSE", code: "CSC 1350", coreq: true, minGrade: null },
+        needsReview: false,
+        reviewReason: null,
+        notes: [],
+      },
+    };
+    mockListCourses.mockResolvedValue([DETAILS["CSC 1350"]!, withCoreq]);
+    mockCourseDetails.mockImplementation(async (codes) =>
+      Object.fromEntries(
+        codes.map((code) => [code, code === "CSC 2259" ? withCoreq : DETAILS[code]!]),
+      ),
+    );
+    render(<EligibleCoursesScreen />);
+
+    const blocked = await screen.findByRole("region", { name: "Blocked (1)" });
+    expect(within(blocked).getByText("CSC 2259")).toBeInTheDocument();
+    await user.click(within(blocked).getByRole("button", { name: "Why blocked?" }));
+    expect(
+      screen.getByRole("list", { name: "Missing prerequisites for CSC 2259" }),
+    ).toHaveTextContent("CSC 1350 completed or planned in the same term");
+  });
+
+  it("shows an alert instead of loading forever when completed courses cannot be read", async () => {
+    mockCompletedGet.mockRejectedValue(new Error("store unavailable"));
+    render(<EligibleCoursesScreen />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Could not load or update completed courses. Please try again.",
+    );
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.queryByRole("region")).not.toBeInTheDocument();
+  });
+
   it("shows the server alert when the catalog cannot be loaded", async () => {
     mockListCourses.mockRejectedValue(new Error("offline"));
     render(<EligibleCoursesScreen />);
