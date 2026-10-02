@@ -3,6 +3,8 @@ import { findConflicts, type Section, type Weekday } from "@jevschedule/shared";
 import { getSectionKey } from "../hooks/useScheduleBuilder.js";
 import { assignMeetingLanes } from "./meeting-lanes.js";
 
+const COURSE_TONE_COUNT = 4;
+
 export const CALENDAR_DAYS: Weekday[] = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 export interface WeeklyCalendarProps {
@@ -35,9 +37,19 @@ export function WeeklyCalendar({
   sections,
   conflictingSectionKeys,
   onRemoveSection,
-  startHour = 8,
-  endHour = 18,
+  startHour: minStartHour = 8,
+  endHour: minEndHour = 18,
 }: WeeklyCalendarProps) {
+  // Widen the default range so evening or early meetings are never drawn outside the grid.
+  const meetings = sections.flatMap((section) => section.meetings);
+  const startHour = Math.min(
+    minStartHour,
+    ...meetings.map((meeting) => Math.floor(meeting.startMinute / 60)),
+  );
+  const endHour = Math.max(
+    minEndHour,
+    ...meetings.map((meeting) => Math.ceil(meeting.endMinute / 60)),
+  );
   const conflicts =
     conflictingSectionKeys ??
     new Set(
@@ -78,6 +90,13 @@ export function WeeklyCalendar({
     });
   }
 
+  const totalCredits = sections.reduce((sum, section) => sum + section.credits.min, 0);
+  const courseTones = new Map(
+    [...new Set(sections.map((section) => section.courseCode))]
+      .sort()
+      .map((code, index) => [code, index % COURSE_TONE_COUNT]),
+  );
+
   const hours: number[] = [];
   for (let h = startHour; h <= endHour; h++) {
     hours.push(h);
@@ -87,7 +106,10 @@ export function WeeklyCalendar({
     <div className="weekly-calendar-container" data-testid="weekly-calendar">
       <header className="calendar-header">
         <h2>Weekly Schedule</h2>
-        <p className="calendar-subtitle">Mon–Fri Class Time Grid</p>
+        <p className="calendar-subtitle">
+          {sections.length} section{sections.length === 1 ? "" : "s"} · {totalCredits} credit
+          {totalCredits === 1 ? "" : "s"}
+        </p>
         {conflicts.size > 0 && (
           <div
             role="alert"
@@ -156,7 +178,7 @@ export function WeeklyCalendar({
                 return (
                   <div
                     key={`${section.courseCode}-${section.sectionNumber}-${day}-${idx}`}
-                    className={`meeting-block ${slot.laneCount > 1 ? "multi-lane" : ""} ${isConflict ? "conflict" : ""}`}
+                    className={`meeting-block tone-${courseTones.get(section.courseCode)} ${slot.laneCount > 1 ? "multi-lane" : ""} ${isConflict ? "conflict" : ""}`}
                     data-testid={`meeting-block-${section.courseCode}-${day}`}
                     style={{
                       top: `${Math.max(0, topPercent)}%`,

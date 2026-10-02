@@ -60,6 +60,26 @@ describe("WeeklyCalendar & formatMinuteToTime", () => {
     expect(formatMinuteToTime(1020)).toBe("5:00 PM");
   });
 
+  it("summarizes section and credit totals and gives each course its own tone", () => {
+    render(<WeeklyCalendar sections={calendarSections} />);
+
+    expect(screen.getByText("2 sections · 8 credits")).toBeInTheDocument();
+    expect(screen.getByTestId("meeting-block-CSC 1350-Mon")).toHaveClass("tone-0");
+    expect(screen.getByTestId("meeting-block-CSC 1350-Fri")).toHaveClass("tone-0");
+    expect(screen.getByTestId("meeting-block-MATH 1550-Tue")).toHaveClass("tone-1");
+  });
+
+  it("extends the time grid to fit meetings outside the default hours", () => {
+    const evening: Section = {
+      ...overlappingSections[0]!,
+      meetings: [{ days: ["Thu"], startMinute: 990, endMinute: 1160 }], // 4:30 - 7:20 PM
+    };
+    render(<WeeklyCalendar sections={[evening]} />);
+
+    expect(screen.getByTestId("time-label-20")).toBeInTheDocument();
+    expect(screen.queryByTestId("time-label-21")).not.toBeInTheDocument();
+  });
+
   it("renders weekly calendar container with Mon-Fri headers and time grid", () => {
     render(<WeeklyCalendar sections={calendarSections} />);
 
