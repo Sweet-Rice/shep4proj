@@ -1,0 +1,2 @@
+.eligible-courses-screen>section,.eligible-courses-screen .eligible-region{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-5);box-shadow:var(--shadow-sm);margin-bottom:var(--space-5)}
+.eligible-course{display:flex;align-items:baseline;gap:var(--space-3);padding:var(--space-2) 0;border-bottom:1px solid var(--border)}.eligible-courses-screen li ul{list-style:disc;padding-left:var(--space-5)}

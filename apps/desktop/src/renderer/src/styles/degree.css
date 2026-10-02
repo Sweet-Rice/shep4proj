@@ -1,0 +1,6 @@
+.degree-header h2{font-size:var(--text-xl)}.concentration,.subtitle{color:var(--text-muted)}
+.progress-bar-container{height:10px;background:var(--surface-2);border-radius:var(--radius-pill);overflow:hidden;margin:var(--space-3) 0}.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--purple-500))}
+.requirements-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--space-4);margin-top:var(--space-6)}.requirement-card{border-left-width:4px}.requirement-satisfied{border-left-color:var(--success)}.requirement-partially_satisfied{border-left-color:var(--warning)}.requirement-unsatisfied{border-left-color:var(--border-strong)}
+.requirement-header{display:flex;justify-content:space-between;align-items:center;gap:var(--space-2);margin-bottom:var(--space-3)}.course-item{padding:4px 0}
+.totals-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4)}.metric-value{font-size:var(--text-2xl);font-weight:700}.metric-label{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted)}
+.bucket-totals-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--space-3);margin-top:var(--space-4)}.bucket-card-header,.totals-header{display:flex;justify-content:space-between;align-items:center}
