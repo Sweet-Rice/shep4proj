@@ -7,7 +7,7 @@ This runbook is host-agnostic. Choose a container host, managed PostgreSQL servi
 From the repository root, build with the server Dockerfile (the build context must include the workspace packages and degree data):
 
 ```sh
-docker build -f apps/server/Dockerfile -t jevschedule-server .
+docker build --platform linux/amd64 -f apps/server/Dockerfile -t jevschedule-server .
 ```
 
 Push this image to the container host's registry using the host's normal release process. Configure the service to run `node dist/main.js` (the image default) and expose its configured port.
@@ -22,9 +22,11 @@ Set these variables through the host's secret/configuration facility. Never comm
 | `HOST` | Set to `0.0.0.0` so the container accepts connections from the host. The code default is `127.0.0.1`. |
 | `PORT` | The port exposed/routed by the host; defaults to `3000`. |
 | `SECTION_SCRAPE_ENABLED` | `true` or `false`; defaults to `false`. Enable only when scheduled live section scraping is intended. |
-| `SECTION_SCRAPE_DEPARTMENTS` | Comma-separated 2–4 letter department prefixes; defaults to `CSC` (for example, `CSC`). Used by scheduled section scraping and the operator section scrape. |
+| `SECTION_SCRAPE_DEPARTMENTS` | Comma-separated 2–4 letter department prefixes; defaults to `CSC` (for example, `CSC`). Used by scheduled section scraping and operator-triggered section scraping. |
+| `CATALOG_SCRAPE_ENABLED` | `true` or `false`; defaults to `false`. Set `true` in production to schedule the CSC catalog scrape. |
+| `CATALOG_BROWSER_CHANNEL` | Browser channel used by the catalog scraper; the server image sets this to `chrome`. |
 
-`HOST`, `PORT` and section scraping are read by `apps/server/src/config.ts`; the defaults above are those in that configuration. Keep scheduled scraping disabled unless the deployment is intended to contact LSU.
+`HOST`, `PORT` and scrape configuration are read by `apps/server/src/config.ts`. Keep scheduled scraping disabled unless the deployment is intended to contact LSU.
 
 ## Apply database migrations
 
@@ -46,16 +48,15 @@ curl -fsS https://YOUR_PUBLIC_HOST/health
 
 A successful response is HTTP 200. The container image also defines a Docker `HEALTHCHECK` for `/health`.
 
-## Load catalog and section data
+## Enable scheduled scraping
 
-Run the live scrapes from an operator machine, not inside the production Alpine image. The operator machine needs Node/pnpm, the repository dependencies, and an installed Chrome browser for the catalog fetcher (to use Microsoft Edge instead, also set `CATALOG_BROWSER_CHANNEL=msedge`). These commands contact live LSU pages; use them only as deliberate operator actions, never as CI tests. Run them from the repository root, where the repository `.env` is available if desired:
+Set `SECTION_SCRAPE_ENABLED=true`, `CATALOG_SCRAPE_ENABLED=true`, and `SECTION_SCRAPE_DEPARTMENTS=CSC` in the host's secure configuration. The server runs both scrapes on its own schedule; no operator-machine scrape is required. The first catalog load takes about three hours because the catalog's robots.txt specifies a 120-second crawl delay.
+
+After the initial load, verify that the public catalog endpoint returns a non-empty list:
 
 ```sh
-DATABASE_URL="$DATABASE_URL" pnpm --filter @jevschedule/server db:scrape:catalog
-DATABASE_URL="$DATABASE_URL" pnpm --filter @jevschedule/server db:scrape:sections
+curl -fsS https://YOUR_PUBLIC_HOST/courses?dept=CSC
 ```
-
-The catalog command loads the configured 2026–2027 catalog for CSC and reports stored/upserted courses and failures. The section command uses `SECTION_SCRAPE_DEPARTMENTS` (default `CSC`) and reports per-term results. Resolve reported failures before considering the initial data load complete.
 
 ## Point the desktop app at the deployed API
 

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_HOST, DEFAULT_PORT, readListenConfig, readSectionScrapeConfig } from "./config.js";
+import {
+  DEFAULT_HOST,
+  DEFAULT_PORT,
+  readCatalogScrapeConfig,
+  readListenConfig,
+  readSectionScrapeConfig,
+} from "./config.js";
 
 describe("readListenConfig", () => {
   it("defaults to localhost:3000", () => {
@@ -59,4 +65,22 @@ describe("readSectionScrapeConfig", () => {
       );
     },
   );
+});
+
+describe("readCatalogScrapeConfig", () => {
+  it("is disabled by default and accepts explicit values", () => {
+    expect(readCatalogScrapeConfig({})).toEqual({ enabled: false });
+    expect(readCatalogScrapeConfig({ CATALOG_SCRAPE_ENABLED: "true" })).toEqual({
+      enabled: true,
+    });
+    expect(readCatalogScrapeConfig({ CATALOG_SCRAPE_ENABLED: " " })).toEqual({
+      enabled: false,
+    });
+  });
+
+  it.each(["yes", "1", "TRUE", "on"])("rejects CATALOG_SCRAPE_ENABLED=%s", (value) => {
+    expect(() => readCatalogScrapeConfig({ CATALOG_SCRAPE_ENABLED: value })).toThrow(
+      /CATALOG_SCRAPE_ENABLED must be/,
+    );
+  });
 });

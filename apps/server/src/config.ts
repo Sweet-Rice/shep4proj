@@ -62,3 +62,16 @@ export function readSectionScrapeConfig(env: NodeJS.ProcessEnv = process.env): S
   }
   return { enabled: rawEnabled === "true", departments: [...new Set(departments)] };
 }
+/** Whether the server scrapes the catalog on a schedule (T-611). */
+export interface CatalogScrapeConfig {
+  enabled: boolean;
+}
+
+/** Reads CATALOG_SCRAPE_ENABLED; the safe default keeps development servers offline. */
+export function readCatalogScrapeConfig(env: NodeJS.ProcessEnv = process.env): CatalogScrapeConfig {
+  const rawEnabled = env.CATALOG_SCRAPE_ENABLED?.trim() || "false";
+  if (rawEnabled !== "true" && rawEnabled !== "false") {
+    throw new Error(`CATALOG_SCRAPE_ENABLED must be "true" or "false", got "${rawEnabled}"`);
+  }
+  return { enabled: rawEnabled === "true" };
+}
