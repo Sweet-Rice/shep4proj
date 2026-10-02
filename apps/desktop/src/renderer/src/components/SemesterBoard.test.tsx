@@ -49,6 +49,47 @@ describe("SemesterBoard", () => {
     expect(screen.getByTestId("course-card-CSC 1351")).toBeInTheDocument();
   });
 
+  it("matches offered seasons and ignores empty history", () => {
+    render(
+      <SemesterBoard
+        plan={samplePlan}
+        courseHistory={{
+          "CSC 1350": [{ term: "LSUAM_FALL_2026", sectionCount: 2 }],
+          "MATH 1550": [],
+          "CSC 1351": [{ term: "LSUAM_FALL_2026", sectionCount: 1 }],
+        }}
+        onMoveCourse={vi.fn()}
+      />,
+    );
+
+    const fallCard = screen.getByTestId("course-card-CSC 1350");
+    const emptyHistoryCard = screen.getByTestId("course-card-MATH 1550");
+    const springCard = screen.getByTestId("course-card-CSC 1351");
+    expect(fallCard.querySelector(".course-validation-warning")).toBeNull();
+    expect(emptyHistoryCard.querySelector(".course-validation-warning")).toBeNull();
+    expect(springCard).toHaveTextContent(/Not offered in Spring terms/);
+  });
+
+  it("warns for a Winter term when history exists", () => {
+    const winterPlan: Plan = {
+      creditLimit: 12,
+      terms: [{ season: "Winter", year: 2027, courses: ["CSC 1350"] }],
+    };
+    render(
+      <SemesterBoard
+        plan={winterPlan}
+        courseHistory={{
+          "CSC 1350": [{ term: "LSUAM_FALL_2026", sectionCount: 1 }],
+        }}
+        onMoveCourse={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("course-card-CSC 1350")).toHaveTextContent(
+      /Not offered in Winter terms/,
+    );
+  });
+
   it("moves course between terms when Move buttons are clicked", async () => {
     const user = userEvent.setup();
     const handleMove = vi.fn();

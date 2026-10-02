@@ -60,6 +60,7 @@ beforeEach(() => {
       catalog: {
         listCourses: mockCatalogList,
         getCourseDetails: mockCourseDetails,
+        getCourseHistory: async () => [],
         listDegrees: async () => [],
         getDegree: async () => {
           throw new Error("none");

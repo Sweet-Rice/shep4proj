@@ -29,6 +29,7 @@ const TEST_CATALOG: Course[] = [
 describe("CourseSearch", () => {
   afterEach(() => {
     cleanup();
+    Reflect.deleteProperty(window, "jevschedule");
   });
 
   it("renders search input and initial course list", () => {
@@ -92,5 +93,47 @@ describe("CourseSearch", () => {
     expect(handleSelect).toHaveBeenCalledWith(expect.objectContaining({ code: "CSC 1350" }));
     await user.click(screen.getByRole("button", { name: "Mark Completed" }));
     expect(handleToggle).toHaveBeenCalledWith("CSC 1350");
+  });
+
+  it("loads history on disclosure and summarizes typical terms", async () => {
+    const getCourseHistory = vi.fn().mockResolvedValue([
+      { term: "LSUAM_FALL_2026", sectionCount: 2 },
+      { term: "LSUAM_FALL_2027", sectionCount: 1 },
+      { term: "LSUAM_SPRING_2027", sectionCount: 4 },
+    ]);
+    Object.assign(window, { jevschedule: { catalog: { getCourseHistory } } });
+    const user = userEvent.setup();
+    render(<CourseSearch courses={TEST_CATALOG} />);
+
+    expect(getCourseHistory).not.toHaveBeenCalled();
+    const firstCourse = screen.getByTestId("course-item-CSC 1350");
+    const disclosure = firstCourse.querySelector("button");
+    expect(disclosure).toHaveTextContent("When is this offered?");
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    await user.click(disclosure!);
+
+    const summary = await screen.findByText(/Offered in:/);
+    expect(summary).toHaveTextContent(
+      "Offered in: Fall (2 terms: 2026, 2027); Spring (1 term: 2027)",
+    );
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
+    expect(getCourseHistory).toHaveBeenCalledOnce();
+    expect(getCourseHistory).toHaveBeenCalledWith("CSC 1350");
+  });
+
+  it("shows empty and server-error offering history states", async () => {
+    const getCourseHistory = vi
+      .fn()
+      .mockResolvedValueOnce([])
+      .mockRejectedValueOnce(new Error("offline"));
+    Object.assign(window, { jevschedule: { catalog: { getCourseHistory } } });
+    const user = userEvent.setup();
+    render(<CourseSearch courses={TEST_CATALOG.slice(0, 2)} />);
+
+    await user.click(screen.getByTestId("course-item-CSC 1350").querySelector("button")!);
+    expect(await screen.findByText(/No offering history recorded yet/)).toBeInTheDocument();
+    await user.click(screen.getByTestId("course-item-CSC 1351").querySelector("button")!);
+    expect(await screen.findByRole("alert")).toHaveTextContent(/Course catalog unavailable/);
+    expect(getCourseHistory).toHaveBeenCalledTimes(2);
   });
 });

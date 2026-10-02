@@ -63,6 +63,48 @@ describe("createCatalogClient", () => {
     expect(first["CSC 1350"]).toEqual(detail);
     expect(second).toEqual(first);
   });
+  it("maps and caches course offering history by code", async () => {
+    const fetchImpl = vi.fn(async () =>
+      response({
+        history: [
+          {
+            term: "LSUAM_FALL_2026",
+            sectionCount: 2,
+            capturedAt: "2026-08-01T00:00:00Z",
+          },
+        ],
+      }),
+    );
+    const client = createCatalogClient(DEFAULT_API_BASE_URL, fetchImpl as typeof fetch);
+
+    const first = await client.getCourseHistory("CSC 1350");
+    const second = await client.getCourseHistory("CSC 1350");
+
+    expect(first).toEqual([{ term: "LSUAM_FALL_2026", sectionCount: 2 }]);
+    expect(second).toBe(first);
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(fetchImpl).toHaveBeenCalledWith("http://127.0.0.1:3000/courses/CSC-1350/history");
+  });
+
+  it("returns and caches empty history for a missing course", async () => {
+    const fetchImpl = vi.fn(async () => response({ error: "Course not found" }, 404));
+    const client = createCatalogClient(DEFAULT_API_BASE_URL, fetchImpl as typeof fetch);
+
+    await expect(client.getCourseHistory("CSC 9999")).resolves.toEqual([]);
+    await expect(client.getCourseHistory("CSC 9999")).resolves.toEqual([]);
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it("rejects malformed course history responses", async () => {
+    const malformed = response({
+      history: [{ term: "LSUAM_FALL_2026", sectionCount: 2 }],
+    });
+    const client = createCatalogClient(
+      DEFAULT_API_BASE_URL,
+      vi.fn(async () => malformed) as typeof fetch,
+    );
+    await expect(client.getCourseHistory("CSC 1350")).rejects.toThrow();
+  });
 
   it("omits a missing detail while returning the available course", async () => {
     const fetchImpl = vi.fn(async (input: RequestInfo | URL) =>

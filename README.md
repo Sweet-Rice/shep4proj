@@ -101,6 +101,11 @@ Release installers require the repository variable `JEVSCHEDULE_API_URL` as thei
 API URL and enforce HTTPS. A non-empty runtime `JEVSCHEDULE_API_URL` overrides the build-time
 value; local builds without either setting use `http://127.0.0.1:3000`.
 
+Each course in **Courses** has a **When is this offered?** disclosure that fetches its archived
+section history on demand and summarizes the Fall, Spring, or Summer terms recorded. Planned
+courses warn when their term season has no recorded offerings; an empty archive stays quiet as
+history accumulates from semester section scrapes.
+
 ### Windows (PowerShell)
 
 ```powershell

@@ -1,4 +1,10 @@
-import type { Course, CourseCode } from "@jevschedule/shared";
+import { useState } from "react";
+import {
+  typicalTerms,
+  type Course,
+  type CourseCode,
+  type CourseOfferingHistory,
+} from "@jevschedule/shared";
 import { useCourseSearch } from "../hooks/useCourseSearch.js";
 
 export interface CourseSearchProps {
@@ -113,11 +119,74 @@ export function CourseSearch({
                       {isCompleted ? "Completed" : "Mark Completed"}
                     </button>
                   )}
+                  <CourseOfferingDisclosure code={course.code} />
                 </div>
               </li>
             );
           })}
         </ul>
+      )}
+    </div>
+  );
+}
+
+function CourseOfferingDisclosure({ code }: { code: CourseCode }) {
+  const [expanded, setExpanded] = useState(false);
+  const [history, setHistory] = useState<CourseOfferingHistory[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+
+  const toggle = () => {
+    const nextExpanded = !expanded;
+    setExpanded(nextExpanded);
+    if (nextExpanded && history === null && !loading) {
+      setLoading(true);
+      setError(false);
+      window.jevschedule.catalog.getCourseHistory(code).then(
+        (result) => {
+          setHistory(result);
+          setLoading(false);
+        },
+        () => {
+          setError(true);
+          setLoading(false);
+        },
+      );
+    }
+  };
+  const terms = history ? typicalTerms(history) : [];
+
+  return (
+    <div className="course-history-disclosure">
+      <button type="button" className="btn" aria-expanded={expanded} onClick={toggle}>
+        When is this offered?
+      </button>
+      {expanded && (
+        <div>
+          {loading ? (
+            <p>Loading offering history…</p>
+          ) : error ? (
+            <p role="alert">
+              Course catalog unavailable. Start the server (pnpm dev) to search courses; you can
+              still enter codes below.
+            </p>
+          ) : terms.length > 0 ? (
+            <p>
+              Offered in:{" "}
+              {terms
+                .map(
+                  ({ season, termCount, years }) =>
+                    `${season} (${termCount} ${termCount === 1 ? "term" : "terms"}: ${years.join(", ")})`,
+                )
+                .join("; ")}
+            </p>
+          ) : (
+            <p>
+              No offering history recorded yet. History builds up as each semester&apos;s sections
+              are scraped.
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
