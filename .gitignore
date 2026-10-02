@@ -5,7 +5,18 @@ coverage
 *.tsbuildinfo
 *.har
 .env*
+*.env
 !.env.example
+# Database dumps and signing material never belong in this public repo (AGENTS.md §6).
+*.dump
+*.pgdump
+backups/
+*.p12
+*.pfx
+*.pem
+*.key
+# Stray files from Windows scripts that wrote to a literal, unexpanded %TEMP% path.
+%TEMP%*
 fixtures/**/raw/
 # Timestamped capture-output dirs written by redact-har.ts / capture-workday.ts
 # (e.g. fixtures/workday/redacted/2026-09-23T11-05-02-734Z/) - not the
