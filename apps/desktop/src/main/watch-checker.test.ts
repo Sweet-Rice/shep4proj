@@ -152,4 +152,40 @@ describe("startWatchChecker", () => {
     expect(notify).toHaveBeenCalledTimes(2);
     checker.stop();
   });
+
+  it("still notifies later watches when looking up an earlier watch fails", async () => {
+    const { store, rows } = storeWith(local("a"), local("b"));
+    const get = vi.fn(async (id: string) => {
+      if (id === "a") throw new Error("offline");
+      return detail;
+    });
+    const notify = vi.fn();
+    const checker = startWatchChecker({ store, client: { get }, notify });
+    await checker.check();
+
+    expect(notify).toHaveBeenCalledTimes(1);
+    expect(rows.get("a")?.lastNotifiedAt).toBeNull();
+    expect(rows.get("b")?.lastNotifiedAt).toBe(detail.lastOpenedAt);
+    checker.stop();
+  });
+
+  it("still notifies later watches when delivering an earlier notification fails", async () => {
+    const { store, rows } = storeWith(local("a"), local("b"));
+    const notify = vi.fn().mockRejectedValueOnce(new Error("notification unavailable"));
+    const checker = startWatchChecker({
+      store,
+      client: { get: vi.fn(async () => detail) },
+      notify,
+    });
+    await checker.check();
+
+    expect(notify).toHaveBeenCalledTimes(2);
+    expect(rows.get("a")?.lastNotifiedAt).toBeNull();
+    expect(rows.get("b")?.lastNotifiedAt).toBe(detail.lastOpenedAt);
+
+    await checker.check();
+    expect(notify).toHaveBeenCalledTimes(3);
+    expect(rows.get("a")?.lastNotifiedAt).toBe(detail.lastOpenedAt);
+    checker.stop();
+  });
 });
