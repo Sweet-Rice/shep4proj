@@ -1,3 +1,4 @@
+import { useEffect, useRef, type KeyboardEvent } from "react";
 import type { CourseCode } from "@jevschedule/shared";
 
 export interface MarkPrereqsDialogProps {
@@ -17,18 +18,52 @@ export function MarkPrereqsDialog({
   onDecline,
   onCancel,
 }: MarkPrereqsDialogProps) {
-  if (!isOpen || unfulfilledPrereqs.length === 0) {
+  const visible = isOpen && unfulfilledPrereqs.length > 0;
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!visible) return;
+    const trigger = document.activeElement;
+    dialogRef.current?.focus();
+    return () => {
+      if (trigger instanceof HTMLElement) trigger.focus();
+    };
+  }, [visible]);
+
+  if (!visible) {
     return null;
   }
 
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape" && onCancel) {
+      event.stopPropagation();
+      onCancel();
+      return;
+    }
+    if (event.key !== "Tab" || !dialogRef.current) return;
+    const focusable = dialogRef.current.querySelectorAll<HTMLElement>("button:not([disabled])");
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement;
+    if (event.shiftKey && (active === first || active === dialogRef.current)) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first?.focus();
+    }
+  }
+
   return (
-    <div
-      className="modal-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="mark-prereqs-title"
-    >
-      <div className="modal-card">
+    <div className="modal-backdrop" onKeyDown={handleKeyDown}>
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mark-prereqs-title"
+      >
         <h3 id="mark-prereqs-title">Also mark prerequisites as completed?</h3>
         <p className="dialog-message">
           <strong>{targetCourse}</strong> has {unfulfilledPrereqs.length} prerequisite
