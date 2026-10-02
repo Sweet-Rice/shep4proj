@@ -142,7 +142,7 @@ export function CompletedCourses() {
         ))}
       </ul>
       <section aria-label="Import transcript">
-        <ImportProgressFlow uploadOnly onImportComplete={() => void refresh()} />
+        <ImportProgressFlow onImportComplete={() => void refresh()} />
       </section>
       {dialog && (
         <MarkPrereqsDialog

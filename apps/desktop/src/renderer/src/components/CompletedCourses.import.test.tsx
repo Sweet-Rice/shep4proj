@@ -37,11 +37,16 @@ describe("transcript upload in the installed desktop screen", () => {
           },
         },
         transcript: { select },
+        workday: {
+          start: vi.fn(),
+          confirm: vi.fn(),
+          onProgress: vi.fn(() => vi.fn()),
+        },
       },
     });
 
     render(<CompletedCourses />);
-    expect(screen.queryByTestId("start-import-btn")).not.toBeInTheDocument();
+    expect(screen.getByTestId("start-import-btn")).toBeEnabled();
     await user.click(screen.getByTestId("select-transcript-btn"));
     await waitFor(() => expect(screen.getByTestId("stage-review")).toBeInTheDocument());
     await user.click(screen.getByTestId("confirm-import-btn"));

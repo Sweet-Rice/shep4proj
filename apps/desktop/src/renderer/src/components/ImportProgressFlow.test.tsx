@@ -1,80 +1,192 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup, waitFor } from "@testing-library/react";
-import { userEvent } from "@testing-library/user-event";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { userEvent, type UserEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
+import { afterEach, describe, expect, it, vi, type Mock } from "vitest";
+import type { WorkdayImportProgress, WorkdayImportReview } from "../../../shared/ipc.js";
 import { ImportProgressFlow } from "./ImportProgressFlow.js";
 
+const review: WorkdayImportReview = {
+  completed: ["CSC 1350"],
+  inProgress: [{ season: "Fall", year: 2026, courses: ["CSC 4330"] }],
+  skipped: [],
+};
+
+function installWorkdayApi(api: Record<string, unknown>) {
+  Object.assign(window, { jevschedule: api });
+}
+
+afterEach(() => {
+  cleanup();
+  Reflect.deleteProperty(window, "jevschedule");
+});
+
 describe("ImportProgressFlow", () => {
-  afterEach(() => {
-    cleanup();
-  });
-
-  it("renders idle state initially and transitions through signing in, fetching, and review", async () => {
+  it("shows real signing-in and fetching progress before review", async () => {
     const user = userEvent.setup();
-    render(<ImportProgressFlow initialStage="idle" />);
-
-    expect(screen.getByTestId("stage-idle")).toBeInTheDocument();
-
-    const startBtn = screen.getByTestId("start-import-btn");
-    await user.click(startBtn);
-
-    // Transitions to signing_in -> fetching -> review
-    await waitFor(() => {
-      expect(screen.getByTestId("stage-review")).toBeInTheDocument();
+    let emit: ((progress: WorkdayImportProgress) => void) | undefined;
+    let resolveStart: (result: WorkdayImportReview) => void = () => undefined;
+    const start = vi.fn(
+      () => new Promise<WorkdayImportReview>((resolve) => (resolveStart = resolve)),
+    );
+    installWorkdayApi({
+      workday: {
+        start,
+        confirm: vi.fn(),
+        onProgress: vi.fn((listener: (progress: WorkdayImportProgress) => void) => {
+          emit = listener;
+          return vi.fn();
+        }),
+      },
     });
+    render(<ImportProgressFlow />);
+    await user.click(screen.getByTestId("start-import-btn"));
+    expect(screen.getByTestId("stage-signing-in")).toBeInTheDocument();
+    await act(async () => emit?.({ stage: "fetching" }));
+    expect(screen.getByTestId("stage-fetching")).toBeInTheDocument();
+    await act(async () => resolveStart(review));
+    expect(await screen.findByTestId("stage-review")).toBeInTheDocument();
+    expect(start).toHaveBeenCalledOnce();
   });
 
-  it("completes import flow from review stage to done", async () => {
+  it("writes nothing before confirm and confirms selected Workday courses", async () => {
     const user = userEvent.setup();
-    const handleComplete = vi.fn();
-
-    render(<ImportProgressFlow initialStage="review" onImportComplete={handleComplete} />);
-
-    expect(screen.getByTestId("stage-review")).toBeInTheDocument();
-
-    const confirmBtn = screen.getByTestId("confirm-import-btn");
-    await user.click(confirmBtn);
-
-    await waitFor(() => {
-      expect(screen.getByTestId("stage-done")).toBeInTheDocument();
+    const confirm = vi.fn().mockResolvedValue(undefined);
+    installWorkdayApi({
+      completed: { set: vi.fn() },
+      workday: {
+        start: vi.fn().mockResolvedValue(review),
+        confirm,
+        onProgress: vi.fn(() => vi.fn()),
+      },
     });
-
-    expect(screen.getByText("Import Complete!")).toBeInTheDocument();
-    expect(handleComplete).toHaveBeenCalledWith(["CSC 1350", "MATH 1550", "ENGL 1001", "CSC 1351"]);
+    render(<ImportProgressFlow />);
+    await user.click(screen.getByTestId("start-import-btn"));
+    await screen.findByTestId("stage-review");
+    expect(window.jevschedule.completed.set).not.toHaveBeenCalled();
+    expect(confirm).not.toHaveBeenCalled();
+    await user.click(screen.getByTestId("confirm-import-btn"));
+    await waitFor(() => expect(confirm).toHaveBeenCalledWith(review));
+    expect(screen.getByTestId("stage-done")).toBeInTheDocument();
   });
 
-  it("handles failure state and provides Upload Transcript Instead fallback", async () => {
+  it("shows the shape-change message and switches to transcript upload", async () => {
     const user = userEvent.setup();
-    const handleFallback = vi.fn();
-
-    render(<ImportProgressFlow initialStage="failure" onFallbackUpload={handleFallback} />);
-
-    expect(screen.getByTestId("stage-failure")).toBeInTheDocument();
-    expect(screen.getByText("Import Failed")).toBeInTheDocument();
-
-    const uploadInsteadBtn = screen.getByTestId("upload-instead-btn");
-    await user.click(uploadInsteadBtn);
-
-    expect(handleFallback).toHaveBeenCalled();
+    const transcript = {
+      select: vi.fn().mockResolvedValue({
+        courses: [{ code: "CSC 1350", term: { season: "Fall", year: 2024 }, grade: "A" }],
+        unrecognizedLines: [],
+      }),
+    };
+    installWorkdayApi({
+      transcript,
+      workday: {
+        start: vi.fn(async () => {
+          throw new Error("shape change");
+        }),
+        confirm: vi.fn(),
+        onProgress: vi.fn((listener: (progress: WorkdayImportProgress) => void) => {
+          listener({
+            stage: "error",
+            fallback: "upload",
+            message: "Workday's pages changed. Import your transcript PDF instead.",
+          });
+          return vi.fn();
+        }),
+      },
+    });
+    render(<ImportProgressFlow />);
+    await user.click(screen.getByTestId("start-import-btn"));
+    expect(
+      await screen.findByText("Workday's pages changed. Import your transcript PDF instead."),
+    ).toBeInTheDocument();
+    await user.click(screen.getByTestId("select-transcript-fallback-btn"));
+    await screen.findByTestId("stage-review");
+    expect(transcript.select).toHaveBeenCalledOnce();
+    expect(screen.getByText("Fall 2024")).toBeInTheDocument();
   });
 
-  it("opens the PDF picker and reviews parsed courses", async () => {
+  it("keeps the failure message when the transcript picker is cancelled", async () => {
     const user = userEvent.setup();
-    const select = vi.fn().mockResolvedValue({
-      courses: [{ code: "CSC 1350", term: { season: "Fall", year: 2024 }, grade: "A" }],
+    const select = vi.fn().mockResolvedValue(null);
+    installWorkdayApi({
+      transcript: { select },
+      workday: {
+        start: vi.fn(async () => {
+          throw new Error("closed");
+        }),
+        confirm: vi.fn(),
+        onProgress: vi.fn((listener: (progress: WorkdayImportProgress) => void) => {
+          listener({ stage: "error", message: "Could not import records from Workday." });
+          return vi.fn();
+        }),
+      },
+    });
+    render(<ImportProgressFlow />);
+    await user.click(screen.getByTestId("start-import-btn"));
+    await screen.findByText("Could not import records from Workday.");
+    await user.click(screen.getByTestId("select-transcript-fallback-btn"));
+    await waitFor(() => expect(select).toHaveBeenCalledOnce());
+    expect(await screen.findByTestId("failure-message")).toHaveTextContent(
+      "Could not import records from Workday.",
+    );
+  });
+
+  describe("after a Workday review has ended", () => {
+    const pdfResult = {
+      courses: [{ code: "CSC 2700", term: { season: "Fall", year: 2024 }, grade: "A" }],
       unrecognizedLines: [],
-    });
-    Object.assign(window, { jevschedule: { transcript: { select } } });
-    try {
-      render(<ImportProgressFlow />);
-      await user.click(screen.getByTestId("select-transcript-btn"));
-      await waitFor(() => expect(screen.getByTestId("stage-review")).toBeInTheDocument());
-      expect(select).toHaveBeenCalledOnce();
-      expect(screen.getByText("Fall 2024")).toBeInTheDocument();
-      expect(screen.getByText("Grade: A")).toBeInTheDocument();
-    } finally {
-      Reflect.deleteProperty(window, "jevschedule");
+    };
+
+    function installBoth() {
+      const confirm = vi.fn().mockResolvedValue(undefined);
+      const set = vi.fn().mockResolvedValue(undefined);
+      installWorkdayApi({
+        completed: { set },
+        transcript: { select: vi.fn().mockResolvedValue(pdfResult) },
+        workday: {
+          start: vi.fn().mockResolvedValue(review),
+          confirm,
+          onProgress: vi.fn(() => vi.fn()),
+        },
+      });
+      return { confirm, set };
     }
+
+    async function expectPdfReviewSavesThroughPdfPath(user: UserEvent, confirm: Mock, set: Mock) {
+      await user.click(screen.getByTestId("select-transcript-btn"));
+      await screen.findByTestId("stage-review");
+      expect(screen.getByText("CSC 2700")).toBeInTheDocument();
+      expect(screen.queryByText("CSC 1350")).not.toBeInTheDocument();
+      await user.click(screen.getByTestId("confirm-import-btn"));
+      await screen.findByTestId("stage-done");
+      expect(set).toHaveBeenCalledWith("CSC 2700", true);
+      expect(set).not.toHaveBeenCalledWith("CSC 1350", true);
+      expect(confirm).not.toHaveBeenCalled();
+    }
+
+    it("reviews the PDF courses, not the cancelled Workday ones", async () => {
+      const user = userEvent.setup();
+      const { confirm, set } = installBoth();
+      render(<ImportProgressFlow />);
+      await user.click(screen.getByTestId("start-import-btn"));
+      await screen.findByTestId("stage-review");
+      await user.click(screen.getByTestId("cancel-import-btn"));
+      await screen.findByTestId("stage-idle");
+      await expectPdfReviewSavesThroughPdfPath(user, confirm, set);
+    });
+
+    it("reviews the PDF courses, not the already-confirmed Workday ones", async () => {
+      const user = userEvent.setup();
+      const { confirm, set } = installBoth();
+      render(<ImportProgressFlow />);
+      await user.click(screen.getByTestId("start-import-btn"));
+      await screen.findByTestId("stage-review");
+      await user.click(screen.getByTestId("confirm-import-btn"));
+      await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
+      await user.click(await screen.findByTestId("finish-btn"));
+      confirm.mockClear();
+      await expectPdfReviewSavesThroughPdfPath(user, confirm, set);
+    });
   });
 });

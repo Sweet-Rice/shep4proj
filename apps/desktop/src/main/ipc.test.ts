@@ -1,6 +1,10 @@
 import type { IpcMainInvokeEvent } from "electron";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { IPC_CHANNELS } from "../shared/ipc.js";
+import {
+  IPC_CHANNELS,
+  type WorkdayImportProgress,
+  type WorkdayImportReview,
+} from "../shared/ipc.js";
 import { isAppRendererUrl, registerIpcHandlers, UntrustedIpcSenderError } from "./ipc.js";
 import { createCompletedStore } from "./store/completed.js";
 import { createPlanStore } from "./store/plan.js";
@@ -11,6 +15,7 @@ type Handler = (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown;
 /** Records handlers the way `ipcMain.handle` would, and lets tests invoke them. */
 function fakeIpcMain() {
   const handlers = new Map<string, Handler>();
+  const sent: unknown[][] = [];
   return {
     handle(channel: string, handler: Handler) {
       if (handlers.has(channel)) throw new Error(`duplicate handler for ${channel}`);
@@ -19,9 +24,15 @@ function fakeIpcMain() {
     invoke(channel: string, ...args: unknown[]) {
       const handler = handlers.get(channel);
       if (!handler) throw new Error(`no handler for ${channel}`);
-      return handler({} as IpcMainInvokeEvent, ...args);
+      return handler(
+        {
+          sender: { send: (...message: unknown[]) => sent.push(message) },
+        } as unknown as IpcMainInvokeEvent,
+        ...args,
+      );
     },
     channels: () => [...handlers.keys()],
+    sent,
   };
 }
 
@@ -38,6 +49,15 @@ describe("registerIpcHandlers", () => {
     listDegrees: ReturnType<typeof vi.fn>;
     getDegree: ReturnType<typeof vi.fn>;
   };
+  let workday: { run: ReturnType<typeof vi.fn> };
+  const importedReview: WorkdayImportReview = {
+    completed: ["CSC 1350"],
+    inProgress: [
+      { season: "Fall", year: 2026, courses: ["CSC 4330", "CSC 3102"] },
+      { season: "Spring", year: 2027, courses: ["CSC 3200"] },
+    ],
+    skipped: [],
+  };
   beforeEach(() => {
     db = openLocalDb(":memory:");
     ipc = fakeIpcMain();
@@ -50,10 +70,18 @@ describe("registerIpcHandlers", () => {
       listDegrees: vi.fn().mockResolvedValue([]),
       getDegree: vi.fn().mockResolvedValue({}),
     };
+    workday = {
+      run: vi.fn(async (emit: (progress: WorkdayImportProgress) => void) => {
+        emit({ stage: "signing-in" });
+        return importedReview;
+      }),
+    };
     registerIpcHandlers(
       ipc,
       { completed: createCompletedStore(db), plan: createPlanStore(db), catalog },
       () => trusted,
+      undefined,
+      { workday },
     );
   });
   it("forwards validated catalog calls", () => {
@@ -94,8 +122,61 @@ describe("registerIpcHandlers", () => {
   });
   afterEach(() => db.close());
 
-  it("registers a handler for every channel", () => {
-    expect(ipc.channels().sort()).toEqual(Object.values(IPC_CHANNELS).sort());
+  it("registers a handler for every invoke channel", () => {
+    expect(ipc.channels().sort()).toEqual(
+      Object.values(IPC_CHANNELS)
+        .filter((channel) => channel !== IPC_CHANNELS.workdayProgress)
+        .sort(),
+    );
+  });
+  it("forwards Workday import progress through the trusted sender", async () => {
+    await expect(ipc.invoke(IPC_CHANNELS.workdayImport)).resolves.toEqual(importedReview);
+    expect(workday.run).toHaveBeenCalledOnce();
+    expect(ipc.sent).toEqual([[IPC_CHANNELS.workdayProgress, { stage: "signing-in" }]]);
+  });
+
+  it("rejects Workday import and confirm from untrusted senders without touching anything", () => {
+    trusted = false;
+    expect(() => ipc.invoke(IPC_CHANNELS.workdayImport)).toThrow(UntrustedIpcSenderError);
+    expect(() => ipc.invoke(IPC_CHANNELS.workdayConfirm, importedReview)).toThrow(
+      UntrustedIpcSenderError,
+    );
+    expect(workday.run).not.toHaveBeenCalled();
+    expect(ipc.sent).toEqual([]);
+    trusted = true;
+    expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual([]);
+    expect(ipc.invoke(IPC_CHANNELS.planGet)).toMatchObject({ terms: [] });
+  });
+
+  it("stores nothing on Workday import and persists only on confirm", async () => {
+    await ipc.invoke(IPC_CHANNELS.workdayImport);
+    expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual([]);
+    expect(ipc.invoke(IPC_CHANNELS.planGet)).toMatchObject({ terms: [] });
+    ipc.invoke(IPC_CHANNELS.workdayConfirm, importedReview);
+    expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual(["CSC 1350"]);
+    expect(ipc.invoke(IPC_CHANNELS.planGet)).toMatchObject({
+      terms: [
+        { season: "Fall", year: 2026, courses: ["CSC 4330", "CSC 3102"] },
+        { season: "Spring", year: 2027, courses: ["CSC 3200"] },
+      ],
+    });
+  });
+
+  it("saves confirmed Workday completions and deduplicated in-progress courses before done", () => {
+    ipc.invoke(IPC_CHANNELS.planSave, {
+      creditLimit: 19,
+      terms: [{ season: "Fall", year: 2026, courses: ["CSC 3102"] }],
+    });
+    ipc.invoke(IPC_CHANNELS.workdayConfirm, importedReview);
+    expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual(["CSC 1350"]);
+    expect(ipc.invoke(IPC_CHANNELS.planGet)).toEqual({
+      creditLimit: 19,
+      terms: [
+        { season: "Fall", year: 2026, courses: ["CSC 3102", "CSC 4330"] },
+        { season: "Spring", year: 2027, courses: ["CSC 3200"] },
+      ],
+    });
+    expect(ipc.sent.at(-1)).toEqual([IPC_CHANNELS.workdayProgress, { stage: "done" }]);
   });
 
   it("sets and gets completed courses", () => {

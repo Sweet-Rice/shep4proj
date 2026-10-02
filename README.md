@@ -103,6 +103,15 @@ The schedule builder identifies sections by term, course, section number, and ty
 highlights follow the shared meeting-overlap rules, so same-number lecture and lab sections
 stay distinct and sections from different terms never conflict.
 
+**Start Workday Import** on the Courses tab opens a disposable browser profile for the LSU
+sign-in. Once you are signed in, the app opens your Academic Record and View My Courses pages,
+reads the session headers from Workday's own requests (kept in memory only, never logged), and
+re-reads each page's data through the read-only endpoint allowlist. The browser and its profile
+are deleted when the import ends or fails. Nothing is saved until you confirm the review:
+confirming marks the selected courses completed and adds current registrations to their plan
+term, skipping courses already planned. If Workday's pages change shape, the flow offers
+**Select Transcript PDF** instead.
+
 For production setup, image builds, database migrations, health checks, and the initial live catalog and section scrapes, see the [server deployment runbook](docs/Deploy.md). Set the repository variable `JEVSCHEDULE_API_URL` to the deployed API's HTTPS base URL for release builds.
 
 Release installers require the repository variable `JEVSCHEDULE_API_URL` as their production

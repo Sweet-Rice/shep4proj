@@ -1,6 +1,12 @@
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import { readFile, stat } from "node:fs/promises";
 import { parseTranscriptPdf } from "@jevschedule/workday";
+import { guardedFetch } from "@jevschedule/workday/allowlist";
+import {
+  launchWorkdayBrowser,
+  teardownWorkdayBrowser,
+  waitForWorkdayLogin,
+} from "@jevschedule/workday/browser";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createCatalogClient, resolveApiBaseUrl } from "./catalog.js";
@@ -8,6 +14,9 @@ import { isAppRendererUrl, registerIpcHandlers } from "./ipc.js";
 import { createCompletedStore } from "./store/completed.js";
 import { openLocalDb } from "./store/db.js";
 import { createPlanStore } from "./store/plan.js";
+import { createLogger } from "./log/logger.js";
+import { createRequestHarvester } from "./workday-harvest.js";
+import { createWorkdayImporter } from "./workday-import.js";
 
 const rendererHtmlPath = fileURLToPath(new URL("../renderer/index.html", import.meta.url));
 const rendererUrl = process.env.ELECTRON_RENDERER_URL ?? pathToFileURL(rendererHtmlPath).href;
@@ -57,6 +66,16 @@ void app.whenReady().then(() => {
         throw new Error("Transcript PDF exceeds the 20 MB limit");
       }
       return parseTranscriptPdf(await readFile(path));
+    },
+    {
+      workday: createWorkdayImporter({
+        launch: launchWorkdayBrowser,
+        waitForLogin: waitForWorkdayLogin,
+        teardown: teardownWorkdayBrowser,
+        harvest: createRequestHarvester(),
+        fetch: guardedFetch,
+        log: createLogger(),
+      }),
     },
   );
 
