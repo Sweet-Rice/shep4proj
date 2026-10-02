@@ -76,6 +76,14 @@ export type {
   EvaluatedFixedRequirement,
   EvaluatedRequirement,
 } from "./evaluate-requirements.js";
+export { groupRequirementsByArea } from "./degree-areas.js";
+export type {
+  AreaChoice,
+  AreaCreditSlot,
+  AreaProgress,
+  CourseAreaProgress,
+  CreditAreaProgress,
+} from "./degree-areas.js";
 
 /**
  * Placeholder for the shared planner types, zod schemas, and prereq /
