@@ -112,7 +112,6 @@ describe("startWatchChecker", () => {
     checker.stop();
   });
 
-
   it("continues after API and notification failures and checks on the interval", async () => {
     vi.useFakeTimers();
     const { store } = storeWith(local("retry"));
