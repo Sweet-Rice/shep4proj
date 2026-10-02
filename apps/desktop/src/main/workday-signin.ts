@@ -1,16 +1,20 @@
 import { randomUUID } from "node:crypto";
 import { BrowserWindow, session, type Session } from "electron";
-import { DEFAULT_LOGGED_IN_PATTERN, WORKDAY_TENANT_URL } from "@jevschedule/workday/urls";
+import { WORKDAY_TENANT_URL } from "@jevschedule/workday/urls";
 
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
+const APP_ROOT_FILTER = "https://www.myworkday.com/lsu/app-root*";
 
 export type WorkdaySignInResult =
-  { status: "success"; session: Session } | { status: "cancelled" } | { status: "timeout" };
+  | { status: "success"; session: Session }
+  | { status: "cancelled" }
+  | { status: "timeout" };
 
 export interface WorkdaySignInOptions {
   timeoutMs?: number;
 }
 
+/** Opens an ephemeral Electron popup and closes it when this session completes app-root. */
 export async function openWorkdaySignIn(
   parent: BrowserWindow,
   { timeoutMs = DEFAULT_TIMEOUT_MS }: WorkdaySignInOptions = {},
@@ -47,6 +51,7 @@ export async function openWorkdaySignIn(
     ]);
     throw error;
   }
+
   window.setMenu(null);
   window.setMenuBarVisibility(false);
   window.webContents.on("context-menu", (event) => event.preventDefault());
@@ -69,13 +74,12 @@ export async function openWorkdaySignIn(
     if (settled) return;
     settled = true;
     clearTimeout(timer);
-    window.webContents.removeListener("did-navigate", onNavigate);
-    window.webContents.removeListener("did-redirect-navigation", onRedirect);
-    window.webContents.removeListener("did-navigate-in-page", onNavigateInPage);
     window.removeListener("closed", onClosed);
-    if (close && !window.isDestroyed()) {
-      window.webContents.stop();
-      window.destroy();
+    ses.webRequest.onCompleted(null);
+    if (close) {
+      setImmediate(() => {
+        if (!window.isDestroyed()) window.close();
+      });
     }
     if (result.status !== "success") {
       await Promise.allSettled([
@@ -85,32 +89,19 @@ export async function openWorkdaySignIn(
     }
     resolveResult(result);
   };
-  const check = (url: string) => {
-    if (DEFAULT_LOGGED_IN_PATTERN.test(url)) void finish({ status: "success", session: ses }, true);
-  };
-  const onNavigate = (_event: Electron.Event, url: string) => check(url);
-  const onRedirect = (
-    _event: Electron.Event,
-    url: string,
-    _isInPlace: boolean,
-    isMainFrame: boolean,
-  ) => {
-    if (isMainFrame) check(url);
-  };
-  const onNavigateInPage = (_event: Electron.Event, url: string, isMainFrame: boolean) => {
-    if (isMainFrame) check(url);
-  };
   const onClosed = () => void finish({ status: "cancelled" }, false);
+  const onRequestCompleted = (details: Electron.OnCompletedListenerDetails) => {
+    if (details.statusCode === 200) void finish({ status: "success", session: ses }, true);
+  };
   const timer = setTimeout(() => void finish({ status: "timeout" }, true), timeoutMs);
 
-  window.webContents.on("did-navigate", onNavigate);
-  window.webContents.on("did-redirect-navigation", onRedirect);
-  window.webContents.on("did-navigate-in-page", onNavigateInPage);
   window.once("closed", onClosed);
+  ses.webRequest.onCompleted({ urls: [APP_ROOT_FILTER] }, onRequestCompleted);
   void window.loadURL(WORKDAY_TENANT_URL).catch(async (error: unknown) => {
     if (!settled) {
       settled = true;
       clearTimeout(timer);
+      ses.webRequest.onCompleted(null);
       window.destroy();
       await Promise.allSettled([
         Promise.resolve().then(() => ses.clearStorageData()),
