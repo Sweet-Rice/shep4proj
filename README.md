@@ -94,7 +94,7 @@ and while a save is in progress, and a failed save restores the previous plan wi
 The schedule builder identifies sections by term, course, section number, and type. Conflict
 highlights follow the shared meeting-overlap rules, so same-number lecture and lab sections
 stay distinct and sections from different terms never conflict.
-For production setup, image builds, database migrations, health checks, and the initial live catalog and section scrapes, see the [server deployment runbook](docs/Deploy.md). Point desktop releases at the deployed API by setting the GitHub repository variable `JEVSCHEDULE_API_URL`.
+For production setup, image builds, database migrations, health checks, and the initial live catalog and section scrapes, see the [server deployment runbook](docs/Deploy.md). Set the GitHub repository variable `JEVSCHEDULE_API_URL` to the public HTTPS API base; on current `main`, releases do not consume that Actions variable yet, so the desktop app still needs a runtime `JEVSCHEDULE_API_URL` override and otherwise uses `http://127.0.0.1:3000`.
 
 Release installers require the repository variable `JEVSCHEDULE_API_URL` as their production
 API URL and enforce HTTPS. A non-empty runtime `JEVSCHEDULE_API_URL` overrides the build-time
