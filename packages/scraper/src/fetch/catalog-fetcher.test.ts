@@ -4,10 +4,10 @@ import { createCatalogFetcher } from "./catalog-fetcher.js";
 import { DisallowedUrlError } from "./robots.js";
 
 const DETAIL_URL = courseDetailUrl({ catoid: CATALOG_2026_2027.catoid, coid: "232623" });
-const mockWait = vi.fn().mockResolvedValue(undefined);
+const mockRun = vi.fn(<T>(task: () => Promise<T>) => task());
 vi.mock("./crawl-delay.js", () => ({
   createCrawlDelay: vi.fn(() => ({
-    wait: mockWait,
+    run: mockRun,
   })),
 }));
 
@@ -21,7 +21,7 @@ function stubFetch() {
 }
 
 beforeEach(() => {
-  mockWait.mockClear();
+  mockRun.mockClear();
 });
 
 afterEach(() => {
@@ -127,8 +127,9 @@ describe("createCatalogFetcher", () => {
 
   it("runs the crawl delay through the fetcher after the allow check and before fetch", async () => {
     const events: string[] = [];
-    mockWait.mockImplementation(async () => {
+    mockRun.mockImplementation(async (task) => {
       events.push("wait");
+      return task();
     });
     const fetchMock = stubFetch();
     fetchMock.mockImplementation(async () => {
@@ -139,12 +140,12 @@ describe("createCatalogFetcher", () => {
 
     const disallowedUrl = "https://catalog.lsu.edu/ajax/preview_course.php?catoid=35&coid=1";
     await expect(fetcher.fetchHtml(disallowedUrl)).rejects.toThrow(DisallowedUrlError);
-    expect(mockWait).not.toHaveBeenCalled();
+    expect(mockRun).not.toHaveBeenCalled();
     expect(events).toEqual([]);
 
     await fetcher.fetchHtml(DETAIL_URL);
     expect(events).toEqual(["wait", "fetch"]);
-    expect(mockWait).toHaveBeenCalledTimes(1);
+    expect(mockRun).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

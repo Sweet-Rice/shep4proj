@@ -7,9 +7,9 @@ import {
   SECTION_CRAWL_DELAY_MS,
 } from "./section-fetcher.js";
 
-const mockWait = vi.fn().mockResolvedValue(undefined);
+const mockRun = vi.fn(<T>(task: () => Promise<T>) => task());
 vi.mock("./crawl-delay.js", () => ({
-  createCrawlDelay: vi.fn(() => ({ wait: mockWait })),
+  createCrawlDelay: vi.fn(() => ({ run: mockRun })),
 }));
 
 const LISTING_URL = sectionListingUrl({ department: "CSC", periodId: "LSUAM_FALL_2026" });
@@ -21,7 +21,7 @@ function stubFetch() {
 }
 
 beforeEach(() => {
-  mockWait.mockClear();
+  mockRun.mockClear();
 });
 
 afterEach(() => {
@@ -81,7 +81,7 @@ describe("createSectionFetcher", () => {
       createSectionFetcher({ log }).fetchHtml("https://courseofferings.lsu.edu/Admin"),
     ).rejects.toThrow(DisallowedSectionUrlError);
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(mockWait).not.toHaveBeenCalled();
+    expect(mockRun).not.toHaveBeenCalled();
     expect(log).not.toHaveBeenCalled();
   });
 
@@ -93,7 +93,7 @@ describe("createSectionFetcher", () => {
       "<html></html>",
     );
 
-    expect(mockWait).toHaveBeenCalledOnce();
+    expect(mockRun).toHaveBeenCalledOnce();
     expect(fetchMock).toHaveBeenCalledWith(LISTING_URL, {
       headers: { "User-Agent": expect.stringContaining("JevSchedule") },
       redirect: "manual",

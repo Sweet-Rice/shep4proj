@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createCrawlDelay } from "./crawl-delay.js";
 
 const INTERVAL_MS = 120_000;
@@ -22,32 +22,34 @@ function fakeClock() {
 }
 
 describe("createCrawlDelay", () => {
-  it("does not wait before the first request", async () => {
+  it("runs the first task without waiting", async () => {
     const clock = fakeClock();
     const delay = createCrawlDelay({ minIntervalMs: INTERVAL_MS, ...clock });
+    const task = vi.fn(async () => "result");
 
-    await delay.wait();
+    await expect(delay.run(task)).resolves.toBe("result");
 
     expect(clock.sleeps).toEqual([0]);
+    expect(task).toHaveBeenCalledOnce();
   });
 
-  it("waits the full interval when called right after the previous request", async () => {
+  it("waits the interval after the previous task finishes", async () => {
     const clock = fakeClock();
     const delay = createCrawlDelay({ minIntervalMs: INTERVAL_MS, ...clock });
 
-    await delay.wait();
-    await delay.wait();
+    await delay.run(async () => undefined);
+    await delay.run(async () => undefined);
 
-    expect(clock.sleeps).toEqual([0, 120_000]);
+    expect(clock.sleeps).toEqual([0, INTERVAL_MS]);
   });
 
-  it("waits only what is left of the interval", async () => {
+  it("waits only the interval remaining since the previous task finished", async () => {
     const clock = fakeClock();
     const delay = createCrawlDelay({ minIntervalMs: INTERVAL_MS, ...clock });
 
-    await delay.wait();
+    await delay.run(async () => undefined);
     clock.advance(30_000);
-    await delay.wait();
+    await delay.run(async () => undefined);
 
     expect(clock.sleeps).toEqual([0, 90_000]);
   });
@@ -56,41 +58,60 @@ describe("createCrawlDelay", () => {
     const clock = fakeClock();
     const delay = createCrawlDelay({ minIntervalMs: INTERVAL_MS, ...clock });
 
-    await delay.wait();
+    await delay.run(async () => undefined);
     clock.advance(200_000);
-    await delay.wait();
+    await delay.run(async () => undefined);
 
     expect(clock.sleeps).toEqual([0, 0]);
   });
 
-  it("measures the interval from when the previous wait resolved", async () => {
+  it("starts the next task no earlier than an interval after a long task finishes", async () => {
     const clock = fakeClock();
     const delay = createCrawlDelay({ minIntervalMs: INTERVAL_MS, ...clock });
+    let firstFinishedAt = 0;
+    let secondStartedAt = 0;
 
-    await delay.wait();
-    await delay.wait();
-    clock.advance(20_000);
-    await delay.wait();
+    await delay.run(async () => {
+      clock.advance(30_000);
+      firstFinishedAt = clock.now();
+    });
+    await delay.run(async () => {
+      secondStartedAt = clock.now();
+    });
 
-    expect(clock.sleeps).toEqual([0, 120_000, 100_000]);
+    expect(secondStartedAt - firstFinishedAt).toBeGreaterThanOrEqual(INTERVAL_MS);
+    expect(clock.sleeps).toEqual([0, INTERVAL_MS]);
   });
 
-  it("gives concurrent callers separate intervals", async () => {
+  it("queues concurrent tasks in call order with separate intervals", async () => {
     const clock = fakeClock();
     const delay = createCrawlDelay({ minIntervalMs: INTERVAL_MS, ...clock });
-    const resolvedAt: number[] = [];
+    const order: number[] = [];
 
     await Promise.all(
-      [0, 1, 2].map(async () => {
-        await delay.wait();
-        resolvedAt.push(clock.now());
-      }),
+      [0, 1, 2].map((index) =>
+        delay.run(async () => {
+          order.push(index);
+        }),
+      ),
     );
 
-    expect(clock.sleeps).toEqual([0, 120_000, 120_000]);
-    const [first = 0, second = 0, third = 0] = resolvedAt;
-    expect(second - first).toBe(120_000);
-    expect(third - second).toBe(120_000);
+    expect(order).toEqual([0, 1, 2]);
+    expect(clock.sleeps).toEqual([0, INTERVAL_MS, INTERVAL_MS]);
+  });
+
+  it("propagates task failures and keeps later callers working", async () => {
+    const clock = fakeClock();
+    const delay = createCrawlDelay({ minIntervalMs: INTERVAL_MS, ...clock });
+
+    await expect(
+      delay.run(async () => {
+        throw new Error("task failed");
+      }),
+    ).rejects.toThrow("task failed");
+    await expect(delay.run(async () => "continued")).resolves.toBe("continued");
+
+    expect(clock.sleeps).toEqual([0, INTERVAL_MS]);
   });
 
   it("keeps later callers working after a sleep fails", async () => {
@@ -105,15 +126,15 @@ describe("createCrawlDelay", () => {
       },
     });
 
-    await delay.wait();
-    await expect(delay.wait()).rejects.toThrow("sleep failed");
-    await expect(delay.wait()).resolves.toBeUndefined();
+    await delay.run(async () => undefined);
+    await expect(delay.run(async () => undefined)).rejects.toThrow("sleep failed");
+    await expect(delay.run(async () => "continued")).resolves.toBe("continued");
   });
 
   it("uses the real clock and timers by default", async () => {
     const delay = createCrawlDelay({ minIntervalMs: 0 });
 
-    await delay.wait();
-    await expect(delay.wait()).resolves.toBeUndefined();
+    await delay.run(async () => undefined);
+    await expect(delay.run(async () => undefined)).resolves.toBeUndefined();
   });
 });

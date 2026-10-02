@@ -93,16 +93,17 @@ export function createSectionFetcher(opts: SectionFetcherOptions = {}): SectionF
   return {
     async fetchHtml(url: string): Promise<string> {
       assertAllowedSectionUrl(url);
-      await delay.wait();
-      log(`fetch ${new Date().toISOString()} ${url}`);
-      const response = await globalThis.fetch(url, {
-        headers: { "User-Agent": USER_AGENT },
-        redirect: "manual",
+      return delay.run(async () => {
+        log(`fetch ${new Date().toISOString()} ${url}`);
+        const response = await globalThis.fetch(url, {
+          headers: { "User-Agent": USER_AGENT },
+          redirect: "manual",
+        });
+        if (response.status !== 200) {
+          throw new Error(`section fetch failed: ${response.status} ${url}`);
+        }
+        return response.text();
       });
-      if (response.status !== 200) {
-        throw new Error(`section fetch failed: ${response.status} ${url}`);
-      }
-      return response.text();
     },
   };
 }
