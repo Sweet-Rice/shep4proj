@@ -51,8 +51,14 @@ export function DegreeProgressScreen() {
 
   return (
     <main className="degree-progress-screen">
-      <h1>Degree Progress</h1>
-      <p className="subtitle">Track your degree requirements and completion status in real-time.</p>
+      <header className="page-header">
+        <h1>Degree Progress</h1>
+        <p className="page-subtitle">
+          {auditLoaded && !audit
+            ? "Import from Workday to see your official degree audit."
+            : "Track your degree requirements and completion status in real-time."}
+        </p>
+      </header>
 
       {degreeError && (
         <p role="alert" className="error-message">
@@ -70,7 +76,7 @@ export function DegreeProgressScreen() {
         <p role="status">Loading degree progress…</p>
       ) : degreeError || !degree ? null : (
         <>
-          {audit ? (
+          {audit && (
             <div className="degree-audit-toolbar" aria-label="Degree progress source">
               <button
                 className="btn btn-secondary"
@@ -87,10 +93,6 @@ export function DegreeProgressScreen() {
                 {`Catalog plan (${degree.catalogYear} ${degree.concentration ?? degree.program})`}
               </button>
             </div>
-          ) : (
-            <p className="degree-audit-prompt">
-              Import from Workday to see your official degree audit.
-            </p>
           )}
           {audit && !showCatalogPlan ? <WorkdayAcademicProgressView audit={audit} /> : catalogView}
         </>
