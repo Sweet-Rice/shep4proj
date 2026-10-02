@@ -113,6 +113,10 @@ export function ImportProgressFlow({
         <div className="flow-card idle-card" data-testid="stage-idle">
           <h3>Import Academic Record</h3>
           <p>Import your completed courses directly from Workday or via transcript review.</p>
+          <p className="import-privacy">
+            You review every course before anything is saved, and imported courses stay on this
+            device.
+          </p>
           <div className="flow-actions">
             <button
               type="button"
