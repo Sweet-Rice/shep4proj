@@ -127,7 +127,7 @@ select:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 28%, transparent);
 }
 input::placeholder {
-  color: var(--text-subtle);
+  color: var(--text-muted);
 }
 input:disabled,
 select:disabled {
