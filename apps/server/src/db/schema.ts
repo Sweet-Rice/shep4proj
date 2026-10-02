@@ -10,7 +10,6 @@ import {
   text,
   timestamp,
   uniqueIndex,
-  uuid,
 } from "drizzle-orm/pg-core";
 import type { PrereqNode, Section, Weekday } from "@jevschedule/shared";
 
@@ -128,17 +127,3 @@ export const sectionArchive = pgTable(
   },
   (table) => [primaryKey({ columns: [table.term, table.department] })],
 );
-
-/** Opaque watch IDs let a desktop client remove only watches it created. */
-export const watches = pgTable("watches", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  term: text("term").notNull(),
-  courseCode: text("course_code").notNull(),
-  sectionNumber: text("section_number").notNull(),
-  sectionType: text("section_type").notNull(),
-  lastEnrollment: integer("last_enrollment").notNull(),
-  lastCapacity: integer("last_capacity").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-export type WatchRow = typeof watches.$inferSelect;

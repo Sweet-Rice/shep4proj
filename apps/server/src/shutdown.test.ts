@@ -7,12 +7,12 @@ const settle = () => new Promise((resolve) => setImmediate(resolve));
 describe("shutdown", () => {
   it("closes the app, waits for every job to stop, then closes the database", async () => {
     const order: string[] = [];
-    let finishPoll: () => void = () => undefined;
-    const seatPoller: Schedule = {
+    let finishCatalog: () => void = () => undefined;
+    const catalogScrape: Schedule = {
       stop: () =>
         new Promise<void>((resolve) => {
-          finishPoll = () => {
-            order.push("seat poller stopped");
+          finishCatalog = () => {
+            order.push("catalog scrape stopped");
             resolve();
           };
         }),
@@ -25,18 +25,18 @@ describe("shutdown", () => {
 
     const done = shutdown({
       app: { close: async () => void order.push("app closed") },
-      schedules: [sectionScrape, seatPoller, undefined],
+      schedules: [sectionScrape, catalogScrape, undefined],
       database: { close: async () => void order.push("database closed") },
     });
     await settle();
     expect(order).toEqual(["app closed", "section scrape stopped"]);
 
-    finishPoll();
+    finishCatalog();
     await done;
     expect(order).toEqual([
       "app closed",
       "section scrape stopped",
-      "seat poller stopped",
+      "catalog scrape stopped",
       "database closed",
     ]);
   });
