@@ -1,10 +1,5 @@
-/**
- * How often the scheduled section scrape wakes up. Each wake-up only fetches terms whose last
- * scrape is at least a day old (`SECTION_SCRAPE_MIN_INTERVAL_MS`), so checking hourly picks up
- * new terms and recovers from failures within the hour without scraping any term more than
- * once a day. The check itself is one landing-page request per department.
- */
-export const SECTION_SCRAPE_CHECK_INTERVAL_MS = 60 * 60 * 1000;
+/** Daily check: one landing-page request per department finds newly listed terms; stored terms refresh once per semester window (currentSemesterStart). */
+export const SECTION_SCRAPE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 export interface Schedule {
   /** Cancels future runs and resolves once any run in progress has finished. */

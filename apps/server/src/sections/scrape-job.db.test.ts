@@ -6,7 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import { createDb, type Db } from "../db/client.js";
 import { meetings, sections, sectionScrapes } from "../db/schema.js";
 import { getTestDatabaseUrl, truncateSections } from "../test-support/db.js";
-import { runSectionScrape, SECTION_SCRAPE_MIN_INTERVAL_MS } from "./scrape-job.js";
+import { runSectionScrape } from "./scrape-job.js";
 import {
   createSectionFixtureFetcher,
   SECTION_FIXTURE_PATH,
@@ -174,7 +174,7 @@ describe.skipIf(!getTestDatabaseUrl())("runSectionScrape", () => {
       fetcher: listingFetcher(emptyListing),
       department: "CSC",
       periodIds: [SECTION_FIXTURE_PERIOD],
-      minIntervalMs: 0,
+      force: true,
     });
 
     expect(result.failed).toEqual([]);
@@ -191,21 +191,35 @@ describe.skipIf(!getTestDatabaseUrl())("runSectionScrape", () => {
     ]);
   });
 
-  it("re-scrapes a term a day later and replaces its sections instead of duplicating them", async () => {
+  it("skips a term within its semester window and re-scrapes it in the next window", async () => {
     const opts = { db, department: "CSC", periodIds: [SECTION_FIXTURE_PERIOD] };
-    await runSectionScrape({ ...opts, fetcher: createSectionFixtureFetcher(), now: () => T0 });
-    const later = hoursAfter(SECTION_SCRAPE_MIN_INTERVAL_MS / 3_600_000);
-    const result = await runSectionScrape({
+    await runSectionScrape({
       ...opts,
       fetcher: createSectionFixtureFetcher(),
-      now: () => later,
+      now: () => new Date("2026-08-02T09:00:00Z"),
     });
 
-    expect(result.scraped).toEqual([{ term: SECTION_FIXTURE_PERIOD, sections: FIXTURE_SECTIONS }]);
+    const skipped = await runSectionScrape({
+      ...opts,
+      fetcher: createSectionFixtureFetcher(),
+      now: () => new Date("2026-12-01T09:00:00Z"),
+    });
+    expect(skipped.skipped).toEqual([SECTION_FIXTURE_PERIOD]);
+    expect(skipped.scraped).toEqual([]);
+
+    const refreshedAt = new Date("2027-01-02T09:00:00Z");
+    const refreshed = await runSectionScrape({
+      ...opts,
+      fetcher: createSectionFixtureFetcher(),
+      now: () => refreshedAt,
+    });
+    expect(refreshed.scraped).toEqual([
+      { term: SECTION_FIXTURE_PERIOD, sections: FIXTURE_SECTIONS },
+    ]);
     expect(await countRows(sections)).toBe(FIXTURE_SECTIONS);
     expect(await countRows(meetings)).toBe(FIXTURE_MEETINGS);
     const [scrape] = await db.select().from(sectionScrapes);
-    expect(scrape?.scrapedAt).toEqual(later);
+    expect(scrape?.scrapedAt).toEqual(refreshedAt);
   });
 
   it("drops sections the portal no longer lists", async () => {
@@ -220,7 +234,7 @@ describe.skipIf(!getTestDatabaseUrl())("runSectionScrape", () => {
       fetcher: listingFetcher(without4330),
       department: "CSC",
       periodIds: [SECTION_FIXTURE_PERIOD],
-      minIntervalMs: 0,
+      force: true,
     });
 
     expect(result.scraped).toEqual([
@@ -290,7 +304,7 @@ describe.skipIf(!getTestDatabaseUrl())("runSectionScrape", () => {
       },
       department: "CSC",
       periodIds: [SECTION_FIXTURE_PERIOD],
-      minIntervalMs: 0,
+      force: true,
     });
 
     expect(result.failed).toHaveLength(1);

@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { createCatalogFetcher } from "@jevschedule/scraper";
 import { createDb } from "../db/client.js";
-import { runCatalogScrape } from "../catalog/scrape-job.js";
+import { runScheduledCatalogScrape } from "../catalog/scheduled-scrape.js";
 import { runCatalogScrapeCommand } from "./catalog-scrape-command.js";
 
 // For local one-off runs; deployed servers run this on a schedule (CATALOG_SCRAPE_ENABLED).
@@ -14,7 +14,7 @@ if (!process.env.DATABASE_URL && existsSync("../../.env")) {
 void runCatalogScrapeCommand(process.env.DATABASE_URL, {
   createDb,
   createCatalogFetcher,
-  runCatalogScrape,
+  runScheduledCatalogScrape,
   log: console.log,
   error: console.error,
 })
