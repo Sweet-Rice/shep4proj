@@ -55,16 +55,15 @@ export function MarkPrereqsDialog({
   }
 
   return (
-    <div
-      ref={dialogRef}
-      tabIndex={-1}
-      className="modal-backdrop"
-      onKeyDown={handleKeyDown}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="mark-prereqs-title"
-    >
-      <div className="modal-card">
+    <div className="modal-backdrop" onKeyDown={handleKeyDown}>
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mark-prereqs-title"
+      >
         <h3 id="mark-prereqs-title">Also mark prerequisites as completed?</h3>
         <p className="dialog-message">
           <strong>{targetCourse}</strong> has {unfulfilledPrereqs.length} prerequisite
