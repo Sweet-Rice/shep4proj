@@ -94,4 +94,29 @@ describe("MarkPrereqsDialog", () => {
     expect(handleDecline).toHaveBeenCalledWith("CSC 2250");
     expect(handleAccept).not.toHaveBeenCalled();
   });
+
+  it("closes with Escape without marking anything", async () => {
+    const user = userEvent.setup();
+    const handleAccept = vi.fn();
+    const handleDecline = vi.fn();
+    const handleCancel = vi.fn();
+
+    render(
+      <MarkPrereqsDialog
+        isOpen={true}
+        targetCourse="CSC 2250"
+        unfulfilledPrereqs={["CSC 1350"]}
+        onAccept={handleAccept}
+        onDecline={handleDecline}
+        onCancel={handleCancel}
+      />,
+    );
+
+    await user.keyboard("{Tab}");
+    await user.keyboard("{Escape}");
+
+    expect(handleCancel).toHaveBeenCalledTimes(1);
+    expect(handleAccept).not.toHaveBeenCalled();
+    expect(handleDecline).not.toHaveBeenCalled();
+  });
 });
