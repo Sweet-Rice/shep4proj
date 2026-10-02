@@ -3,7 +3,8 @@ import { readFile, stat } from "node:fs/promises";
 import { parseTranscriptPdf } from "@jevschedule/workday";
 import { guardedFetch } from "@jevschedule/workday/allowlist";
 import { WorkdayShapeError } from "@jevschedule/workday/academic-record";
-import { openWorkdaySignIn } from "./workday-signin.js";
+import { WorkdayAuthenticationError, createWorkdayImporter } from "./workday-import.js";
+import { clearWorkdaySession, openWorkdaySignIn } from "./workday-signin.js";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createCatalogClient, resolveApiBaseUrl } from "./catalog.js";
@@ -13,12 +14,12 @@ import { createCompletedStore } from "./store/completed.js";
 import { openLocalDb } from "./store/db.js";
 import { createPlanStore } from "./store/plan.js";
 import { createLogger } from "./log/logger.js";
-import { createWorkdayImporter } from "./workday-import.js";
 
 const rendererHtmlPath = fileURLToPath(new URL("../renderer/index.html", import.meta.url));
 const rendererUrl = process.env.ELECTRON_RENDERER_URL ?? pathToFileURL(rendererHtmlPath).href;
 
 let mainWindow: BrowserWindow | undefined;
+let workdayCleanupPending = false;
 
 function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
@@ -47,7 +48,6 @@ function createWindow(): BrowserWindow {
 void app.whenReady().then(() => {
   const db = openLocalDb(join(app.getPath("userData"), "jevschedule.sqlite"));
   app.on("will-quit", () => db.close());
-
   registerIpcHandlers(
     ipcMain,
     {
@@ -78,15 +78,17 @@ void app.whenReady().then(() => {
             throw new Error("Application window is unavailable");
           return openWorkdaySignIn(mainWindow);
         },
+        clearSession: clearWorkdaySession,
         fetchJson: async (ses: Session, url, headers) => {
           const response = await guardedFetch((input, init) => ses.fetch(input, init), {
             method: "GET",
             url,
             headers,
           });
+          if (response.status === 401 || response.status === 403) {
+            throw new WorkdayAuthenticationError();
+          }
           if (response.status < 200 || response.status >= 300) {
-            if (url.endsWith("/app-root"))
-              throw new Error("Workday could not provide session headers");
             throw new WorkdayShapeError("Workday did not return the expected course records", url);
           }
           return response.json;
@@ -103,6 +105,16 @@ void app.whenReady().then(() => {
   });
 });
 
+app.on("before-quit", (event) => {
+  if (workdayCleanupPending) return;
+  workdayCleanupPending = true;
+  event.preventDefault();
+  void clearWorkdaySession()
+    .catch(() => undefined)
+    .finally(() => app.quit());
+});
+
 app.on("window-all-closed", () => {
+  void clearWorkdaySession().catch(() => app.quit());
   if (process.platform !== "darwin") app.quit();
 });

@@ -1,12 +1,18 @@
 import { randomUUID } from "node:crypto";
 import { BrowserWindow, session, type Session } from "electron";
-import { WORKDAY_TENANT_URL } from "@jevschedule/workday/urls";
+import { guardedFetch } from "@jevschedule/workday/allowlist";
+import { DEFAULT_LOGGED_IN_PATTERN, WORKDAY_TENANT_URL } from "@jevschedule/workday/urls";
 
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
-const APP_ROOT_FILTER = "https://www.myworkday.com/lsu/app-root*";
+const APP_ROOT_URL = "https://www.myworkday.com/lsu/app-root";
+
+export interface WorkdaySessionCredentials {
+  sessionSecureToken: string;
+  uiClientVersion: string;
+}
 
 export type WorkdaySignInResult =
-  | { status: "success"; session: Session }
+  | ({ status: "success"; session: Session } & WorkdaySessionCredentials)
   | { status: "cancelled" }
   | { status: "timeout" };
 
@@ -14,43 +20,83 @@ export interface WorkdaySignInOptions {
   timeoutMs?: number;
 }
 
-/** Opens an ephemeral Electron popup and closes it when this session completes app-root. */
+let partition: string | undefined;
+let workdaySession: Session | undefined;
+
+function getWorkdaySession(): Session {
+  if (!workdaySession) {
+    partition ??= `wd-${randomUUID()}`;
+    workdaySession = session.fromPartition(partition);
+    const userAgent = workdaySession
+      .getUserAgent()
+      .replace(/\s+Electron\/[^\s]+/g, "")
+      .replace(/\s+JevSchedule\/[^\s]+/g, "");
+    workdaySession.setUserAgent(userAgent);
+  }
+  return workdaySession;
+}
+
+async function readSessionCredentials(ses: Session): Promise<WorkdaySessionCredentials | null> {
+  try {
+    const response = await guardedFetch((url, init) => ses.fetch(url, init), {
+      method: "GET",
+      url: APP_ROOT_URL,
+    });
+    if (response.status < 200 || response.status >= 300) return null;
+    const payload = response.json;
+    if (typeof payload !== "object" || payload === null) return null;
+    if (!("sessionSecureToken" in payload) || !("uiClientVersion" in payload)) return null;
+    const { sessionSecureToken, uiClientVersion } = payload;
+    if (
+      typeof sessionSecureToken !== "string" ||
+      sessionSecureToken.trim().length === 0 ||
+      typeof uiClientVersion !== "string" ||
+      uiClientVersion.trim().length === 0
+    ) {
+      return null;
+    }
+    return { sessionSecureToken, uiClientVersion };
+  } catch {
+    return null;
+  }
+}
+
+/** Clears the in-memory Workday session without writing credentials to disk. */
+export async function clearWorkdaySession(): Promise<void> {
+  if (!workdaySession) return;
+  const results = await Promise.allSettled([
+    Promise.resolve().then(() => workdaySession!.clearStorageData()),
+    Promise.resolve().then(() => workdaySession!.clearCache()),
+  ]);
+  if (results.some((result) => result.status === "rejected")) {
+    throw new Error("Unable to clear Workday session");
+  }
+}
+
+/** Reuses the app-run session or opens a sign-in popup when app-root has no session token. */
 export async function openWorkdaySignIn(
   parent: BrowserWindow,
   { timeoutMs = DEFAULT_TIMEOUT_MS }: WorkdaySignInOptions = {},
 ): Promise<WorkdaySignInResult> {
-  const partition = `wd-${randomUUID()}`;
-  const ses = session.fromPartition(partition);
-  const userAgent = ses
-    .getUserAgent()
-    .replace(/\s+Electron\/[^\s]+/g, "")
-    .replace(/\s+JevSchedule\/[^\s]+/g, "");
-  ses.setUserAgent(userAgent);
+  const ses = getWorkdaySession();
+  const existingCredentials = await readSessionCredentials(ses);
+  if (existingCredentials) return { status: "success", session: ses, ...existingCredentials };
 
-  let window: BrowserWindow;
-  try {
-    window = new BrowserWindow({
-      parent,
-      modal: true,
-      width: 520,
-      height: 720,
-      title: "Sign in to Workday",
-      autoHideMenuBar: true,
-      webPreferences: {
-        partition,
-        nodeIntegration: false,
-        contextIsolation: true,
-        sandbox: true,
-        devTools: false,
-      },
-    });
-  } catch (error) {
-    await Promise.allSettled([
-      Promise.resolve().then(() => ses.clearStorageData()),
-      Promise.resolve().then(() => ses.clearCache()),
-    ]);
-    throw error;
-  }
+  const window = new BrowserWindow({
+    parent,
+    modal: true,
+    width: 520,
+    height: 720,
+    title: "Sign in to Workday",
+    autoHideMenuBar: true,
+    webPreferences: {
+      partition: partition!,
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      devTools: false,
+    },
+  });
 
   window.setMenu(null);
   window.setMenuBarVisibility(false);
@@ -70,43 +116,55 @@ export async function openWorkdaySignIn(
     rejectResult = reject;
   });
   let settled = false;
-  const finish = async (result: WorkdaySignInResult, close: boolean) => {
+  let probeInFlight: Promise<void> | undefined;
+  const finish = (result: WorkdaySignInResult, close: boolean) => {
     if (settled) return;
     settled = true;
     clearTimeout(timer);
+    window.webContents.removeListener("did-navigate", onNavigate);
+    window.webContents.removeListener("did-redirect-navigation", onRedirect);
     window.removeListener("closed", onClosed);
-    ses.webRequest.onCompleted(null);
     if (close) {
       setImmediate(() => {
         if (!window.isDestroyed()) window.close();
       });
     }
-    if (result.status !== "success") {
-      await Promise.allSettled([
-        Promise.resolve().then(() => ses.clearStorageData()),
-        Promise.resolve().then(() => ses.clearCache()),
-      ]);
-    }
     resolveResult(result);
   };
-  const onClosed = () => void finish({ status: "cancelled" }, false);
-  const onRequestCompleted = (details: Electron.OnCompletedListenerDetails) => {
-    if (details.statusCode === 200) void finish({ status: "success", session: ses }, true);
+  const probe = () => {
+    if (settled || probeInFlight) return;
+    probeInFlight = readSessionCredentials(ses)
+      .then((credentials) => {
+        if (credentials && !settled) {
+          finish({ status: "success", session: ses, ...credentials }, true);
+        }
+      })
+      .finally(() => {
+        probeInFlight = undefined;
+      });
   };
-  const timer = setTimeout(() => void finish({ status: "timeout" }, true), timeoutMs);
+  const queueProbe = (url: string, isMainFrame = true) => {
+    if (isMainFrame && DEFAULT_LOGGED_IN_PATTERN.test(url)) setImmediate(probe);
+  };
+  const onNavigate = (_event: Electron.Event, url: string) => queueProbe(url);
+  const onRedirect = (
+    _event: Electron.Event,
+    url: string,
+    _isInPlace: boolean,
+    isMainFrame: boolean,
+  ) => queueProbe(url, isMainFrame);
+  const onClosed = () => finish({ status: "cancelled" }, false);
+  const timer = setTimeout(() => finish({ status: "timeout" }, true), timeoutMs);
 
+  window.webContents.on("did-navigate", onNavigate);
+  window.webContents.on("did-redirect-navigation", onRedirect);
   window.once("closed", onClosed);
-  ses.webRequest.onCompleted({ urls: [APP_ROOT_FILTER] }, onRequestCompleted);
-  void window.loadURL(WORKDAY_TENANT_URL).catch(async (error: unknown) => {
+  void window.loadURL(WORKDAY_TENANT_URL).catch((error: unknown) => {
     if (!settled) {
       settled = true;
       clearTimeout(timer);
-      ses.webRequest.onCompleted(null);
-      window.destroy();
-      await Promise.allSettled([
-        Promise.resolve().then(() => ses.clearStorageData()),
-        Promise.resolve().then(() => ses.clearCache()),
-      ]);
+      window.removeListener("closed", onClosed);
+      if (!window.isDestroyed()) window.destroy();
       rejectResult(error);
     }
   });
