@@ -79,9 +79,9 @@ describe("WeeklyCalendar & formatMinuteToTime", () => {
     render(<WeeklyCalendar sections={calendarSections} />);
 
     expect(screen.getByText("2 sections · 8 credits")).toBeInTheDocument();
-    expect(screen.getByTestId("meeting-block-CSC 1350-Mon")).toHaveClass("tone-0");
-    expect(screen.getByTestId("meeting-block-CSC 1350-Fri")).toHaveClass("tone-0");
-    expect(screen.getByTestId("meeting-block-MATH 1550-Tue")).toHaveClass("tone-1");
+    expect(screen.getByTestId("meeting-block-CSC 1350-Mon")).toHaveClass("tone-2");
+    expect(screen.getByTestId("meeting-block-CSC 1350-Fri")).toHaveClass("tone-2");
+    expect(screen.getByTestId("meeting-block-MATH 1550-Tue")).toHaveClass("tone-3");
   });
 
   it("keeps a course's tone when other courses are added or removed", () => {
@@ -103,7 +103,12 @@ describe("WeeklyCalendar & formatMinuteToTime", () => {
 
     rerender(
       <WeeklyCalendar
-        sections={[course("ART 1001"), course("BIOL 1001"), course("CSC 1350"), course("MATH 1550")]}
+        sections={[
+          course("ART 1001"),
+          course("BIOL 1001"),
+          course("CSC 1350"),
+          course("MATH 1550"),
+        ]}
       />,
     );
     expect(toneOf("MATH 1550")).toBe(alone);
