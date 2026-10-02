@@ -66,6 +66,9 @@
 }
 .completed-course-title {
   flex: 1 0 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  overflow-wrap: anywhere;
   padding-left: 26px;
   color: var(--text-muted);
   font-size: var(--text-xs);
