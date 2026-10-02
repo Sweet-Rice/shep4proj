@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { inspect } from "node:util";
 import { eq, sql } from "drizzle-orm";
 import type { SectionFetcher } from "@jevschedule/scraper";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDb, type Db } from "../db/client.js";
 import { watches } from "../db/schema.js";
 import {
@@ -69,6 +69,18 @@ describe.skipIf(!getTestDatabaseUrl())("pollWatchedSeats", () => {
     await closeDb?.();
   });
 
+  // Only Date is faked, so database sockets keep real timers. Openings are stamped with node's
+  // clock, which this pins.
+  const OPENED_AT = new Date("2026-08-01T12:00:00.000Z");
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(OPENED_AT);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("reports a full section that opened once, and records the new counts", async () => {
     const id = await watch(OPEN, { lastEnrollment: 40, lastCapacity: 40 });
 
@@ -79,11 +91,31 @@ describe.skipIf(!getTestDatabaseUrl())("pollWatchedSeats", () => {
     ]);
     const [saved] = await db.select().from(watches).where(eq(watches.id, id));
     expect(saved).toMatchObject({ id, lastEnrollment: 38, lastCapacity: 40 });
-    expect(saved!.lastOpenedAt).toBeInstanceOf(Date);
+    expect(saved!.lastOpenedAt).toEqual(OPENED_AT);
 
     const second = await poll();
     expect(second.result.opened).toBe(0);
     expect(second.openings).toEqual([]);
+  });
+
+  it("stamps a later opening of the same watch with a newer time", async () => {
+    // The desktop notifies only when this stamp is newer than its last checkpoint.
+    const id = await watch(OPEN, { lastEnrollment: 40, lastCapacity: 40 });
+    await poll();
+    const [first] = await db.select().from(watches).where(eq(watches.id, id));
+    expect(first!.lastOpenedAt).toEqual(OPENED_AT);
+
+    await db
+      .update(watches)
+      .set({ lastEnrollment: 40, lastCapacity: 40 })
+      .where(eq(watches.id, id));
+    const later = new Date(OPENED_AT.getTime() + 60 * 60 * 1000);
+    vi.setSystemTime(later);
+    const second = await poll();
+
+    expect(second.openings).toHaveLength(1);
+    const [saved] = await db.select().from(watches).where(eq(watches.id, id));
+    expect(saved!.lastOpenedAt).toEqual(later);
   });
 
   it("updates counts without reporting when the section was already open or is still full", async () => {
