@@ -7,12 +7,33 @@ import { ScheduleScreen } from "./components/ScheduleScreen.js";
 
 type TabId = "courses" | "progress" | "eligible" | "plan" | "schedule";
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: "courses", label: "Courses" },
-  { id: "progress", label: "Degree progress" },
-  { id: "eligible", label: "Eligible courses" },
-  { id: "plan", label: "Plan" },
-  { id: "schedule", label: "Schedule" },
+const TABS: { id: TabId; label: string; icon: string[] }[] = [
+  {
+    id: "courses",
+    label: "Courses",
+    icon: ["M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z", "M5 17a3 3 0 0 1 3-3h11"],
+  },
+  { id: "progress", label: "Degree progress", icon: ["M5 20v-6", "M12 20V6", "M19 20v-10"] },
+  {
+    id: "eligible",
+    label: "Eligible courses",
+    icon: ["M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z", "m8 12 3 3 5-6"],
+  },
+  {
+    id: "plan",
+    label: "Plan",
+    icon: ["M3 7l9-4 9 4-9 4z", "M3 12l9 4 9-4", "M3 17l9 4 9-4"],
+  },
+  {
+    id: "schedule",
+    label: "Schedule",
+    icon: [
+      "M6 5h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z",
+      "M4 10h16",
+      "M8 3v4",
+      "M16 3v4",
+    ],
+  },
 ];
 
 export function App() {
@@ -41,8 +62,14 @@ export function App() {
     <div className="app-shell">
       <aside className="app-sidebar">
         <div className="app-brand">
-          <span className="app-brand-mark" aria-hidden="true" />
-          <span>JevSchedule</span>
+          <svg className="app-brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+            <rect width="32" height="32" rx="8" />
+            <path d="M19 8v11a4 4 0 0 1-4 4h-1.5a3.5 3.5 0 0 1-3.5-3.5" />
+          </svg>
+          <span className="app-brand-text">
+            <span className="app-brand-name">JevSchedule</span>
+            <span className="app-brand-tag">Degree planner</span>
+          </span>
         </div>
         <nav
           role="tablist"
@@ -50,7 +77,7 @@ export function App() {
           aria-orientation="vertical"
           onKeyDown={handleTabKeyDown}
         >
-          {TABS.map(({ id, label }) => (
+          {TABS.map(({ id, label, icon }) => (
             <button
               key={id}
               ref={(element) => {
@@ -65,10 +92,16 @@ export function App() {
               tabIndex={tab === id ? 0 : -1}
               onClick={() => setTab(id)}
             >
-              {label}
+              <svg className="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                {icon.map((d) => (
+                  <path key={d} d={d} />
+                ))}
+              </svg>
+              <span>{label}</span>
             </button>
           ))}
         </nav>
+        <p className="app-sidebar-footer">Your plan stays on this device.</p>
       </aside>
       <section
         role="tabpanel"
