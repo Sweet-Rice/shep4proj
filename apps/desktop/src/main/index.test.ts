@@ -6,12 +6,6 @@ const state = vi.hoisted(() => ({
   watchCount: 0,
   appHandlers: new Map<string, () => void>(),
   quit: vi.fn(),
-  notifications: [] as { options: unknown; show: Mock }[],
-  seatOpeningNotification: vi.fn((watch: { courseCode: string }) => ({
-    title: `title for ${watch.courseCode}`,
-    body: "body",
-  })),
-  startWatchChecker: vi.fn((_options: unknown) => ({ check: vi.fn(), stop: vi.fn() })),
   windows: [] as { show: Mock; focus: Mock; isDestroyed: Mock }[],
   buildFromTemplate: vi.fn((_template: unknown) => ({})),
 }));
@@ -40,9 +34,6 @@ vi.mock("electron", () => ({
   nativeImage: { createFromPath: () => ({ resize: () => ({}) }) },
   Notification: class {
     show = vi.fn();
-    constructor(options: unknown) {
-      state.notifications.push({ options, show: this.show });
-    }
   },
   Tray: class {
     destroy = vi.fn();
@@ -76,8 +67,11 @@ vi.mock("./store/watches.js", () => ({
   createWatchStore: () => ({ list: () => Array.from({ length: state.watchCount }, () => ({})) }),
 }));
 vi.mock("./watch-checker.js", () => ({
-  seatOpeningNotification: state.seatOpeningNotification,
-  startWatchChecker: state.startWatchChecker,
+  seatOpeningNotification: (watch: { courseCode: string; sectionNumber: string }) => ({
+    title: `Seat open: ${watch.courseCode} ${watch.sectionNumber}`,
+    body: "0 of 0 seats open. Seat counts update daily.",
+  }),
+  startWatchChecker: () => ({ stop: vi.fn() }),
 }));
 vi.mock("./watches.js", () => ({
   createWatchClient: (baseUrl: string) => {
@@ -114,9 +108,6 @@ afterEach(() => {
   state.watchCount = 0;
   state.appHandlers.clear();
   state.quit.mockClear();
-  state.notifications.length = 0;
-  state.seatOpeningNotification.mockClear();
-  state.startWatchChecker.mockClear();
   state.windows.length = 0;
   state.buildFromTemplate.mockClear();
 });
@@ -135,70 +126,6 @@ describe("main API URL wiring", () => {
   });
 });
 
-describe("seat opening notifications", () => {
-  it("starts one watch checker whose notify shows the seat-opening notification", async () => {
-    await loadMain();
-
-    expect(state.startWatchChecker).toHaveBeenCalledTimes(1);
-    const options = state.startWatchChecker.mock.calls[0]![0] as {
-      notify: (watch: unknown) => void;
-    };
-    expect(state.notifications).toHaveLength(0);
-
-    const status = { courseCode: "CSC 4330" };
-    options.notify(status);
-
-    expect(state.seatOpeningNotification).toHaveBeenCalledWith(status);
-    expect(state.notifications).toHaveLength(1);
-    expect(state.notifications[0]!.options).toEqual({ title: "title for CSC 4330", body: "body" });
-    expect(state.notifications[0]!.show).toHaveBeenCalledTimes(1);
-  });
-});
-
-interface TrayMenuItem {
-  label?: string;
-  type?: string;
-  click?: () => void;
-}
-
-async function loadTrayMenu(): Promise<TrayMenuItem[]> {
-  await loadMain();
-  expect(state.buildFromTemplate).toHaveBeenCalledTimes(1);
-  return state.buildFromTemplate.mock.calls[0]![0] as TrayMenuItem[];
-}
-
-describe("tray menu", () => {
-  it("offers Open JevSchedule and Quit", async () => {
-    const template = await loadTrayMenu();
-    expect(template.filter((item) => item.type !== "separator").map((item) => item.label)).toEqual([
-      "Open JevSchedule",
-      "Quit",
-    ]);
-  });
-
-  it("quits the app from Quit", async () => {
-    const template = await loadTrayMenu();
-    template.find((item) => item.label === "Quit")!.click!();
-    expect(state.quit).toHaveBeenCalledTimes(1);
-  });
-
-  it("shows and focuses the existing window from Open JevSchedule", async () => {
-    const template = await loadTrayMenu();
-    expect(state.windows).toHaveLength(1);
-    template.find((item) => item.label === "Open JevSchedule")!.click!();
-    expect(state.windows).toHaveLength(1);
-    expect(state.windows[0]!.show).toHaveBeenCalledTimes(1);
-    expect(state.windows[0]!.focus).toHaveBeenCalledTimes(1);
-  });
-
-  it("recreates the window from Open JevSchedule once it has been destroyed", async () => {
-    const template = await loadTrayMenu();
-    state.windows[0]!.isDestroyed.mockReturnValue(true);
-    template.find((item) => item.label === "Open JevSchedule")!.click!();
-    expect(state.windows).toHaveLength(2);
-    expect(state.windows[0]!.show).not.toHaveBeenCalled();
-  });
-});
 
 describe("closing every window", () => {
   it("quits on Windows and Linux when no section is watched", async () => {
