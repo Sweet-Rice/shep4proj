@@ -205,6 +205,44 @@ describe("PlanScreen", () => {
     expect(screen.getByText("Credit limit per semester:")).toBeInTheDocument();
     expect(screen.getByText("19 hrs")).toBeInTheDocument();
   });
+
+  it("blocks further edits while a save is pending so a failed save cannot undo a newer one", async () => {
+    const user = userEvent.setup();
+    mockPlanGet.mockResolvedValueOnce({
+      creditLimit: 19,
+      terms: [{ season: "Fall", year: 2026, courses: [] }],
+    });
+    let rejectSave!: (error: Error) => void;
+    mockPlanSave.mockReturnValueOnce(
+      new Promise<void>((_, reject) => {
+        rejectSave = reject;
+      }),
+    );
+    render(<PlanScreen />);
+
+    const limit = await screen.findByLabelText("Credit limit per semester");
+    await user.selectOptions(await screen.findByRole("combobox", { name: "Course" }), "CSC 4330");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Term" }), "Fall-2026");
+    await user.clear(limit);
+    await user.type(limit, "12");
+    await user.tab();
+    await waitFor(() => expect(mockPlanSave).toHaveBeenCalledTimes(1));
+
+    const add = screen.getByRole("button", { name: "Add to plan" });
+    expect(add).toBeDisabled();
+    expect(limit).toBeDisabled();
+    await user.click(add);
+    expect(mockPlanSave).toHaveBeenCalledTimes(1);
+
+    rejectSave(new Error("disk full"));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Could not save the plan: disk full",
+    );
+    await waitFor(() => expect(limit).toHaveValue(19));
+    expect(screen.queryByTestId("course-card-CSC 4330")).not.toBeInTheDocument();
+    expect(limit).toBeEnabled();
+    expect(mockPlanSave).toHaveBeenCalledTimes(1);
+  });
   it("shows an inline missing-prerequisite error for a course planned too early", async () => {
     mockPlanGet.mockResolvedValueOnce({
       creditLimit: 19,

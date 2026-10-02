@@ -11,6 +11,7 @@ export function PlanScreen() {
   const {
     plan,
     loaded,
+    saving,
     error: planError,
     moveCourse,
     addCourseToTerm,
@@ -27,6 +28,7 @@ export function PlanScreen() {
   const [creditLimitError, setCreditLimitError] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<CourseCode | "">("");
   const [selectedTermKey, setSelectedTermKey] = useState("");
+  const editable = loaded && !saving;
 
   useEffect(() => {
     setCreditLimitInput(String(plan.creditLimit));
@@ -44,7 +46,7 @@ export function PlanScreen() {
   const selectedTermIndex = plan.terms.findIndex((term) => termKey(term) === selectedTermKey);
 
   const commitCreditLimit = () => {
-    if (!loaded) return;
+    if (!editable) return;
     const parsed = Number(creditLimitInput);
     if (!Number.isInteger(parsed) || parsed < 1) {
       setCreditLimitInput(String(plan.creditLimit));
@@ -60,7 +62,7 @@ export function PlanScreen() {
   const addSelectedCourse = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (
-      !loaded ||
+      !editable ||
       catalogError ||
       catalogLoading ||
       selectedTermIndex < 0 ||
@@ -89,7 +91,7 @@ export function PlanScreen() {
           type="number"
           min={1}
           step={1}
-          disabled={!loaded}
+          disabled={!editable}
           value={creditLimitInput}
           onChange={(event) => setCreditLimitInput(event.target.value)}
           onBlur={commitCreditLimit}
@@ -110,7 +112,7 @@ export function PlanScreen() {
             aria-label="Course"
             value={selectedCourse}
             onChange={(event) => setSelectedCourse(event.target.value as CourseCode | "")}
-            disabled={!loaded || catalogLoading || Boolean(catalogError)}
+            disabled={!editable || catalogLoading || Boolean(catalogError)}
           >
             <option value="">Select a course</option>
             {availableCourses.map((course) => (
@@ -126,7 +128,7 @@ export function PlanScreen() {
             aria-label="Term"
             value={selectedTermKey}
             onChange={(event) => setSelectedTermKey(event.target.value)}
-            disabled={!loaded || plan.terms.length === 0}
+            disabled={!editable || plan.terms.length === 0}
           >
             <option value="">Select a term</option>
             {plan.terms.map((term) => (
@@ -139,7 +141,7 @@ export function PlanScreen() {
         <button
           type="submit"
           disabled={
-            !loaded ||
+            !editable ||
             catalogLoading ||
             Boolean(catalogError) ||
             plan.terms.length === 0 ||

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   DEFAULT_CREDIT_LIMIT,
   type CourseCode,
@@ -32,6 +32,10 @@ export function usePlan(initialPlan: Plan = EMPTY_PLAN) {
   const [plan, setPlan] = useState<Plan>(initialPlan);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [saving, setSaving] = useState(false);
+  // Only one save may be in flight: a later save is built from the optimistic state, so
+  // rolling back an earlier failed save would otherwise diverge from what was persisted.
+  const savingRef = useRef(false);
 
   // Load plan from IPC store on mount
   useEffect(() => {
@@ -68,18 +72,24 @@ export function usePlan(initialPlan: Plan = EMPTY_PLAN) {
   // Save updated plan to store
   const savePlan = useCallback(
     async (nextPlan: Plan) => {
+      if (savingRef.current) return;
       const prevPlan = plan;
       setPlan(nextPlan);
       setError(null);
 
       const api = getPlanApi();
       if (api) {
+        savingRef.current = true;
+        setSaving(true);
         try {
           await api.save(nextPlan);
         } catch (err) {
           setPlan(prevPlan);
           setError(err instanceof Error ? err : new Error(String(err)));
           throw err;
+        } finally {
+          savingRef.current = false;
+          setSaving(false);
         }
       }
     },
@@ -177,6 +187,7 @@ export function usePlan(initialPlan: Plan = EMPTY_PLAN) {
   return {
     plan,
     loaded,
+    saving,
     error,
     moveCourse,
     addCourseToTerm,
