@@ -11,36 +11,14 @@ export interface CourseSuggestion {
   validationReason?: string | null;
 }
 
-export const SAMPLE_SUGGESTIONS: CourseSuggestion[] = [
-  {
-    code: "CSC 1351",
-    title: "Computer Science II for Majors",
-    rationale: "Core requirement following CSC 1350 completion.",
-    status: "valid",
-  },
-  {
-    code: "MATH 1552",
-    title: "Analytic Geometry and Calculus II",
-    rationale: "Prerequisite for upper-level CSC courses.",
-    status: "valid",
-  },
-  {
-    code: "CSC 3102",
-    title: "Advanced Data Structures",
-    rationale: "Core computer science algorithm course.",
-    status: "invalid",
-    validationReason: "Prerequisite CSC 2250 is not yet completed.",
-  },
-];
-
 export interface SuggestionViewProps {
-  suggestions?: CourseSuggestion[];
+  suggestions: CourseSuggestion[];
   onAcceptCourse: (code: CourseCode) => void;
   onRejectCourse?: (code: CourseCode) => void;
 }
 
 export function SuggestionView({
-  suggestions = SAMPLE_SUGGESTIONS,
+  suggestions,
   onAcceptCourse,
   onRejectCourse,
 }: SuggestionViewProps) {

@@ -13,6 +13,7 @@ import type { CatalogClient } from "./catalog.js";
 import type { CompletedStore } from "./store/completed.js";
 import type { PlanStore } from "./store/plan.js";
 import type { WorkdayImporter } from "./workday-import.js";
+import { CourseNotInCatalogError, restrictReviewToCatalog } from "../shared/catalog-membership.js";
 /** Stores and services the handlers read. */
 export interface IpcStores {
   completed: CompletedStore;
@@ -74,6 +75,13 @@ export function registerIpcHandlers(
   selectTranscript: () => Promise<TranscriptParseResult | null> = async () => null,
   services: IpcServices = {},
 ): void {
+  async function assertInCatalog(codes: CourseCode[]): Promise<void> {
+    if (codes.length === 0) return;
+    const known = new Set((await stores.catalog.listCourses()).map((course) => course.code));
+    const missing = codes.filter((code) => !known.has(code));
+    if (missing.length > 0) throw new CourseNotInCatalogError(missing);
+  }
+
   function handle(
     channel: string,
     handler: (args: unknown[], event: IpcMainInvokeEvent) => unknown,
@@ -85,13 +93,17 @@ export function registerIpcHandlers(
   }
 
   handle(IPC_CHANNELS.completedGet, () => stores.completed.getCompleted());
-  handle(IPC_CHANNELS.completedSet, (args) => {
+  handle(IPC_CHANNELS.completedSet, async (args) => {
     const [code, completed] = CompletedSetArgsSchema.parse(args);
+    if (completed) await assertInCatalog([code]);
     stores.completed.setCompleted(code, completed);
   });
   handle(IPC_CHANNELS.planGet, () => stores.plan.getPlan());
-  handle(IPC_CHANNELS.planSave, (args) => {
+  handle(IPC_CHANNELS.planSave, async (args) => {
     const [plan] = PlanSaveArgsSchema.parse(args);
+    const existing = new Set(stores.plan.getPlan().terms.flatMap((term) => term.courses));
+    const added = plan.terms.flatMap((term) => term.courses).filter((code) => !existing.has(code));
+    await assertInCatalog(added);
     stores.plan.savePlan(plan);
   });
   handle(IPC_CHANNELS.transcriptSelect, (args) => {
@@ -122,15 +134,21 @@ export function registerIpcHandlers(
     const [courseCode, term] = CatalogSectionsArgsSchema.parse(args);
     return stores.catalog.listSections(courseCode, term);
   });
-  handle(IPC_CHANNELS.workdayImport, (args, event) => {
+  handle(IPC_CHANNELS.workdayImport, async (args, event) => {
     z.tuple([]).parse(args);
     if (!services.workday) throw new Error("Workday importer is unavailable");
-    return services.workday.run((progress) => {
+    const review = await services.workday.run((progress) => {
       event.sender.send(IPC_CHANNELS.workdayProgress, progress);
     });
+    const catalog = new Set((await stores.catalog.listCourses()).map((course) => course.code));
+    return restrictReviewToCatalog(review, catalog);
   });
-  handle(IPC_CHANNELS.workdayConfirm, (args, event) => {
+  handle(IPC_CHANNELS.workdayConfirm, async (args, event) => {
     const [review] = z.tuple([WorkdayReviewSchema]).parse(args);
+    await assertInCatalog([
+      ...review.completed,
+      ...review.inProgress.flatMap((term) => term.courses),
+    ]);
     for (const code of review.completed) stores.completed.setCompleted(code, true);
 
     const plan = stores.plan.getPlan();

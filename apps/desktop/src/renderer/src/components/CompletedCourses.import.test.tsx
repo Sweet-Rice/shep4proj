@@ -28,7 +28,16 @@ describe("transcript upload in the installed desktop screen", () => {
           },
         },
         catalog: {
-          listCourses: async () => [],
+          listCourses: async () => [
+            {
+              catalogYear: "2026-2027",
+              code: "CSC 1350",
+              title: "Computer Science I",
+              credits: { min: 3, max: 3, note: null },
+              description: "Introductory course",
+              prerequisiteText: null,
+            },
+          ],
           getCourseDetails: async () => ({}),
           getCourseHistory: async () => [],
           listDegrees: async () => [],
@@ -106,7 +115,9 @@ describe("transcript upload in the installed desktop screen", () => {
     render(<CompletedCourses />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Course catalog server unreachable at http://127.0.0.1:3000",
+      "Course catalog unavailable: Course catalog server unreachable at http://127.0.0.1:3000. Courses can't be verified or marked completed until the server is reachable.",
     );
+    expect(screen.getByRole("textbox", { name: "Course code" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Show course" })).toBeDisabled();
   });
 });

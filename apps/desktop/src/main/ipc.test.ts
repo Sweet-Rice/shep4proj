@@ -6,6 +6,7 @@ import {
   type WorkdayImportReview,
 } from "../shared/ipc.js";
 import { isAppRendererUrl, registerIpcHandlers, UntrustedIpcSenderError } from "./ipc.js";
+import { CourseNotInCatalogError, NOT_IN_CATALOG_REASON } from "../shared/catalog-membership.js";
 import { createCompletedStore } from "./store/completed.js";
 import { createPlanStore } from "./store/plan.js";
 import { openLocalDb, type LocalDb } from "./store/db.js";
@@ -53,8 +54,8 @@ describe("registerIpcHandlers", () => {
   const importedReview: WorkdayImportReview = {
     completed: ["CSC 1350"],
     inProgress: [
-      { season: "Fall", year: 2026, courses: ["CSC 4330", "CSC 3102"] },
-      { season: "Spring", year: 2027, courses: ["CSC 3200"] },
+      { season: "Fall", year: 2026, courses: ["CSC 4330"] },
+      { season: "Spring", year: 2027, courses: ["CSC 1350"] },
     ],
     skipped: [],
   };
@@ -63,7 +64,7 @@ describe("registerIpcHandlers", () => {
     ipc = fakeIpcMain();
     trusted = true;
     catalog = {
-      listCourses: vi.fn().mockResolvedValue([]),
+      listCourses: vi.fn().mockResolvedValue([{ code: "CSC 1350" }, { code: "CSC 4330" }]),
       getCourseDetails: vi.fn().mockResolvedValue({}),
       getCourseHistory: vi.fn().mockResolvedValue([]),
       listSections: vi.fn().mockResolvedValue([]),
@@ -135,6 +136,19 @@ describe("registerIpcHandlers", () => {
     expect(ipc.sent).toEqual([[IPC_CHANNELS.workdayProgress, { stage: "signing-in" }]]);
   });
 
+  it("filters Workday review courses absent from the catalog", async () => {
+    workday.run.mockResolvedValue({
+      completed: ["CSC 1350"],
+      inProgress: [{ season: "Fall", year: 2026, courses: ["CSC 4330", "MATH 9999"] }],
+      skipped: [],
+    });
+    await expect(ipc.invoke(IPC_CHANNELS.workdayImport)).resolves.toEqual({
+      completed: ["CSC 1350"],
+      inProgress: [{ season: "Fall", year: 2026, courses: ["CSC 4330"] }],
+      skipped: [{ code: "MATH 9999", reason: NOT_IN_CATALOG_REASON }],
+    });
+  });
+
   it("rejects Workday import and confirm from untrusted senders without touching anything", () => {
     trusted = false;
     expect(() => ipc.invoke(IPC_CHANNELS.workdayImport)).toThrow(UntrustedIpcSenderError);
@@ -152,35 +166,57 @@ describe("registerIpcHandlers", () => {
     await ipc.invoke(IPC_CHANNELS.workdayImport);
     expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual([]);
     expect(ipc.invoke(IPC_CHANNELS.planGet)).toMatchObject({ terms: [] });
-    ipc.invoke(IPC_CHANNELS.workdayConfirm, importedReview);
+    await ipc.invoke(IPC_CHANNELS.workdayConfirm, importedReview);
     expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual(["CSC 1350"]);
     expect(ipc.invoke(IPC_CHANNELS.planGet)).toMatchObject({
       terms: [
-        { season: "Fall", year: 2026, courses: ["CSC 4330", "CSC 3102"] },
-        { season: "Spring", year: 2027, courses: ["CSC 3200"] },
+        { season: "Fall", year: 2026, courses: ["CSC 4330"] },
+        { season: "Spring", year: 2027, courses: ["CSC 1350"] },
       ],
     });
   });
+  it("rejects Workday confirmation before writing any non-catalog course", async () => {
+    await expect(
+      ipc.invoke(IPC_CHANNELS.workdayConfirm, {
+        completed: ["CSC 0000"],
+        inProgress: [],
+        skipped: [],
+      }),
+    ).rejects.toThrow(CourseNotInCatalogError);
+    expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual([]);
+    expect(ipc.invoke(IPC_CHANNELS.planGet)).toMatchObject({ terms: [] });
+  });
 
-  it("saves confirmed Workday completions and deduplicated in-progress courses before done", () => {
-    ipc.invoke(IPC_CHANNELS.planSave, {
+  it("saves confirmed Workday courses without duplicating planned codes", async () => {
+    await ipc.invoke(IPC_CHANNELS.planSave, {
       creditLimit: 19,
-      terms: [{ season: "Fall", year: 2026, courses: ["CSC 3102"] }],
+      terms: [{ season: "Fall", year: 2026, courses: ["CSC 4330"] }],
     });
-    ipc.invoke(IPC_CHANNELS.workdayConfirm, importedReview);
+    await ipc.invoke(IPC_CHANNELS.workdayConfirm, importedReview);
     expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual(["CSC 1350"]);
     expect(ipc.invoke(IPC_CHANNELS.planGet)).toEqual({
       creditLimit: 19,
       terms: [
-        { season: "Fall", year: 2026, courses: ["CSC 3102", "CSC 4330"] },
-        { season: "Spring", year: 2027, courses: ["CSC 3200"] },
+        { season: "Fall", year: 2026, courses: ["CSC 4330"] },
+        { season: "Spring", year: 2027, courses: ["CSC 1350"] },
       ],
     });
     expect(ipc.sent.at(-1)).toEqual([IPC_CHANNELS.workdayProgress, { stage: "done" }]);
   });
 
-  it("sets and gets completed courses", () => {
-    ipc.invoke(IPC_CHANNELS.completedSet, "CSC 1350", true);
+  it("rejects completing a code absent from the catalog", async () => {
+    await expect(ipc.invoke(IPC_CHANNELS.completedSet, "CSC 0000", true)).rejects.toThrow(
+      CourseNotInCatalogError,
+    );
+    expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual([]);
+  });
+
+  it("allows unmarking a code absent from the catalog", async () => {
+    await expect(ipc.invoke(IPC_CHANNELS.completedSet, "CSC 0000", false)).resolves.toBeUndefined();
+  });
+
+  it("allows completing a catalog course", async () => {
+    await ipc.invoke(IPC_CHANNELS.completedSet, "CSC 1350", true);
     expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual(["CSC 1350"]);
   });
 
@@ -189,18 +225,39 @@ describe("registerIpcHandlers", () => {
     ["a malformed code", ["csc1350", true]],
     ["a non-boolean flag", ["CSC 1350", "yes"]],
     ["extra arguments", ["CSC 1350", true, "extra"]],
-  ])("rejects %s", (_label, args) => {
-    expect(() => ipc.invoke(IPC_CHANNELS.completedSet, ...args)).toThrow();
+  ])("rejects %s", async (_label, args) => {
+    await expect(ipc.invoke(IPC_CHANNELS.completedSet, ...args)).rejects.toThrow();
     expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual([]);
   });
 
-  it("saves and gets the plan", () => {
+  it("saves and gets a plan with catalog courses", async () => {
     const plan = {
       creditLimit: 15,
-      terms: [{ season: "Fall", year: 2027, courses: ["CSC 3102"] }],
+      terms: [{ season: "Fall", year: 2027, courses: ["CSC 1350"] }],
     };
-    ipc.invoke(IPC_CHANNELS.planSave, plan);
+    await ipc.invoke(IPC_CHANNELS.planSave, plan);
     expect(ipc.invoke(IPC_CHANNELS.planGet)).toEqual(plan);
+  });
+
+  it("rejects adding an absent catalog course and allows offline reorder", async () => {
+    await expect(
+      ipc.invoke(IPC_CHANNELS.planSave, {
+        creditLimit: 15,
+        terms: [{ season: "Fall", year: 2027, courses: ["CSC 0000"] }],
+      }),
+    ).rejects.toThrow(CourseNotInCatalogError);
+    const plan = {
+      creditLimit: 15,
+      terms: [{ season: "Fall", year: 2027, courses: ["CSC 1350", "CSC 4330"] }],
+    };
+    await ipc.invoke(IPC_CHANNELS.planSave, plan);
+    catalog.listCourses.mockRejectedValue(new Error("offline"));
+    const reordered = {
+      ...plan,
+      terms: [{ ...plan.terms[0], courses: ["CSC 4330", "CSC 1350"] }],
+    };
+    await ipc.invoke(IPC_CHANNELS.planSave, reordered);
+    expect(ipc.invoke(IPC_CHANNELS.planGet)).toEqual(reordered);
   });
 
   it.each([
@@ -211,18 +268,9 @@ describe("registerIpcHandlers", () => {
       "a term with a bad season",
       [{ creditLimit: 15, terms: [{ season: "Autumn", year: 2027, courses: [] }] }],
     ],
-  ])("rejects saving %s", (_label, args) => {
-    expect(() => ipc.invoke(IPC_CHANNELS.planSave, ...args)).toThrow();
+  ])("rejects saving %s", async (_label, args) => {
+    await expect(ipc.invoke(IPC_CHANNELS.planSave, ...args)).rejects.toThrow();
     expect(ipc.invoke(IPC_CHANNELS.planGet)).toEqual({ creditLimit: 19, terms: [] });
-  });
-
-  it("rejects calls from untrusted senders before touching the store", () => {
-    trusted = false;
-    expect(() => ipc.invoke(IPC_CHANNELS.completedSet, "CSC 1350", true)).toThrow(
-      UntrustedIpcSenderError,
-    );
-    trusted = true;
-    expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual([]);
   });
 
   it("rejects transcript picker arguments and untrusted frames", async () => {

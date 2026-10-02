@@ -44,9 +44,10 @@ export function SemesterBoard({
   courseHistory,
   completed = [],
 }: SemesterBoardProps) {
+  const currentYear = new Date().getFullYear();
   const [dragData, setDragData] = useState<DraggedCourseData | null>(null);
   const [newSeason, setNewSeason] = useState<Season>("Fall");
-  const [newYear, setNewYear] = useState<number>(2027);
+  const [newYear, setNewYear] = useState<number>(currentYear);
   const validation = courseDetails
     ? plannerTools.validatePlan({ ...plan, courseDetails }, completed)
     : null;
@@ -306,8 +307,8 @@ export function SemesterBoard({
               value={newYear}
               onChange={(e) => setNewYear(Number(e.target.value))}
               aria-label="Enter Year"
-              min={2020}
-              max={2035}
+              min={currentYear - 8}
+              max={currentYear + 8}
             />
             <button type="submit" className="btn btn-primary" data-testid="add-term-btn">
               Add Term

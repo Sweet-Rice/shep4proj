@@ -11,6 +11,7 @@ const review: WorkdayImportReview = {
   inProgress: [{ season: "Fall", year: 2026, courses: ["CSC 4330"] }],
   skipped: [],
 };
+const catalogCodes = new Set(["CSC 1350", "CSC 4330", "CSC 2700"]);
 
 function installWorkdayApi(api: Record<string, unknown>) {
   Object.assign(window, { jevschedule: api });
@@ -39,7 +40,7 @@ describe("ImportProgressFlow", () => {
         }),
       },
     });
-    render(<ImportProgressFlow />);
+    render(<ImportProgressFlow catalogCodes={catalogCodes} />);
     await user.click(screen.getByTestId("start-import-btn"));
     expect(screen.getByTestId("stage-signing-in")).toBeInTheDocument();
     await act(async () => emit?.({ stage: "fetching" }));
@@ -60,7 +61,7 @@ describe("ImportProgressFlow", () => {
         onProgress: vi.fn(() => vi.fn()),
       },
     });
-    render(<ImportProgressFlow />);
+    render(<ImportProgressFlow catalogCodes={catalogCodes} />);
     await user.click(screen.getByTestId("start-import-btn"));
     await screen.findByTestId("stage-review");
     expect(window.jevschedule.completed.set).not.toHaveBeenCalled();
@@ -95,7 +96,7 @@ describe("ImportProgressFlow", () => {
         }),
       },
     });
-    render(<ImportProgressFlow />);
+    render(<ImportProgressFlow catalogCodes={catalogCodes} />);
     await user.click(screen.getByTestId("start-import-btn"));
     expect(
       await screen.findByText("Workday's pages changed. Import your transcript PDF instead."),
@@ -122,7 +123,7 @@ describe("ImportProgressFlow", () => {
         }),
       },
     });
-    render(<ImportProgressFlow />);
+    render(<ImportProgressFlow catalogCodes={catalogCodes} />);
     await user.click(screen.getByTestId("start-import-btn"));
     await screen.findByText("Could not import records from Workday.");
     await user.click(screen.getByTestId("select-transcript-fallback-btn"));
@@ -168,7 +169,7 @@ describe("ImportProgressFlow", () => {
     it("reviews the PDF courses, not the cancelled Workday ones", async () => {
       const user = userEvent.setup();
       const { confirm, set } = installBoth();
-      render(<ImportProgressFlow />);
+      render(<ImportProgressFlow catalogCodes={catalogCodes} />);
       await user.click(screen.getByTestId("start-import-btn"));
       await screen.findByTestId("stage-review");
       await user.click(screen.getByTestId("cancel-import-btn"));
@@ -179,7 +180,7 @@ describe("ImportProgressFlow", () => {
     it("reviews the PDF courses, not the already-confirmed Workday ones", async () => {
       const user = userEvent.setup();
       const { confirm, set } = installBoth();
-      render(<ImportProgressFlow />);
+      render(<ImportProgressFlow catalogCodes={catalogCodes} />);
       await user.click(screen.getByTestId("start-import-btn"));
       await screen.findByTestId("stage-review");
       await user.click(screen.getByTestId("confirm-import-btn"));

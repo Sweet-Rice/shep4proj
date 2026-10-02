@@ -153,15 +153,27 @@ describe("CompletedCourses prerequisite auto-check", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("keeps the manual course form direct without fetching details", async () => {
+  it("rejects manual CSC 0000 and never calls completed.set", async () => {
     const user = userEvent.setup();
-    const { persisted, getCourseDetails } = renderScreen();
+    const { persisted } = renderScreen();
+    await user.type(await screen.findByLabelText("Course code"), "CSC 0000");
+    await user.click(screen.getByRole("button", { name: "Show course" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "CSC 0000 is not in the LSU course catalog.",
+    );
+    expect(screen.queryByRole("checkbox", { name: "CSC 0000 completed" })).not.toBeInTheDocument();
+    expect(persisted).toEqual([]);
+  });
+
+  it("manually completes a catalog course", async () => {
+    const user = userEvent.setup();
+    const { persisted } = renderScreen();
     await user.type(await screen.findByLabelText("Course code"), "CSC 4330");
     await user.click(screen.getByRole("button", { name: "Show course" }));
     await user.click(await screen.findByRole("checkbox", { name: "CSC 4330 completed" }));
 
     await waitFor(() => expect(persisted).toEqual([["CSC 4330", true]]));
-    expect(getCourseDetails).not.toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

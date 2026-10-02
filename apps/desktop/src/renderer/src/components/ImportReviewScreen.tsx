@@ -13,22 +13,8 @@ export interface TranscriptParseResult {
   unrecognizedLines: string[];
 }
 
-export const SAMPLE_PARSE_RESULT: TranscriptParseResult = {
-  parsedCourses: [
-    { code: "CSC 1350", term: "Fall 2024", grade: "A", selected: true },
-    { code: "MATH 1550", term: "Fall 2024", grade: "B+", selected: true },
-    { code: "ENGL 1001", term: "Fall 2024", grade: "A-", selected: true },
-    { code: "CSC 1351", term: "Spring 2025", grade: "B", selected: true },
-  ],
-  unrecognizedLines: [
-    "PHYS 1000 - In Progress",
-    "TOTAL CREDITS EARNED: 14.0",
-    "CUMULATIVE GPA: 3.65",
-  ],
-};
-
 export interface ImportReviewScreenProps {
-  parseResult?: TranscriptParseResult;
+  parseResult: TranscriptParseResult;
   onConfirm?: (selectedCourses: CourseCode[]) => Promise<void> | void;
   onCancel?: () => void;
   saveToStore?: boolean;
@@ -50,7 +36,7 @@ function getCompletedApi() {
 }
 
 export function ImportReviewScreen({
-  parseResult = SAMPLE_PARSE_RESULT,
+  parseResult,
   onConfirm,
   onCancel,
   saveToStore = true,

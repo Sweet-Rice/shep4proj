@@ -2,11 +2,7 @@ import { useState } from "react";
 import type { CourseCode } from "@jevschedule/shared";
 import type { TranscriptParseResult as PdfParseResult } from "@jevschedule/workday";
 import type { WorkdayImportReview } from "../../../shared/ipc.js";
-import {
-  ImportReviewScreen,
-  SAMPLE_PARSE_RESULT,
-  type TranscriptParseResult,
-} from "./ImportReviewScreen.js";
+import { ImportReviewScreen, type TranscriptParseResult } from "./ImportReviewScreen.js";
 import { toTranscriptReview } from "./transcript-review.js";
 
 export type ImportStage =
@@ -25,13 +21,13 @@ function workdayApi() {
 
 export interface ImportProgressFlowProps {
   initialStage?: ImportStage;
-  parseResult?: TranscriptParseResult;
+  catalogCodes: ReadonlySet<CourseCode>;
   onImportComplete?: (courses: CourseCode[]) => void;
 }
 
 export function ImportProgressFlow({
   initialStage = "idle",
-  parseResult = SAMPLE_PARSE_RESULT,
+  catalogCodes,
   onImportComplete,
 }: ImportProgressFlowProps) {
   const [stage, setStage] = useState<ImportStage>(initialStage);
@@ -57,7 +53,7 @@ export function ImportProgressFlow({
       }
       setWorkdayReview(null);
       setErrorMessage(null);
-      setUploadedResult(toTranscriptReview(result));
+      setUploadedResult(toTranscriptReview(result, catalogCodes));
       setStage("review");
     } catch {
       setErrorMessage("Could not read this transcript PDF. Try another PDF.");
@@ -161,7 +157,7 @@ export function ImportProgressFlow({
         </div>
       )}
 
-      {stage === "review" && (
+      {stage === "review" && (workdayReview ?? uploadedResult) !== null && (
         <div className="flow-card review-card" data-testid="stage-review">
           <ImportReviewScreen
             parseResult={
@@ -171,9 +167,11 @@ export function ImportProgressFlow({
                       code,
                       selected: true,
                     })),
-                    unrecognizedLines: [],
+                    unrecognizedLines: workdayReview.skipped.map(
+                      (skipped) => `${skipped.code} — ${skipped.reason}`,
+                    ),
                   }
-                : (uploadedResult ?? parseResult)
+                : uploadedResult!
             }
             saveToStore={!workdayReview}
             onConfirm={handleReviewConfirm}
