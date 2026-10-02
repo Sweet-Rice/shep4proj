@@ -5,7 +5,7 @@ import type { Db } from "../db/client.js";
 import { courses, sectionArchive, type CourseRow } from "../db/schema.js";
 
 const DEPT_REGEX = /^[A-Z]{2,4}$/;
-const COURSE_ID_REGEX = /^[A-Z]{2,4}-\d{4}$/;
+const COURSE_ID_REGEX = /^[A-Z]{2,4}-\d{4}[A-Z]{0,2}$/;
 
 interface CoursesQuery {
   dept?: unknown;

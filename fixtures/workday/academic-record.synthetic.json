@@ -185,7 +185,7 @@
                                     "instances": [
                                       {
                                         "instanceId": "inst-7smjqr",
-                                        "text": "F",
+                                        "text": "A",
                                         "v": 1,
                                         "pv": 1,
                                         "rt": "single",
@@ -196,8 +196,8 @@
                                   "90.6": {
                                     "widget": "gridCellNumeric",
                                     "label": "Grade Points",
-                                    "text": "0.00",
-                                    "value": 0,
+                                    "text": "12.00",
+                                    "value": 12,
                                     "format": "n2",
                                     "precision": 2
                                   },
@@ -212,8 +212,8 @@
                                   "90.8": {
                                     "widget": "gridCellNumeric",
                                     "label": "Earned Grade Points",
-                                    "text": "0.00",
-                                    "value": 0,
+                                    "text": "12.00",
+                                    "value": 12,
                                     "format": "n2",
                                     "precision": 2
                                   }

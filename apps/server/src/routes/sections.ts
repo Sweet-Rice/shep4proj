@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import {
   AcademicPeriodIdSchema,
-  SectionCourseCodeSchema,
+  CourseCodeSchema,
   type Meeting,
   type Section,
 } from "@jevschedule/shared";
@@ -52,7 +52,7 @@ export function registerSectionRoutes(app: FastifyInstance, deps: { db: Db }): v
     if (typeof rawCourse !== "string" || !COURSE_PARAM_REGEX.test(rawCourse.toUpperCase())) {
       return reply.status(400).send({ error: "invalid course" });
     }
-    const courseCode = SectionCourseCodeSchema.parse(rawCourse.toUpperCase().replace("-", " "));
+    const courseCode = CourseCodeSchema.parse(rawCourse.toUpperCase().replace("-", " "));
 
     let term: string | undefined;
     if (rawTerm !== undefined) {

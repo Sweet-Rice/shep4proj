@@ -1,16 +1,7 @@
 import { z } from "zod";
 import { CreditsSchema } from "./course.js";
+import { CourseCodeSchema } from "./course-code.js";
 import type { Season } from "./plan.js";
-
-/**
- * Course code as the Course Offerings portal lists it: like `CourseCodeSchema`, plus an optional
- * suffix of up to two letters, as in the graduate-credit `CSC 4330G` and the online-term
- * `CSC 4890GE`. Kept separate until the shared course code decides how to treat suffixes
- * (#196), so those sections aren't dropped.
- */
-export const SectionCourseCodeSchema = z.string().regex(/^[A-Z]{2,4} \d{4}[A-Z]{0,2}$/);
-
-export type SectionCourseCode = z.infer<typeof SectionCourseCodeSchema>;
 
 /**
  * Course Offerings academic period id, e.g. `LSUAM_FALL_2026` or `LSUAM_ONLINE_FALL_1_2026`.
@@ -61,7 +52,7 @@ export type Meeting = z.infer<typeof MeetingSchema>;
  */
 export const SectionSchema = z.object({
   term: AcademicPeriodIdSchema,
-  courseCode: SectionCourseCodeSchema,
+  courseCode: CourseCodeSchema,
   sectionNumber: z.string().regex(/^\d{3}$/),
   sectionType: z.string().regex(/^[A-Z]{3}$/),
   credits: CreditsSchema,

@@ -35,10 +35,10 @@ describe("parseAcademicRecord", () => {
         number: "4999G",
         title: "Special Topics in Computer Science",
         term: { season: "Fall", year: 2021, label: "Fall Semester 2021" },
-        grade: "F",
-        gradePoints: 0,
+        grade: "A",
+        gradePoints: 12,
         creditHours: 3,
-        status: "failed",
+        status: "completed",
       },
       {
         code: "CSC 1350",

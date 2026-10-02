@@ -33,12 +33,11 @@ export type {
 export {
   AcademicPeriodIdSchema,
   MeetingSchema,
-  SectionCourseCodeSchema,
   SectionSchema,
   WeekdaySchema,
   termToPeriodId,
 } from "./section.js";
-export type { AcademicPeriodId, Meeting, Section, SectionCourseCode, Weekday } from "./section.js";
+export type { AcademicPeriodId, Meeting, Section, Weekday } from "./section.js";
 export { typicalTerms } from "./typical-terms.js";
 export type { CourseOfferingHistory, TypicalTerm } from "./typical-terms.js";
 export { createPlannerTools } from "./planner-tools.js";

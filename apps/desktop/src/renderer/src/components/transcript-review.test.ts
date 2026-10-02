@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { toTranscriptReview } from "./transcript-review.js";
 
 describe("toTranscriptReview", () => {
-  it("keeps completed courses and flags catalog-incompatible codes", () => {
+  it("keeps suffixed completed courses and flags only unrecognized rows", () => {
     expect(
       toTranscriptReview({
         courses: [
@@ -17,12 +17,10 @@ describe("toTranscriptReview", () => {
     ).toEqual({
       parsedCourses: [
         { code: "CSC 1350", term: "Fall 2024", grade: "A-", selected: true },
+        { code: "CSC 4103G", term: "Spring 2026", grade: "A", selected: true },
         { code: "MATH 1021", term: "Credit by exam", grade: "Pass", selected: true },
       ],
-      unrecognizedLines: [
-        "EE 2741 (page 2: grade missing)",
-        "CSC 4103G (catalog course code not supported)",
-      ],
+      unrecognizedLines: ["EE 2741 (page 2: grade missing)"],
     });
   });
 });
