@@ -62,4 +62,24 @@ describe("App tabs", () => {
     expect(screen.getByRole("tab", { name: "Plan" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("heading", { name: "Plan" })).toBeInTheDocument();
   });
+
+  it("places Eligible courses between Degree progress and Plan and shows its screen", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
+      "Courses",
+      "Degree progress",
+      "Eligible courses",
+      "Plan",
+    ]);
+    await user.click(screen.getByRole("tab", { name: "Eligible courses" }));
+
+    expect(screen.getByRole("tab", { name: "Eligible courses" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByRole("heading", { name: "Eligible courses" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Plan" })).not.toBeInTheDocument();
+  });
 });
