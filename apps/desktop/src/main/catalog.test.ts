@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { DegreeProgramSchema, type Course, type DegreeProgram } from "@jevschedule/shared";
-import { createCatalogClient, DEFAULT_API_BASE_URL } from "./catalog.js";
+import { createCatalogClient, DEFAULT_API_BASE_URL, resolveApiBaseUrl } from "./catalog.js";
 
 const course: Course = {
   catalogYear: "2026-2027",
@@ -33,6 +33,24 @@ const degree: DegreeProgram = DegreeProgramSchema.parse({
 });
 const response = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+
+describe("resolveApiBaseUrl", () => {
+  it("prefers a non-empty runtime URL over the build-time URL", () => {
+    expect(resolveApiBaseUrl("https://runtime.example", "https://build.example")).toBe(
+      "https://runtime.example",
+    );
+  });
+
+  it("uses the build-time URL when the runtime URL is empty or missing", () => {
+    expect(resolveApiBaseUrl(undefined, "https://build.example")).toBe("https://build.example");
+    expect(resolveApiBaseUrl("", "https://build.example")).toBe("https://build.example");
+  });
+
+  it("falls back to the default when both configured URLs are empty or missing", () => {
+    expect(resolveApiBaseUrl(undefined, undefined)).toBe(DEFAULT_API_BASE_URL);
+    expect(resolveApiBaseUrl("", "")).toBe(DEFAULT_API_BASE_URL);
+  });
+});
 
 describe("createCatalogClient", () => {
   it("maps course ids to hyphenated paths and caches successful details", async () => {
