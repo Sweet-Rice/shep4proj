@@ -78,6 +78,28 @@ describe("catalog hooks", () => {
     });
   });
 
+  it("requests details in chunks within the IPC cap and merges the results", async () => {
+    const codes = Array.from({ length: 1200 }, (_, i) => `CSC ${1000 + i}` as CourseCode);
+    const getCourseDetails = vi.fn((chunk: CourseCode[]) =>
+      Promise.resolve(
+        Object.fromEntries(chunk.map((code) => [code, { ...detail, code }])) as Record<
+          CourseCode,
+          CourseDetail
+        >,
+      ),
+    );
+    Object.assign(window, { jevschedule: { catalog: { getCourseDetails } } });
+    const { result } = renderHook(() => useCourseDetails(codes));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error).toBeNull();
+    expect(Object.keys(result.current.details)).toHaveLength(1200);
+    expect(getCourseDetails.mock.calls.length).toBeGreaterThan(1);
+    for (const [chunk] of getCourseDetails.mock.calls) {
+      expect(chunk.length).toBeLessThanOrEqual(500);
+    }
+  });
+
   it("fetches and returns history once per distinct planned code", async () => {
     const history: CourseOfferingHistory[] = [{ term: "LSUAM_FALL_2026", sectionCount: 2 }];
     const getCourseHistory = vi.fn().mockResolvedValue(history);
