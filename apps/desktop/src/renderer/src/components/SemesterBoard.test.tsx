@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { render, screen, cleanup, createEvent, fireEvent, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import type { Plan, ValidationPlan } from "@jevschedule/shared";
@@ -250,6 +250,80 @@ describe("SemesterBoard", () => {
       />,
     );
     expect(container.querySelector(".term-meter-danger")).toBeNull();
+  });
+
+  it("marks the term meter as warning at the limit and ok below it", () => {
+    const { container, rerender } = render(
+      <SemesterBoard
+        plan={{ ...samplePlan, creditLimit: 9 }}
+        courseDetails={courseDetails}
+        onMoveCourse={vi.fn()}
+      />,
+    );
+    const meter = () =>
+      screen.getByTestId("term-column-0").querySelector(".term-meter") as HTMLElement;
+    expect(meter()).toHaveClass("term-meter-warning");
+    expect(meter()).not.toHaveClass("term-meter-danger");
+    rerender(
+      <SemesterBoard
+        plan={{ ...samplePlan, creditLimit: 12 }}
+        courseDetails={courseDetails}
+        onMoveCourse={vi.fn()}
+      />,
+    );
+    expect(meter()).toHaveClass("term-meter-ok");
+    expect(meter().firstElementChild).toHaveStyle({ width: "75%" });
+    expect(container.querySelector(".term-meter-warning")).toBeNull();
+  });
+
+  it("shows an empty state only when the plan has no terms", () => {
+    const { rerender } = render(
+      <SemesterBoard plan={{ ...samplePlan, terms: [] }} onMoveCourse={vi.fn()} />,
+    );
+    expect(screen.getByText("No terms yet")).toBeInTheDocument();
+    rerender(<SemesterBoard plan={samplePlan} onMoveCourse={vi.fn()} />);
+    expect(screen.queryByText("No terms yet")).toBeNull();
+  });
+
+  it("highlights the hovered term as a drop target until the drag leaves or drops", () => {
+    render(<SemesterBoard plan={samplePlan} onMoveCourse={vi.fn()} />);
+    const target = screen.getByTestId("term-column-1");
+    // jsdom drops relatedTarget from the init dict, so attach it by hand.
+    const dragLeave = (relatedTarget: Element) => {
+      const event = createEvent.dragLeave(target);
+      Object.defineProperty(event, "relatedTarget", { value: relatedTarget });
+      fireEvent(target, event);
+    };
+    expect(target).not.toHaveClass("drop-target");
+    fireEvent.dragOver(target, { dataTransfer: {} });
+    expect(target).toHaveClass("drop-target");
+    dragLeave(document.body);
+    expect(target).not.toHaveClass("drop-target");
+    fireEvent.dragOver(target, { dataTransfer: {} });
+    dragLeave(within(target).getByTestId("term-courses-1"));
+    expect(target).toHaveClass("drop-target");
+    fireEvent.drop(target, {
+      dataTransfer: {
+        getData: () =>
+          JSON.stringify({ sourceTermIndex: 0, sourceCourseIndex: 0, code: "CSC 1350" }),
+      },
+    });
+    expect(target).not.toHaveClass("drop-target");
+  });
+
+  it("removes a course from its term with the icon button and shows its credits", () => {
+    const handleRemove = vi.fn();
+    render(
+      <SemesterBoard
+        plan={samplePlan}
+        courseDetails={courseDetails}
+        onMoveCourse={vi.fn()}
+        onRemoveCourse={handleRemove}
+      />,
+    );
+    expect(screen.getByTestId("course-card-CSC 1350")).toHaveTextContent("4 cr");
+    fireEvent.click(screen.getByRole("button", { name: "Remove CSC 1350 from Fall 2026" }));
+    expect(handleRemove).toHaveBeenCalledWith(0, "CSC 1350");
   });
 
   it("shows a manual-review warning rather than a missing-prerequisite error", () => {
