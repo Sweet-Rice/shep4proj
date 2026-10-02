@@ -122,13 +122,10 @@ nav[role="tablist"] [role="tab"][aria-selected="true"] .nav-icon {
 .app-content {
   min-width: 0;
   overflow: auto;
+  scrollbar-gutter: stable;
   padding: var(--space-7) var(--space-8);
 }
 .app-content > main {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-.app-content > .plan-screen,
-.app-content > .schedule-screen {
-  max-width: none;
+  max-width: 1320px;
+  margin-inline: auto;
 }
