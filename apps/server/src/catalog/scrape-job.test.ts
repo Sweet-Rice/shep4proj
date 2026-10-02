@@ -74,6 +74,27 @@ describe("scrape-job unit tests", () => {
     expect(row.creditsNote).toBe(note);
     expect(row.description).toBe(detail.description);
   });
+  it("converts THTR 7900 with an empty prerequisite label into a course row", () => {
+    const detail = parseCourseDetail(
+      readFileSync(path.join(FIXTURE_DIR, "course-thtr-7900.html"), "utf8"),
+    );
+    const row = toCourseRow(
+      {
+        code: "THTR 7900",
+        title: detail.title,
+        creditsText: "3",
+        coid: "231970",
+        department: "Theatre",
+      },
+      detail,
+      "2026-2027",
+    );
+
+    expect(row.code).toBe("THTR 7900");
+    expect(row.dept).toBe("THTR");
+    expect(row.prerequisiteText).toBeNull();
+    expect(row.prereqTree).toBeNull();
+  });
 
   it("Detail/entry code mismatch lands in failed: use a fake fetcher returning the 4330 page for the 1350 URL", async () => {
     const fakeFetcher: CatalogFetcher = {

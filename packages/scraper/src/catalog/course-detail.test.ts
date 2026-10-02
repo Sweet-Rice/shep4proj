@@ -101,6 +101,20 @@ describe("parseCourseDetail fixtures", () => {
     });
   });
 
+  it("parses THTR 7900 with an empty prerequisite label", () => {
+    const detail = parseCourseDetail(readFileSync(`${FIXTURE_DIR}course-thtr-7900.html`, "utf8"));
+    expect(detail).toEqual<CourseDetail>({
+      code: "THTR 7900",
+      title: "Research and Writing for Theatre Studies",
+      creditsText: "3",
+      description:
+        "Research and writing skills for students of theatre history, dramatic literature, theory, and criticism.",
+      prerequisiteText: null,
+      prerequisiteCourseCodes: [],
+      notes: [],
+    });
+  });
+
   it.each([
     ["CHEM 1101", "course-chem-1101.html"],
     ["EE 7422", "course-ee-7422.html"],
@@ -228,6 +242,14 @@ describe("parseCourseDetail markup rules", () => {
     expect(detail.prerequisiteText).toBeNull();
   });
 
+  it("ignores an empty value for an optional non-prerequisite label", () => {
+    const detail = parseCourseDetail(
+      page("<em>Coreq.:</em> <em>&#160;</em> <em></em> Description."),
+    );
+    expect(detail.notes).toEqual([]);
+    expect(detail.description).toBe("Description.");
+  });
+
   it("collapses whitespace runs and non-breaking spaces", () => {
     const detail = parseCourseDetail(
       page(
@@ -298,11 +320,11 @@ describe("parseCourseDetail shape errors", () => {
     expect(detail.description).toBe("");
   });
 
-  it("throws CatalogShapeError when a label has no value", () => {
-    const message = shapeErrorMessage(() =>
-      parseCourseDetail(page("<em>Prereq.:</em> Description.")),
-    );
-    expect(message).toBe('CSC 1000: label "Prereq.:" has no value');
+  it("treats a label with no value as absent", () => {
+    const detail = parseCourseDetail(page("<em>Prereq.:</em> Description."));
+    expect(detail.prerequisiteText).toBeNull();
+    expect(detail.prerequisiteCourseCodes).toEqual([]);
+    expect(detail.description).toBe("Description.");
   });
 
   it("throws CatalogShapeError when the prerequisite label appears twice", () => {

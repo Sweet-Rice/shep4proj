@@ -35,6 +35,7 @@ All captured 2026-09-24 (UTC).
 | `course-phys-7353.html` | `https://catalog.lsu.edu/preview_course_nopop.php?catoid=35&coid=231474` | `dc546995bd3533f0fe7d170bb21baf4eba7e5697b8b53efeedbaeb15276b54b8` |
 | `course-biol-4801.html` | `https://catalog.lsu.edu/preview_course_nopop.php?catoid=35&coid=233013` | `447f4cdf8736853196262dede674e15dbfd945f516b8ba28b103a3073e1f07c2` |
 | `hist-course-list.html` | `https://catalog.lsu.edu/content.php?catoid=35&navoid=3486&filter[27]=HIST&filter[29]=&filter[course_type]=-1&filter[keyword]=&filter[32]=1&filter[cpage]=1&cur_cat_oid=35&expand=&search_database=Filter` | `bf4752148e8b37696d77731972fc963b3f088fc4f57e77b99a86a7b5dad5ff8a` |
+| `course-thtr-7900.html` | `https://catalog.lsu.edu/preview_course_nopop.php?catoid=35&coid=231970` | `10c62df2213ea78f090115d34d16a1d1df86607c3184393e9977cf4dde82ba90` |
 | `econ-course-list.html` | `https://catalog.lsu.edu/content.php?catoid=35&navoid=3486&filter[27]=ECON&filter[29]=&filter[course_type]=-1&filter[keyword]=&filter[32]=1&filter[cpage]=1&cur_cat_oid=35&expand=&search_database=Filter` | `ac1c5c970b47d526b2b18810b34566ecfba9c551624420b88a769c3da3fe8079` |
 | `course-hist-2025.html` | `https://catalog.lsu.edu/preview_course_nopop.php?catoid=35&coid=233254` | `ee5ce6ed8a43bd59386465f27d8f3749e471bf579c413ad5bbd1406001763da5` |
 
@@ -46,7 +47,8 @@ department: `Biological Sciences` (1: CSC 3605) comes before `Computer Science` 
 Each row is `<a href="preview_course_nopop.php?catoid=35&coid=<coid>" …>CSC 1350 Computer Science I for Majors (4)</a>`.
 Credits include ranges and free text: `(1-3)`, `(1-12)`, `(1-12 per sem.)`.
 
-**Course detail pages.** Five pages, each picked for a different prereq pattern:
+**Course detail pages.** The five CSC pages below cover different prerequisite
+patterns; THTR 7900 covers an empty prerequisite label:
 
 | Course | Prereq text (as rendered) | Why it's here |
 |---|---|---|
@@ -54,6 +56,7 @@ Credits include ranges and free text: `(1-3)`, `(1-12)`, `(1-12 per sem.)`.
 | CSC 2700 | CSC 1254 or CSC 1351 or permission of department. | Non-course alternative inside an OR, variable credits `(1-3)`, repeat-limit note that links other courses (CSC 3700, CSC 4700) |
 | CSC 3102 | CSC 1254 or CSC 1351 and credit or concurrent enrollment in CSC 2259 or EE 2741. | Mixed `or`/`and` with no grouping, a second coreq wording ("credit or concurrent enrollment in"), non-CSC prefix |
 | CSC 3200 | ENGL 1005 or ENGL 2000 or HNRS 2000; CSC 3102. | `;` separating AND groups, a "For majors only." restriction |
+| THTR 7900 | none (the `Prereq.:` label is followed by an empty value) | validates handling of optional empty prerequisite labels |
 | CSC 4330 | CSC 3102, CSC 3380. | Plain comma-separated AND list (baseline) |
 
 On detail pages, each referenced course is an `<a>` with
@@ -77,10 +80,11 @@ requirements text has no "CRITICAL REQUIREMENTS" heading.
   final `200` document response was saved.
 - The original detail fixtures were fetched with plain HTTP. The 2026-10-02
   parser-gap pages were fetched through Edge/Chromium so the bounded capture used
-  one browser route for every request.
+  one browser route for every request; THTR 7900 was fetched through Edge after a
+  plain-HTTP attempt returned an empty body.
 - The original capture used the `robots.txt` 120-second crawl delay. The
-  authorized 2026-10-02 fixture capture used at least two seconds between its
-  nine page requests and refused `/ajax/` URLs.
+  authorized 2026-10-02 fixture captures used at least two seconds between page
+  requests and refused `/ajax/` URLs.
 
 To refresh for a new catalog year, capture the same pages under a new
 `fixtures/catalog/<year>/` directory, taking the current `catoid`/`coid`/`poid`
