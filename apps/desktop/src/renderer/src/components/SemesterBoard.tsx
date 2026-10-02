@@ -46,6 +46,7 @@ export function SemesterBoard({
 }: SemesterBoardProps) {
   const currentYear = new Date().getFullYear();
   const [dragData, setDragData] = useState<DraggedCourseData | null>(null);
+  const [dragOverTerm, setDragOverTerm] = useState<number | null>(null);
   const [newSeason, setNewSeason] = useState<Season>("Fall");
   const [newYear, setNewYear] = useState<number>(currentYear);
   const validation = courseDetails
@@ -79,6 +80,7 @@ export function SemesterBoard({
     destCourseIndex?: number,
   ) => {
     e.preventDefault();
+    setDragOverTerm(null);
     let data = dragData;
 
     if (!data) {
@@ -114,10 +116,14 @@ export function SemesterBoard({
     <div className="semester-board-container" data-testid="semester-board">
       <header className="board-header">
         <h2>Semester-by-Semester Plan</h2>
-        <p className="credit-limit-info">
-          Credit limit per semester: <strong>{plan.creditLimit} hrs</strong>
-        </p>
       </header>
+
+      {plan.terms.length === 0 && (
+        <div className="empty-state">
+          <h3>No terms yet</h3>
+          <p>Add a term to start placing courses.</p>
+        </div>
+      )}
 
       <div className="terms-grid" data-testid="terms-grid">
         {plan.terms.map((term, termIndex) => {
@@ -137,13 +143,29 @@ export function SemesterBoard({
             ? term.courses.some((code) => !courseDetails[code])
             : term.courses.length > 0;
           const isOverLimit = creditIssue !== undefined;
+          const fillPct = Math.min(100, Math.round((knownCredits / plan.creditLimit) * 100));
+          const meterState = isOverLimit
+            ? "danger"
+            : knownCredits >= plan.creditLimit
+              ? "warning"
+              : "ok";
 
           return (
             <div
               key={`${term.season}-${term.year}-${termIndex}`}
-              className={`term-column ${isOverLimit ? "over-limit" : ""}`}
+              className={`term-column ${isOverLimit ? "over-limit" : ""} ${
+                dragOverTerm === termIndex ? "drop-target" : ""
+              }`}
               data-testid={`term-column-${termIndex}`}
-              onDragOver={handleDragOver}
+              onDragOver={(e) => {
+                handleDragOver(e);
+                setDragOverTerm(termIndex);
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                  setDragOverTerm(null);
+                }
+              }}
               onDrop={(e) => handleDrop(e, termIndex)}
             >
               <div className="term-header">
@@ -160,13 +182,16 @@ export function SemesterBoard({
                 {onRemoveTerm && (
                   <button
                     type="button"
-                    className="btn btn-icon"
+                    className="btn btn-icon btn-ghost btn-remove-term"
                     onClick={() => onRemoveTerm(termIndex)}
                     aria-label={`Remove ${term.season} ${term.year} term`}
                   >
                     ×
                   </button>
                 )}
+              </div>
+              <div className={`term-meter term-meter-${meterState}`} aria-hidden="true">
+                <span style={{ width: `${fillPct}%` }} />
               </div>
 
               {creditIssue && (
@@ -177,7 +202,7 @@ export function SemesterBoard({
 
               <div className="courses-list" data-testid={`term-courses-${termIndex}`}>
                 {term.courses.length === 0 ? (
-                  <p className="empty-term-message">Drag courses here</p>
+                  <p className="empty-term-message">Drag courses here or add one above</p>
                 ) : (
                   term.courses.map((code, courseIndex) => {
                     const courseIssues = issues.filter(
@@ -203,6 +228,21 @@ export function SemesterBoard({
                             ⋮⋮
                           </span>
                           <span className="course-code-text">{code}</span>
+                          {courseDetails?.[code] && (
+                            <span className="course-credits">
+                              {courseDetails[code].credits.max} cr
+                            </span>
+                          )}
+                          {onRemoveCourse && (
+                            <button
+                              type="button"
+                              className="btn btn-icon btn-xs btn-ghost btn-remove"
+                              onClick={() => onRemoveCourse(termIndex, code)}
+                              aria-label={`Remove ${code} from ${term.season} ${term.year}`}
+                            >
+                              ×
+                            </button>
+                          )}
                         </div>
                         {courseIssues.map((issue) => (
                           <p
@@ -245,7 +285,7 @@ export function SemesterBoard({
                               }
                               aria-label={`Move ${code} left to ${plan.terms[termIndex - 1]?.season}`}
                             >
-                              ← Move
+                              ←
                             </button>
                           )}
 
@@ -263,18 +303,7 @@ export function SemesterBoard({
                               }
                               aria-label={`Move ${code} right to ${plan.terms[termIndex + 1]?.season}`}
                             >
-                              Move →
-                            </button>
-                          )}
-
-                          {onRemoveCourse && (
-                            <button
-                              type="button"
-                              className="btn btn-xs btn-ghost btn-remove"
-                              onClick={() => onRemoveCourse(termIndex, code)}
-                              aria-label={`Remove ${code} from ${term.season} ${term.year}`}
-                            >
-                              Remove
+                              →
                             </button>
                           )}
                         </div>
@@ -286,42 +315,41 @@ export function SemesterBoard({
             </div>
           );
         })}
+        {onAddTerm && (
+          <form className="add-term-form term-column" onSubmit={handleAddTermSubmit}>
+            <h3>Add New Term</h3>
+            <div className="form-inline">
+              <label className="field">
+                <span className="field-label">Season</span>
+                <select
+                  value={newSeason}
+                  onChange={(e) => setNewSeason(e.target.value as Season)}
+                  aria-label="Select Season"
+                >
+                  <option value="Fall">Fall</option>
+                  <option value="Spring">Spring</option>
+                  <option value="Summer">Summer</option>
+                  <option value="Winter">Winter</option>
+                </select>
+              </label>
+              <label className="field">
+                <span className="field-label">Year</span>
+                <input
+                  type="number"
+                  value={newYear}
+                  onChange={(e) => setNewYear(Number(e.target.value))}
+                  aria-label="Enter Year"
+                  min={currentYear - 8}
+                  max={currentYear + 8}
+                />
+              </label>
+              <button type="submit" className="btn btn-primary" data-testid="add-term-btn">
+                Add Term
+              </button>
+            </div>
+          </form>
+        )}
       </div>
-
-      {onAddTerm && (
-        <form className="add-term-form" onSubmit={handleAddTermSubmit}>
-          <h4>Add New Term</h4>
-          <div className="form-inline">
-            <label className="field">
-              <span className="field-label">Season</span>
-              <select
-                value={newSeason}
-                onChange={(e) => setNewSeason(e.target.value as Season)}
-                aria-label="Select Season"
-              >
-                <option value="Fall">Fall</option>
-                <option value="Spring">Spring</option>
-                <option value="Summer">Summer</option>
-                <option value="Winter">Winter</option>
-              </select>
-            </label>
-            <label className="field">
-              <span className="field-label">Year</span>
-              <input
-                type="number"
-                value={newYear}
-                onChange={(e) => setNewYear(Number(e.target.value))}
-                aria-label="Enter Year"
-                min={currentYear - 8}
-                max={currentYear + 8}
-              />
-            </label>
-            <button type="submit" className="btn btn-primary" data-testid="add-term-btn">
-              Add Term
-            </button>
-          </div>
-        </form>
-      )}
     </div>
   );
 }

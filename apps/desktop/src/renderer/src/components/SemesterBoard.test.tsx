@@ -233,6 +233,25 @@ describe("SemesterBoard", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("9 credits exceed the 8-credit limit");
   });
 
+  it("marks the term meter as danger only when over the limit", () => {
+    const { container, rerender } = render(
+      <SemesterBoard
+        plan={{ ...samplePlan, creditLimit: 8 }}
+        courseDetails={courseDetails}
+        onMoveCourse={vi.fn()}
+      />,
+    );
+    expect(container.querySelector(".term-meter-danger")).not.toBeNull();
+    rerender(
+      <SemesterBoard
+        plan={{ ...samplePlan, creditLimit: 20 }}
+        courseDetails={courseDetails}
+        onMoveCourse={vi.fn()}
+      />,
+    );
+    expect(container.querySelector(".term-meter-danger")).toBeNull();
+  });
+
   it("shows a manual-review warning rather than a missing-prerequisite error", () => {
     const details: ValidationPlan["courseDetails"] = {
       ...courseDetails,
