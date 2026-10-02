@@ -152,6 +152,20 @@ describe("WeeklyCalendar & formatMinuteToTime", () => {
     expect(screen.queryByTestId("time-label-6")).not.toBeInTheDocument();
   });
 
+  it.each(["Mon", "Tue", "Wed", "Thu", "Fri"] as const)(
+    "sizes the hour range from %s meetings",
+    (day) => {
+      const outside: Section = {
+        ...overlappingSections[0]!,
+        meetings: [{ days: [day], startMinute: 360, endMinute: 1260 }], // 6 AM - 9 PM
+      };
+      render(<WeeklyCalendar sections={[outside]} />);
+
+      expect(screen.getByTestId("time-label-6")).toBeInTheDocument();
+      expect(screen.getByTestId("time-label-21")).toBeInTheDocument();
+    },
+  );
+
   it("uses singular wording for one section and one credit", () => {
     const single: Section = {
       ...overlappingSections[0]!,
