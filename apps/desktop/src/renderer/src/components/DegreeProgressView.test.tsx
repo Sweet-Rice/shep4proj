@@ -90,14 +90,14 @@ describe("DegreeProgressView", () => {
 
     // Immediately recomputes credits and status without reload
     expect(screen.getByTestId("credits-summary")).toHaveTextContent("3 / 120 credits (3%)");
-    expect(screen.getByTestId("req-status-req-fixed")).toHaveTextContent("Unsatisfied");
+    expect(screen.getByTestId("req-status-req-fixed")).toHaveTextContent("Partially Satisfied");
 
     // Toggle CSC 1351
     const checkbox1351 = screen.getByRole("checkbox", { name: /CSC 1351/i });
     await user.click(checkbox1351);
 
     // Fixed requirement becomes satisfied immediately
-    expect(screen.getByTestId("req-status-req-fixed")).toHaveTextContent("Satisfied");
+    expect(screen.getByTestId("req-status-req-fixed")).toHaveTextContent(/^Satisfied$/);
     expect(screen.getByTestId("credits-summary")).toHaveTextContent("6 / 120 credits (5%)");
 
     // Toggle ENGL 1001 to satisfy Choose N requirement
