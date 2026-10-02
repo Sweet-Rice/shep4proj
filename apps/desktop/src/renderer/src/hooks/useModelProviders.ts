@@ -19,10 +19,6 @@ export function useModelProviders(
     setSettings((prev) => ({ ...prev, qwenBaseUrl, qwenModel }));
   }, []);
 
-  const updateJevSettings = useCallback((jevBaseUrl: string, jevApiKey: string) => {
-    setSettings((prev) => ({ ...prev, jevBaseUrl, jevApiKey }));
-  }, []);
-
   const validation = validateProviderSettings(settings);
 
   return {
@@ -30,7 +26,6 @@ export function useModelProviders(
     setSettings,
     setActiveProvider,
     updateQwenSettings,
-    updateJevSettings,
     isValid: validation.isValid,
     validationErrors: validation.errors,
   };

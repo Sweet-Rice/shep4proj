@@ -10,14 +10,8 @@ export function ModelProviderSettingsView({
   initialSettings,
   onSaveSettings,
 }: ModelProviderSettingsViewProps) {
-  const {
-    settings,
-    setActiveProvider,
-    updateQwenSettings,
-    updateJevSettings,
-    isValid,
-    validationErrors,
-  } = useModelProviders(initialSettings);
+  const { settings, setActiveProvider, updateQwenSettings, isValid, validationErrors } =
+    useModelProviders(initialSettings);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,18 +56,6 @@ export function ModelProviderSettingsView({
               />
               <span>Local Qwen (OpenAI-compatible)</span>
             </label>
-
-            <label className="radio-label">
-              <input
-                type="radio"
-                name="provider"
-                value="jev"
-                checked={settings.activeProvider === "jev"}
-                onChange={() => setActiveProvider("jev")}
-                data-testid="provider-jev-radio"
-              />
-              <span>Jev AI Provider</span>
-            </label>
           </div>
         </div>
 
@@ -103,37 +85,6 @@ export function ModelProviderSettingsView({
                 onChange={(e) => updateQwenSettings(settings.qwenBaseUrl, e.target.value)}
                 placeholder="qwen2.5-coder"
                 data-testid="qwen-model-input"
-              />
-            </div>
-          </div>
-        )}
-
-        {settings.activeProvider === "jev" && (
-          <div className="provider-subpanel jev-panel" data-testid="jev-settings-panel">
-            <h4>Jev AI Configuration</h4>
-            <div className="form-group">
-              <label htmlFor="jev-base-url">Base URL</label>
-              <input
-                id="jev-base-url"
-                type="url"
-                className="form-control"
-                value={settings.jevBaseUrl}
-                onChange={(e) => updateJevSettings(e.target.value, settings.jevApiKey)}
-                placeholder="https://api.jev.ai/v1"
-                data-testid="jev-base-url-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="jev-api-key">API Credentials (Stored in safeStorage)</label>
-              <input
-                id="jev-api-key"
-                type="password"
-                className="form-control"
-                value={settings.jevApiKey}
-                onChange={(e) => updateJevSettings(settings.jevBaseUrl, e.target.value)}
-                placeholder="Enter Jev API key…"
-                data-testid="jev-api-key-input"
               />
             </div>
           </div>

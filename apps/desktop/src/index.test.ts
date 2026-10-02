@@ -9,7 +9,6 @@ import {
   WeeklyCalendar,
   ImportReviewScreen,
   ImportProgressFlow,
-  JevProviderService,
   SuggestionView,
   ModelProviderSettingsView,
   HarnessSettingsView,
@@ -29,7 +28,6 @@ describe("desktop", () => {
     expect(WeeklyCalendar).toBeDefined();
     expect(ImportReviewScreen).toBeDefined();
     expect(ImportProgressFlow).toBeDefined();
-    expect(JevProviderService).toBeDefined();
     expect(SuggestionView).toBeDefined();
     expect(ModelProviderSettingsView).toBeDefined();
     expect(HarnessSettingsView).toBeDefined();
