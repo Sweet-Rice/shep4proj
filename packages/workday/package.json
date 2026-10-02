@@ -29,6 +29,10 @@
     "./current-registrations": {
       "types": "./dist/current-registrations/index.d.ts",
       "default": "./dist/current-registrations/index.js"
+    },
+    "./urls": {
+      "types": "./dist/urls.d.ts",
+      "default": "./dist/urls.js"
     }
   },
   "scripts": {

@@ -1,20 +1,6 @@
+import { DEFAULT_LOGGED_IN_PATTERN } from "../urls.js";
 import type { BrowserContextLike, PageLike } from "./types.js";
-
-/**
- * Workday tenant landing page for LSU. This is where `launchWorkdayBrowser`
- * points the first tab; the student then completes myLSU + Microsoft SSO +
- * Duo before landing back here, authenticated (T-002 survey).
- */
-export const WORKDAY_TENANT_URL = "https://www.myworkday.com/lsu/";
-
-/**
- * Authenticated Workday pages live under `/lsu/d/...` (e.g. `home.htmld`,
- * `task/<id>.htmld`, including the "View My Academic Record" task used by
- * US-10). Matching this prefix — rather than the home page specifically —
- * means we detect login regardless of which `/lsu/d/` page the student
- * lands on after SSO.
- */
-export const DEFAULT_LOGGED_IN_PATTERN = /^https:\/\/www\.myworkday\.com\/lsu\/d\//;
+export { DEFAULT_LOGGED_IN_PATTERN, WORKDAY_TENANT_URL } from "../urls.js";
 
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
 
