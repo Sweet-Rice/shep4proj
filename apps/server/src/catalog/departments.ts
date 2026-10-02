@@ -1,4 +1,4 @@
-/** Catalog prefixes the server scrapes, in priority order: the major first, then departments the degree requires, then common LSU gen-ed departments. */
+/** Catalog prefixes the server scrapes, in priority order: the major first, then departments the degree requires, then common LSU gen-ed departments, then other departments CSC students' transcripts commonly show (engineering, honors, ISDS electives). */
 export const CATALOG_SCRAPE_DEPARTMENTS = [
   "CSC",
   "MATH",
@@ -25,4 +25,7 @@ export const CATALOG_SCRAPE_DEPARTMENTS = [
   "THTR",
   "SPAN",
   "FREN",
+  "ENGR",
+  "HNRS",
+  "ISDS",
 ] as const;
