@@ -8,6 +8,7 @@ interface PopupMock {
   close: Mock;
   destroy: Mock;
   emit: (event: string, ...args: unknown[]) => boolean;
+  userClose: () => void;
 }
 
 interface SessionMock {
@@ -62,11 +63,21 @@ vi.mock("electron", () => {
   class FakeWindow extends MockEmitter {
     options: unknown;
     openHandler: (params: { url: string }) => unknown = () => undefined;
-    webContents = Object.assign(new MockEmitter(), {
+    readonly contents = Object.assign(new MockEmitter(), {
       setWindowOpenHandler: vi.fn((handler: (params: { url: string }) => unknown) => {
         this.openHandler = handler;
       }),
     });
+    // Like Electron, a destroyed window's webContents can no longer be used.
+    get webContents() {
+      if (this.destroyed) throw new TypeError("Object has been destroyed");
+      return this.contents;
+    }
+    /** The user closing the popup: Electron destroys the window, then emits "closed". */
+    userClose() {
+      this.destroyed = true;
+      this.emit("closed");
+    }
     destroyed = false;
     loadedUrls: string[] = [];
     loadURL = vi.fn(async (url: string) => {
@@ -184,7 +195,7 @@ describe("openWorkdaySignIn", () => {
     });
     await Promise.resolve();
     expect(settled).toBe(false);
-    popup().emit("closed");
+    popup().userClose();
     await expect(opened).resolves.toEqual({ status: "cancelled" });
   });
 
@@ -196,7 +207,7 @@ describe("openWorkdaySignIn", () => {
     window.webContents.emit("did-navigate", {}, "https://www.myworkday.com/lsu/d/home.htmld");
     await new Promise<void>((resolve) => setImmediate(resolve));
     expect(popup().close).not.toHaveBeenCalled();
-    popup().emit("closed");
+    popup().userClose();
     await expect(opened).resolves.toEqual({ status: "cancelled" });
   });
 
@@ -237,7 +248,7 @@ describe("openWorkdaySignIn", () => {
     const nextPopup = await waitForPopup();
     expect(state().windows).toHaveLength(1);
     expect(state().sessions).toHaveLength(1);
-    nextPopup.emit("closed");
+    nextPopup.userClose();
     await expect(nextImport).resolves.toEqual({ status: "cancelled" });
   });
 
@@ -247,7 +258,7 @@ describe("openWorkdaySignIn", () => {
     const pending = openWorkdaySignIn({} as never, { timeoutMs: 10_000 });
     const ses = sessionMock();
     const window = await waitForPopup();
-    window.emit("closed");
+    window.userClose();
     await expect(pending).resolves.toEqual({ status: "cancelled" });
     await clearWorkdaySession();
     expect(ses.clearStorageData).toHaveBeenCalledOnce();
@@ -259,7 +270,7 @@ describe("openWorkdaySignIn", () => {
     const cancelled = openWorkdaySignIn({} as never, { timeoutMs: 10_000 });
     const firstPopup = await waitForPopup();
     expect(firstPopup.options.webPreferences.partition).not.toMatch(/^persist:/);
-    firstPopup.emit("closed");
+    firstPopup.userClose();
     await expect(cancelled).resolves.toEqual({ status: "cancelled" });
 
     vi.useFakeTimers();

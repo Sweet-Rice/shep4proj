@@ -121,8 +121,11 @@ export async function openWorkdaySignIn(
     if (settled) return;
     settled = true;
     clearTimeout(timer);
-    window.webContents.removeListener("did-navigate", onNavigate);
-    window.webContents.removeListener("did-redirect-navigation", onRedirect);
+    // "closed" fires after the window is destroyed, when its webContents can no longer be used.
+    if (!window.isDestroyed()) {
+      window.webContents.removeListener("did-navigate", onNavigate);
+      window.webContents.removeListener("did-redirect-navigation", onRedirect);
+    }
     window.removeListener("closed", onClosed);
     if (close) {
       setImmediate(() => {
