@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const state = vi.hoisted(() => ({ apiBaseUrl: undefined as string | undefined }));
+const state = vi.hoisted(() => ({
+  apiBaseUrl: undefined as string | undefined,
+  windowOptions: undefined as Record<string, unknown> | undefined,
+}));
 
 vi.mock("electron", () => ({
   app: {
@@ -13,9 +16,14 @@ vi.mock("electron", () => ({
     static getAllWindows = vi.fn(() => [{}]);
     loadFile = vi.fn();
     loadURL = vi.fn();
+
+    constructor(options: Record<string, unknown>) {
+      state.windowOptions = options;
+    }
   },
   dialog: { showOpenDialog: vi.fn() },
   ipcMain: {},
+  nativeTheme: { shouldUseDarkColors: false },
 }));
 
 vi.mock("./catalog.js", async (importOriginal) => {
@@ -43,6 +51,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.resetModules();
   state.apiBaseUrl = undefined;
+  state.windowOptions = undefined;
 });
 
 describe("main API URL wiring", () => {
@@ -55,5 +64,18 @@ describe("main API URL wiring", () => {
     await vi.waitFor(() => expect(state.apiBaseUrl).toBeDefined());
 
     expect(state.apiBaseUrl).toBe("https://runtime.example");
+  });
+  // Importing the entrypoint runs Electron's ready handler and constructs BrowserWindow.
+  it("creates a window sized for the desktop layouts", async () => {
+    await import("./index.js");
+    await vi.waitFor(() =>
+      expect(state.windowOptions).toMatchObject({
+        width: 1280,
+        height: 820,
+        minWidth: 1024,
+        minHeight: 680,
+        backgroundColor: "#F7F6FA",
+      }),
+    );
   });
 });

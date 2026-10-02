@@ -160,7 +160,7 @@ export function SemesterBoard({
                 {onRemoveTerm && (
                   <button
                     type="button"
-                    className="btn btn-sm btn-danger"
+                    className="btn btn-icon"
                     onClick={() => onRemoveTerm(termIndex)}
                     aria-label={`Remove ${term.season} ${term.year} term`}
                   >
@@ -234,7 +234,7 @@ export function SemesterBoard({
                           {termIndex > 0 && (
                             <button
                               type="button"
-                              className="btn btn-xs"
+                              className="btn btn-xs btn-ghost"
                               onClick={() =>
                                 onMoveCourse(
                                   termIndex,
@@ -252,7 +252,7 @@ export function SemesterBoard({
                           {termIndex < plan.terms.length - 1 && (
                             <button
                               type="button"
-                              className="btn btn-xs"
+                              className="btn btn-xs btn-ghost"
                               onClick={() =>
                                 onMoveCourse(
                                   termIndex,
@@ -270,7 +270,7 @@ export function SemesterBoard({
                           {onRemoveCourse && (
                             <button
                               type="button"
-                              className="btn btn-xs btn-remove"
+                              className="btn btn-xs btn-ghost btn-remove"
                               onClick={() => onRemoveCourse(termIndex, code)}
                               aria-label={`Remove ${code} from ${term.season} ${term.year}`}
                             >
@@ -292,24 +292,30 @@ export function SemesterBoard({
         <form className="add-term-form" onSubmit={handleAddTermSubmit}>
           <h4>Add New Term</h4>
           <div className="form-inline">
-            <select
-              value={newSeason}
-              onChange={(e) => setNewSeason(e.target.value as Season)}
-              aria-label="Select Season"
-            >
-              <option value="Fall">Fall</option>
-              <option value="Spring">Spring</option>
-              <option value="Summer">Summer</option>
-              <option value="Winter">Winter</option>
-            </select>
-            <input
-              type="number"
-              value={newYear}
-              onChange={(e) => setNewYear(Number(e.target.value))}
-              aria-label="Enter Year"
-              min={currentYear - 8}
-              max={currentYear + 8}
-            />
+            <label className="field">
+              <span className="field-label">Season</span>
+              <select
+                value={newSeason}
+                onChange={(e) => setNewSeason(e.target.value as Season)}
+                aria-label="Select Season"
+              >
+                <option value="Fall">Fall</option>
+                <option value="Spring">Spring</option>
+                <option value="Summer">Summer</option>
+                <option value="Winter">Winter</option>
+              </select>
+            </label>
+            <label className="field">
+              <span className="field-label">Year</span>
+              <input
+                type="number"
+                value={newYear}
+                onChange={(e) => setNewYear(Number(e.target.value))}
+                aria-label="Enter Year"
+                min={currentYear - 8}
+                max={currentYear + 8}
+              />
+            </label>
             <button type="submit" className="btn btn-primary" data-testid="add-term-btn">
               Add Term
             </button>

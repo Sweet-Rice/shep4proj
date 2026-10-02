@@ -1,0 +1,126 @@
+.schedule-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+.schedule-sidebar {
+  min-width: 0;
+}
+.schedule-calendar {
+  position: sticky;
+  top: 0;
+  min-width: 0;
+}
+.schedule-course-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.section-list {
+  margin-top: var(--space-4);
+}
+.section-list-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.section-list-item p {
+  margin: var(--space-2) 0;
+}
+.section-list-meetings {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.calendar-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px repeat(5, minmax(0, 1fr));
+  grid-template-rows: 36px calc(var(--hours) * 56px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.grid-header-corner {
+  grid-column: 1;
+  grid-row: 1;
+}
+.grid-header-day {
+  grid-row: 1;
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  background: var(--surface-2);
+  border-left: 1px solid var(--border);
+}
+.time-label {
+  position: absolute;
+  grid-column: 1;
+  grid-row: 2;
+  left: 0;
+  right: auto;
+  width: 56px;
+  text-align: right;
+  transform: translateY(-50%);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.day-column {
+  grid-row: 2;
+  position: relative;
+  border-left: 1px solid var(--border);
+  background: linear-gradient(to bottom, var(--border) 1px, transparent 1px) 0 0/100%
+    calc(100% / var(--hours));
+}
+.meeting-block {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  font-size: var(--text-xs);
+  overflow: hidden;
+}
+.meeting-block.conflict {
+  background: var(--danger-soft);
+  border-left-color: var(--danger);
+}
+.block-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+.block-sub,
+.block-location,
+.block-time {
+  color: var(--text-muted);
+}
+.btn-remove-section {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  opacity: 0;
+}
+.meeting-block:hover .btn-remove-section,
+.meeting-block:focus-within .btn-remove-section {
+  opacity: 1;
+}
+@media (max-width: 1100px) {
+  .schedule-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .schedule-calendar {
+    position: static;
+  }
+  .weekly-calendar-container {
+    overflow-x: auto;
+  }
+  .calendar-grid {
+    min-width: 560px;
+  }
+}

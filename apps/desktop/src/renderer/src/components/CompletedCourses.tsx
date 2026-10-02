@@ -74,91 +74,104 @@ export function CompletedCourses() {
   return (
     <main>
       <h1>Completed courses</h1>
-      {catalogLoading ? (
-        <p>Loading course catalog…</p>
-      ) : catalogError ? (
-        <p role="alert">
-          Course catalog unavailable: {catalogError.message}. Courses can&apos;t be verified or
-          marked completed until the server is reachable.
-        </p>
-      ) : (
-        <CourseSearch
-          courses={courses}
-          completedCourses={completed}
-          onToggleCompleted={(code) => {
-            if (loaded) void handleSearchToggle(code);
-          }}
-        />
-      )}
-      <p>Enter a course code to mark it complete or incomplete. Changes stay on this device.</p>
-      <form onSubmit={selectCourse}>
-        <label htmlFor="course-code">Course code</label>
-        <div className="course-entry">
-          <input
-            id="course-code"
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="CSC 1350"
-            disabled={catalogLoading || catalogError !== null || !loaded}
-            aria-invalid={inputError !== null}
-            aria-describedby={inputError ? "course-code-error" : undefined}
-          />
-          <button type="submit" disabled={catalogLoading || catalogError !== null || !loaded}>
-            Show course
-          </button>
-        </div>
-        {inputError && (
-          <p id="course-code-error" role="alert">
-            {inputError}
-          </p>
-        )}
-      </form>
-      {error && (
-        <p role="alert">
-          {loaded && error.message.includes("Not in the LSU course catalog")
-            ? error.message
-            : loaded
-              ? "Could not save completion. The previous state has been restored. Try the toggle again."
-              : "Could not load completed courses. Restart the app to try again."}
-        </p>
-      )}
-      <p role="status">
-        {loading
-          ? "Loading saved courses…"
-          : pending.size > 0
-            ? "Saving completion…"
-            : error
-              ? ""
-              : "Changes saved on this device."}
-      </p>
-      {loaded && codes.length === 0 && <p>No courses marked complete yet.</p>}
-      <ul className="completed-courses">
-        {codes.map((code) => (
-          <li key={code}>
-            <CourseCompletionToggle
-              courseId={code}
-              isCompleted={isCompleted(code)}
-              onToggle={(courseId) => {
-                void toggleCourse(courseId);
+      <div className="courses-layout">
+        <section className="courses-catalog card" aria-label="Course catalog">
+          {catalogLoading ? (
+            <p>Loading course catalog…</p>
+          ) : catalogError ? (
+            <p role="alert">
+              Course catalog unavailable: {catalogError.message}. Courses can&apos;t be verified or
+              marked completed until the server is reachable.
+            </p>
+          ) : (
+            <CourseSearch
+              courses={courses}
+              completedCourses={completed}
+              onToggleCompleted={(code) => {
+                if (loaded) void handleSearchToggle(code);
               }}
-              label={`${code} completed`}
-              disabled={!loaded || pending.has(code)}
             />
-            {isCompleted(code) &&
-              !catalogLoading &&
-              !catalogError &&
-              !courses.some((course) => course.code === code) && (
-                <span className="badge badge-warning">Not in catalog</span>
+          )}
+        </section>
+        <div className="courses-side">
+          <section className="card" aria-labelledby="completed-heading">
+            <h2 id="completed-heading">Your completed courses</h2>
+            <p className="muted">
+              Enter a course code to mark it complete or incomplete. Changes stay on this device.
+            </p>
+            <form className="toolbar" onSubmit={selectCourse}>
+              <div className="course-entry">
+                <label className="field" htmlFor="course-code">
+                  <span className="field-label">Course code</span>
+                  <input
+                    id="course-code"
+                    value={input}
+                    onChange={(event) => setInput(event.target.value)}
+                    placeholder="CSC 1350"
+                    disabled={catalogLoading || catalogError !== null || !loaded}
+                    aria-invalid={inputError !== null}
+                    aria-describedby={inputError ? "course-code-error" : undefined}
+                  />
+                </label>
+                <button type="submit" disabled={catalogLoading || catalogError !== null || !loaded}>
+                  Show course
+                </button>
+              </div>
+              {inputError && (
+                <p id="course-code-error" role="alert">
+                  {inputError}
+                </p>
               )}
-          </li>
-        ))}
-      </ul>
-      <section aria-label="Import transcript">
-        <ImportProgressFlow
-          catalogCodes={new Set(courses.map((course) => course.code))}
-          onImportComplete={() => void refresh()}
-        />
-      </section>
+            </form>
+            {error && (
+              <p role="alert">
+                {loaded && error.message.includes("Not in the LSU course catalog")
+                  ? error.message
+                  : loaded
+                    ? "Could not save completion. The previous state has been restored. Try the toggle again."
+                    : "Could not load completed courses. Restart the app to try again."}
+              </p>
+            )}
+            <p role="status">
+              {loading
+                ? "Loading saved courses…"
+                : pending.size > 0
+                  ? "Saving completion…"
+                  : error
+                    ? ""
+                    : "Changes saved on this device."}
+            </p>
+            {loaded && codes.length === 0 && <p>No courses marked complete yet.</p>}
+            <ul className="completed-courses">
+              {codes.map((code) => (
+                <li key={code}>
+                  <CourseCompletionToggle
+                    courseId={code}
+                    isCompleted={isCompleted(code)}
+                    onToggle={(courseId) => {
+                      void toggleCourse(courseId);
+                    }}
+                    label={`${code} completed`}
+                    disabled={!loaded || pending.has(code)}
+                  />
+                  {isCompleted(code) &&
+                    !catalogLoading &&
+                    !catalogError &&
+                    !courses.some((course) => course.code === code) && (
+                      <span className="badge badge-warning">Not in catalog</span>
+                    )}
+                </li>
+              ))}
+            </ul>
+          </section>
+          <section className="card" aria-label="Import transcript">
+            <ImportProgressFlow
+              catalogCodes={new Set(courses.map((course) => course.code))}
+              onImportComplete={() => void refresh()}
+            />
+          </section>
+        </div>
+      </div>
       {dialog && (
         <MarkPrereqsDialog
           isOpen

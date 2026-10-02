@@ -88,4 +88,21 @@ describe("App tabs", () => {
     expect(screen.getByRole("tab", { name: "Schedule" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("heading", { name: "Schedule" })).toBeInTheDocument();
   });
+  it("uses roving keyboard navigation for the vertical tab list", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const courses = screen.getByRole("tab", { name: "Courses" });
+
+    courses.focus();
+    await user.keyboard("{ArrowDown}");
+    const progress = screen.getByRole("tab", { name: "Degree progress" });
+    expect(progress).toHaveAttribute("aria-selected", "true");
+    expect(progress).toHaveFocus();
+    expect(courses).toHaveAttribute("tabindex", "-1");
+
+    await user.keyboard("{End}");
+    const schedule = screen.getByRole("tab", { name: "Schedule" });
+    expect(schedule).toHaveAttribute("aria-selected", "true");
+    expect(schedule).toHaveFocus();
+  });
 });
