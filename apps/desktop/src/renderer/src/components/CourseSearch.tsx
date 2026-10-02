@@ -50,7 +50,7 @@ export function CourseSearch({
           {query && (
             <button
               type="button"
-              className="btn btn-clear"
+              className="btn btn-xs btn-ghost btn-clear"
               onClick={clearQuery}
               aria-label="Clear search query"
             >
@@ -107,7 +107,7 @@ export function CourseSearch({
                   {onSelectCourse && (
                     <button
                       type="button"
-                      className="btn btn-select"
+                      className="btn btn-sm btn-secondary btn-select"
                       onClick={() => onSelectCourse(course)}
                     >
                       Select
@@ -117,7 +117,7 @@ export function CourseSearch({
                   {onToggleCompleted && (
                     <button
                       type="button"
-                      className={`btn btn-toggle ${isCompleted ? "completed" : ""}`}
+                      className={`btn btn-sm ${isCompleted ? "btn-secondary completed" : "btn-primary"} btn-toggle`}
                       onClick={() => onToggleCompleted(course.code)}
                       aria-pressed={isCompleted}
                     >
@@ -163,7 +163,12 @@ function CourseOfferingDisclosure({ code }: { code: CourseCode }) {
 
   return (
     <div className="course-history-disclosure">
-      <button type="button" className="btn" aria-expanded={expanded} onClick={toggle}>
+      <button
+        type="button"
+        className="btn btn-sm btn-ghost"
+        aria-expanded={expanded}
+        onClick={toggle}
+      >
         When is this offered?
       </button>
       {expanded && (
