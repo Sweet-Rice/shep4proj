@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
 import { createPlannerTools } from "./planner-tools.js";
 import {
@@ -36,6 +37,14 @@ describe("planner tool definitions", () => {
     ).toBe(true);
     expect(definitions).toEqual(JSON.parse(snapshot));
     expect(JSON.parse(builtSchemas)).toEqual(definitions);
+  });
+
+  it("publishes the generated schemas at the package subpath", () => {
+    const published = createRequire(import.meta.url).resolve(
+      "@jevschedule/shared/planner-tool-schemas.json",
+    );
+
+    expect(JSON.parse(readFileSync(published, "utf8"))).toEqual(getPlannerToolDefinitions());
   });
 
   it("accepts only public tool arguments", () => {
