@@ -1,0 +1,6 @@
+# Downloaded data, caches, model weights and the catalog dump are never committed.
+data/
+cache/
+.venv/
+__pycache__/
+*.pyc
