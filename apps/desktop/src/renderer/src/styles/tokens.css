@@ -29,6 +29,7 @@
   --surface-2: var(--gray-100);
   --border: var(--gray-200);
   --border-strong: var(--gray-400);
+  --border-control: #85819a;
   --text: var(--gray-900);
   --text-muted: var(--gray-600);
   --accent: var(--purple-600);
@@ -105,6 +106,7 @@
     --surface-sunken: #161120;
     --border: #332b43;
     --border-strong: #5c5270;
+    --border-control: #8379a0;
     --text: #f3f0f8;
     --text-muted: #b3abc4;
     --text-subtle: #8a8199;
