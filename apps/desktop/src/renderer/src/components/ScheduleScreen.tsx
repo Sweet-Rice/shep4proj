@@ -106,14 +106,23 @@ export function ScheduleScreen() {
                     ))}
                   </select>
                 </label>
-                <button className="btn btn-primary" type="button" onClick={addCourse} disabled={!selectedCourse}>
+                <button
+                  className="btn btn-primary"
+                  type="button"
+                  onClick={addCourse}
+                  disabled={!selectedCourse}
+                >
                   Add course
                 </button>
                 <ul className="schedule-course-list">
                   {courseCodes.map((code) => (
                     <li key={code}>
                       <span>{code}</span>
-                      <button className="btn btn-ghost btn-sm" type="button" onClick={() => removeCourse(code)}>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        type="button"
+                        onClick={() => removeCourse(code)}
+                      >
                         Remove
                       </button>
                     </li>
@@ -123,7 +132,8 @@ export function ScheduleScreen() {
               {loading && <p role="status">Loading sections…</p>}
               {(error || catalogError) && (
                 <p role="alert">
-                  Could not reach the JevSchedule server. Start it with pnpm dev and reopen this tab.
+                  Could not reach the JevSchedule server. Start it with pnpm dev and reopen this
+                  tab.
                 </p>
               )}
               {courseCodes.map((code) => (
