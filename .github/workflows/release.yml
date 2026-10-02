@@ -32,11 +32,8 @@ jobs:
           node-version: "lts/*"
           cache: "pnpm"
 
-      - name: Require production API URL
-        if: ${{ vars.JEVSCHEDULE_API_URL == '' }}
-        run: echo "Set the JEVSCHEDULE_API_URL repository variable" && exit 1
-
       - name: Require HTTPS production API URL
+        if: ${{ vars.JEVSCHEDULE_API_URL != '' }}
         env:
           JEVSCHEDULE_API_URL: ${{ vars.JEVSCHEDULE_API_URL }}
         run: node apps/desktop/src/release/require-https-api-url.mjs
@@ -57,6 +54,7 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           MAIN_VITE_API_URL: ${{ vars.JEVSCHEDULE_API_URL }}
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ runner.os == 'macOS' && 'false' || '' }}
 
       - name: Upload Artifacts to GitHub Release
         uses: softprops/action-gh-release@v2
