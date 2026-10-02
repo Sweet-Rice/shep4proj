@@ -63,7 +63,7 @@ export function SectionList({ courseCode, sections, term, onAddSection }: Sectio
                     : `${available} seat${available === 1 ? "" : "s"} available`}
                 </p>
                 {onAddSection && (
-                  <button type="button" onClick={() => onAddSection(section)}>
+                  <button className="btn btn-secondary btn-sm" type="button" onClick={() => onAddSection(section)}>
                     Add to schedule
                   </button>
                 )}

@@ -68,76 +68,82 @@ export function ScheduleScreen() {
         <p>Add a term in the Plan tab to build a schedule.</p>
       ) : (
         <>
-          <label>
-            Term
-            <select
-              aria-label="Term"
-              value={term ?? ""}
-              onChange={(event) => {
-                setSelectedTerm(event.currentTarget.value as AcademicPeriodId);
-                setEdited(null);
-              }}
-            >
-              {terms.map(({ season, year, periodId }) => (
-                <option key={periodId} value={periodId}>
-                  {season} {year}
-                </option>
-              ))}
-            </select>
-          </label>
-          <section aria-labelledby="schedule-courses-heading">
-            <h2 id="schedule-courses-heading">Courses to schedule</h2>
-            <label>
-              Add course
-              <select
-                aria-label="Add course"
-                value={selectedCourse}
-                onChange={(event) =>
-                  setSelectedCourse(event.currentTarget.value as CourseCode | "")
-                }
-              >
-                <option value="">Select a course</option>
-                {availableCourses.map((course) => (
-                  <option key={course.code} value={course.code}>
-                    {course.code} — {course.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button type="button" onClick={addCourse} disabled={!selectedCourse}>
-              Add course
-            </button>
-            <ul>
+          <div className="schedule-layout">
+            <div className="schedule-sidebar">
+              <label className="field">
+                <span className="field-label">Term</span>
+                <select
+                  aria-label="Term"
+                  value={term ?? ""}
+                  onChange={(event) => {
+                    setSelectedTerm(event.currentTarget.value as AcademicPeriodId);
+                    setEdited(null);
+                  }}
+                >
+                  {terms.map(({ season, year, periodId }) => (
+                    <option key={periodId} value={periodId}>
+                      {season} {year}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <section className="card" aria-labelledby="schedule-courses-heading">
+                <h2 id="schedule-courses-heading">Courses to schedule</h2>
+                <label className="field">
+                  <span className="field-label">Add course</span>
+                  <select
+                    aria-label="Add course"
+                    value={selectedCourse}
+                    onChange={(event) =>
+                      setSelectedCourse(event.currentTarget.value as CourseCode | "")
+                    }
+                  >
+                    <option value="">Select a course</option>
+                    {availableCourses.map((course) => (
+                      <option key={course.code} value={course.code}>
+                        {course.code} — {course.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button className="btn btn-primary" type="button" onClick={addCourse} disabled={!selectedCourse}>
+                  Add course
+                </button>
+                <ul className="schedule-course-list">
+                  {courseCodes.map((code) => (
+                    <li key={code}>
+                      <span>{code}</span>
+                      <button className="btn btn-ghost btn-sm" type="button" onClick={() => removeCourse(code)}>
+                        Remove
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+              {loading && <p role="status">Loading sections…</p>}
+              {(error || catalogError) && (
+                <p role="alert">
+                  Could not reach the JevSchedule server. Start it with pnpm dev and reopen this tab.
+                </p>
+              )}
               {courseCodes.map((code) => (
-                <li key={code}>
-                  <span>{code}</span>
-                  <button type="button" onClick={() => removeCourse(code)}>
-                    Remove
-                  </button>
-                </li>
+                <SectionList
+                  key={`${term}:${code}`}
+                  courseCode={code}
+                  term={term ?? undefined}
+                  sections={sectionsByCourse[code] ?? []}
+                  onAddSection={builder.addSection}
+                />
               ))}
-            </ul>
-          </section>
-          {loading && <p role="status">Loading sections…</p>}
-          {(error || catalogError) && (
-            <p role="alert">
-              Could not reach the JevSchedule server. Start it with pnpm dev and reopen this tab.
-            </p>
-          )}
-          {courseCodes.map((code) => (
-            <SectionList
-              key={`${term}:${code}`}
-              courseCode={code}
-              term={term ?? undefined}
-              sections={sectionsByCourse[code] ?? []}
-              onAddSection={builder.addSection}
-            />
-          ))}
-          <WeeklyCalendar
-            sections={termSections}
-            conflictingSectionKeys={termConflicts}
-            onRemoveSection={builder.removeSection}
-          />
+            </div>
+            <div className="schedule-calendar">
+              <WeeklyCalendar
+                sections={termSections}
+                conflictingSectionKeys={termConflicts}
+                onRemoveSection={builder.removeSection}
+              />
+            </div>
+          </div>
         </>
       )}
     </main>

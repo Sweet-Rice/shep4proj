@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { findConflicts, type Section, type Weekday } from "@jevschedule/shared";
 import { getSectionKey } from "../hooks/useScheduleBuilder.js";
 
@@ -85,11 +86,21 @@ export function WeeklyCalendar({
         )}
       </header>
 
-      <div className="calendar-grid" role="region" aria-label="Weekly class schedule time grid">
+      <div
+        className="calendar-grid"
+        role="region"
+        aria-label="Weekly class schedule time grid"
+        style={{ "--hours": endHour - startHour } as CSSProperties}
+      >
         <div className="grid-header-corner" aria-hidden="true" />
 
-        {CALENDAR_DAYS.map((day) => (
-          <div key={day} className="grid-header-day" data-testid={`day-header-${day}`}>
+        {CALENDAR_DAYS.map((day, i) => (
+          <div
+            key={day}
+            className="grid-header-day"
+            data-testid={`day-header-${day}`}
+            style={{ gridColumn: i + 2 }}
+          >
             {day}
           </div>
         ))}
@@ -110,11 +121,16 @@ export function WeeklyCalendar({
           );
         })}
 
-        {CALENDAR_DAYS.map((day) => {
+        {CALENDAR_DAYS.map((day, i) => {
           const slotsForDay = meetingSlots.filter((s) => s.day === day);
 
           return (
-            <div key={day} className="day-column" data-testid={`day-column-${day}`}>
+            <div
+              key={day}
+              className="day-column"
+              data-testid={`day-column-${day}`}
+              style={{ gridColumn: i + 2 }}
+            >
               {slotsForDay.map((slot, idx) => {
                 const topPercent = ((slot.startMinute - startMinuteTotal) / totalMinutes) * 100;
                 const heightPercent = ((slot.endMinute - slot.startMinute) / totalMinutes) * 100;
