@@ -107,7 +107,10 @@ describe("WeeklyCalendar & formatMinuteToTime", () => {
   });
 
   it("uses singular wording for one section and one credit", () => {
-    const single: Section = { ...overlappingSections[0]!, credits: { min: 1, max: 1 } };
+    const single: Section = {
+      ...overlappingSections[0]!,
+      credits: { ...overlappingSections[0]!.credits, min: 1, max: 1 },
+    };
     render(<WeeklyCalendar sections={[single]} />);
 
     expect(screen.getByText("1 section · 1 credit")).toBeInTheDocument();
