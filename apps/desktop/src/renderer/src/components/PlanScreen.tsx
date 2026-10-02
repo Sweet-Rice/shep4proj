@@ -80,7 +80,7 @@ export function PlanScreen() {
       <h1>Plan</h1>
       {catalogError && (
         <p role="alert">
-          Course catalog unavailable. Start the server to add courses and check prerequisites.
+          {catalogError.message}. Start the server to add courses and check prerequisites.
         </p>
       )}
       {planError && <p role="alert">Could not save the plan: {planError.message}</p>}
