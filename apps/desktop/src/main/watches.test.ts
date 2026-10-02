@@ -36,10 +36,12 @@ it("creates, removes, and retrieves a watch through the expected API endpoints",
   ]);
   expect(fetchImpl.mock.calls[0]?.[1]).toMatchObject({
     method: "POST",
+    headers: { "content-type": "application/json" },
     body: JSON.stringify(section),
   });
   expect(fetchImpl.mock.calls[1]?.[1]).toMatchObject({
     method: "DELETE",
+    headers: { "content-type": "application/json" },
     body: JSON.stringify({ id }),
   });
 });
@@ -51,3 +53,17 @@ it("returns null for removed server watches and rejects non-http API URLs", asyn
     "JEVSCHEDULE_API_URL must be an http(s) URL",
   );
 });
+
+it.each([400, 401, 500, 503])(
+  "throws on HTTP %i instead of reporting the watch as removed, without leaking the id",
+  async (status) => {
+    const client = createWatchClient("https://api.example.test", async () => response({}, status));
+    const failure = await client.get(id).then(
+      () => undefined,
+      (error: unknown) => error,
+    );
+    expect(failure).toBeInstanceOf(Error);
+    expect((failure as Error).message).toMatch(new RegExp(`HTTP ${status}`));
+    expect((failure as Error).message).not.toContain(id);
+  },
+);
