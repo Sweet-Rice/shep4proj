@@ -1,4 +1,64 @@
-.flow-card{display:flex;flex-direction:column;gap:var(--space-3)}.flow-actions{display:flex;gap:var(--space-2);flex-wrap:wrap}.progress-card{align-items:center;text-align:center}
-.success-icon,.error-icon{width:32px;height:32px;border-radius:50%;display:grid;place-items:center}.success-icon{background:var(--success-soft);color:var(--success)}.error-icon{background:var(--danger-soft);color:var(--danger)}
-.review-header{margin-bottom:var(--space-3)}.section-toolbar{display:flex;justify-content:space-between;align-items:center}.parsed-courses-list{max-height:320px;overflow:auto}.parsed-course-item .course-checkbox-label{display:grid;grid-template-columns:auto auto 1fr auto;gap:var(--space-2);align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
-.unrecognized-lines-section{background:var(--warning-soft);border-radius:var(--radius-sm);padding:var(--space-3)}.unrecognized-item{font-family:var(--font-mono);font-size:var(--text-xs)}.review-actions{display:flex;justify-content:flex-end;gap:var(--space-2)}
+.flow-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.flow-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.progress-card {
+  align-items: center;
+  text-align: center;
+}
+.success-icon,
+.error-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.success-icon {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.error-icon {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.review-header {
+  margin-bottom: var(--space-3);
+}
+.section-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.parsed-courses-list {
+  max-height: 320px;
+  overflow: auto;
+}
+.parsed-course-item .course-checkbox-label {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  gap: var(--space-2);
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.unrecognized-lines-section {
+  background: var(--warning-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+}
+.unrecognized-item {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+.review-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
