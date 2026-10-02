@@ -1,12 +1,9 @@
-import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme, type Session } from "electron";
 import { readFile, stat } from "node:fs/promises";
 import { parseTranscriptPdf } from "@jevschedule/workday";
 import { guardedFetch } from "@jevschedule/workday/allowlist";
-import {
-  launchWorkdayBrowser,
-  teardownWorkdayBrowser,
-  waitForWorkdayLogin,
-} from "@jevschedule/workday/browser";
+import { WorkdayShapeError } from "@jevschedule/workday/academic-record";
+import { openWorkdaySignIn } from "./workday-signin.js";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createCatalogClient, resolveApiBaseUrl } from "./catalog.js";
@@ -16,13 +13,14 @@ import { createCompletedStore } from "./store/completed.js";
 import { openLocalDb } from "./store/db.js";
 import { createPlanStore } from "./store/plan.js";
 import { createLogger } from "./log/logger.js";
-import { createRequestHarvester } from "./workday-harvest.js";
 import { createWorkdayImporter } from "./workday-import.js";
 
 const rendererHtmlPath = fileURLToPath(new URL("../renderer/index.html", import.meta.url));
 const rendererUrl = process.env.ELECTRON_RENDERER_URL ?? pathToFileURL(rendererHtmlPath).href;
 
-function createWindow(): void {
+let mainWindow: BrowserWindow | undefined;
+
+function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
     width: 1280,
     height: 820,
@@ -43,6 +41,7 @@ function createWindow(): void {
   } else {
     void window.loadFile(rendererHtmlPath);
   }
+  return window;
 }
 
 void app.whenReady().then(() => {
@@ -74,20 +73,33 @@ void app.whenReady().then(() => {
     },
     {
       workday: createWorkdayImporter({
-        launch: launchWorkdayBrowser,
-        waitForLogin: waitForWorkdayLogin,
-        teardown: teardownWorkdayBrowser,
-        harvest: createRequestHarvester(),
-        fetch: guardedFetch,
+        signIn: () => {
+          if (!mainWindow || mainWindow.isDestroyed())
+            throw new Error("Application window is unavailable");
+          return openWorkdaySignIn(mainWindow);
+        },
+        fetchJson: async (ses: Session, url, headers) => {
+          const response = await guardedFetch((input, init) => ses.fetch(input, init), {
+            method: "GET",
+            url,
+            headers,
+          });
+          if (response.status < 200 || response.status >= 300) {
+            if (url.endsWith("/app-root"))
+              throw new Error("Workday could not provide session headers");
+            throw new WorkdayShapeError("Workday did not return the expected course records", url);
+          }
+          return response.json;
+        },
         log: createLogger(),
       }),
     },
   );
 
-  createWindow();
+  mainWindow = createWindow();
 
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) mainWindow = createWindow();
   });
 });
 

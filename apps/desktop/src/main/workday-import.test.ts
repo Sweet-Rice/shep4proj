@@ -1,229 +1,202 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
-import type { GuardedRequest, GuardedResponse } from "@jevschedule/workday/allowlist";
+import {
+  ALLOWED_ENDPOINTS,
+  guardedFetch,
+  type FetchImplementation,
+  type GuardedRequest,
+} from "@jevschedule/workday/allowlist";
 import { WorkdayShapeError } from "@jevschedule/workday/academic-record";
 import type { WorkdayImportProgress } from "../shared/ipc.js";
 import { createWorkdayImporter } from "./workday-import.js";
-import {
-  WorkdayHarvestTimeoutError,
-  type HarvestTarget,
-  type HarvestedRequest,
-} from "./workday-harvest.js";
 
 const FIXTURES_DIR = fileURLToPath(new URL("../../../../fixtures/workday/", import.meta.url));
 const academicRecord = JSON.parse(
   readFileSync(`${FIXTURES_DIR}academic-record.synthetic.json`, "utf8"),
 ) as unknown;
-const currentRegistrations = JSON.parse(
+const registrations = JSON.parse(
   readFileSync(`${FIXTURES_DIR}current-registrations.synthetic.json`, "utf8"),
 ) as unknown;
-
+const APP_ROOT = "https://www.myworkday.com/lsu/app-root";
+const ACADEMIC = "https://www.myworkday.com/lsu/generic-hub/task/2998$30300.htmld";
+const COURSES = "https://www.myworkday.com/lsu/generic-hub/task/2998$28771.htmld";
 const TOKEN = "synthetic-secure-token-7f3a";
-const HEADERS = {
+const VERSION = "synthetic-client-version";
+const HOME = "https://www.myworkday.com/lsu/d/home.htmld";
+const DATA_HEADERS = {
   "session-secure-token": TOKEN,
-  "x-workday-client": "synthetic-client",
+  "x-workday-client": VERSION,
   accept: "application/json",
-  "content-type": "application/json",
-  referer: "https://www.myworkday.com/lsu/d/task/2998$30300.htmld",
+  referer: HOME,
 };
-const ACADEMIC_URL =
-  "https://www.myworkday.com/lsu/generic-hub/task/2998$30300.htmld?clientRequestID=synthetic";
-const NAV_CONTEXT_URL = "https://www.myworkday.com/lsu/generic-hub/page-context-id/nav1.htmld";
-const REGISTRATIONS_URL = "https://www.myworkday.com/lsu/generic-hub/page-context-id/reg2.htmld";
-/** Responses keyed by URL; the navigation context answers with a grid-free payload. */
-const PAYLOADS: Record<string, unknown> = {
-  [ACADEMIC_URL]: academicRecord,
-  [NAV_CONTEXT_URL]: { title: "Navigation", widget: "page", body: { children: [] } },
-  [REGISTRATIONS_URL]: currentRegistrations,
-};
+const session = {
+  clearStorageData: vi.fn(async () => undefined),
+  clearCache: vi.fn(async () => undefined),
+} as never;
 
 interface HarnessOptions {
-  harvest?: (target: HarvestTarget) => Promise<HarvestedRequest[]>;
-  fetch?: (request: GuardedRequest) => Promise<GuardedResponse>;
-  teardown?: () => Promise<void>;
+  responses?: Record<string, unknown>;
+  failUrl?: string;
+  throwFetch?: boolean;
+  missingToken?: boolean;
+  cleanupError?: boolean;
 }
 
 function harness(options: HarnessOptions = {}) {
   const events: string[] = [];
   const messages: WorkdayImportProgress[] = [];
   const logCalls: unknown[][] = [];
-  const page = { goto: vi.fn(), url: () => "", on: vi.fn(), off: vi.fn() };
-  const session = { context: {}, page, profileDir: "synthetic-profile", channel: "chrome" };
-  const harvest = vi.fn(async (_page: unknown, target: HarvestTarget) => {
-    events.push(`harvest ${target.endpoint.id}`);
-    if (options.harvest) return options.harvest(target);
-    return target.endpoint.id === "academic-record-get"
-      ? [{ url: ACADEMIC_URL, headers: HEADERS }]
-      : [
-          { url: NAV_CONTEXT_URL, headers: HEADERS },
-          { url: REGISTRATIONS_URL, headers: HEADERS },
-        ];
+  const requests: Array<{ url: string; headers?: Readonly<Record<string, string>> }> = [];
+  const payloads: Record<string, unknown> = {
+    [APP_ROOT]: options.missingToken
+      ? { uiClientVersion: VERSION, userModel: { private: "private sentinel" } }
+      : {
+          sessionSecureToken: TOKEN,
+          uiClientVersion: VERSION,
+          userModel: { private: "private sentinel" },
+        },
+    [ACADEMIC]: options.responses?.[ACADEMIC] ?? academicRecord,
+    [COURSES]: options.responses?.[COURSES] ?? registrations,
+  };
+  const fetch = vi.fn<FetchImplementation>(async (url: string) => {
+    events.push(`fetch ${url}`);
+    if (options.throwFetch) throw new Error("sensitive response body");
+    if (url === options.failUrl) return { status: 503, json: async () => null };
+    return { status: 200, json: async () => payloads[url] ?? null };
   });
-  const fetch = vi.fn(async (_page: unknown, request: GuardedRequest, _allowed: unknown) => {
-    events.push(`fetch ${request.url}`);
-    if (options.fetch) return options.fetch(request);
-    return { status: 200, json: PAYLOADS[request.url] ?? null };
-  });
-  const teardown = vi.fn(async () => {
-    events.push("teardown");
-    await options.teardown?.();
-  });
+  const fetchJson = vi.fn(
+    async (_ses: never, url: string, headers?: Readonly<Record<string, string>>) => {
+      const request: GuardedRequest = { method: "GET", url, headers };
+      requests.push({ url, headers });
+      const result = await guardedFetch(fetch, request, ALLOWED_ENDPOINTS);
+      if (result.status < 200 || result.status >= 300) {
+        if (url === APP_ROOT) throw new Error("Workday could not provide session headers");
+        throw new WorkdayShapeError("Workday did not return the expected course records", url);
+      }
+      return result.json;
+    },
+  );
   const log = Object.fromEntries(
     ["debug", "info", "warn", "error"].map((level) => [
       level,
       (...args: unknown[]) => logCalls.push(args),
     ]),
   ) as never;
+  const clearStorageData = vi.fn(async () => {
+    if (options.cleanupError) throw new Error("cleanup details");
+  });
+  const clearCache = vi.fn(async () => undefined);
   const importer = createWorkdayImporter({
-    launch: vi.fn(async () => session) as never,
-    waitForLogin: vi.fn(async () => ({ status: "success", page })) as never,
-    teardown: teardown as never,
-    harvest: harvest as never,
-    fetch: fetch as never,
+    signIn: vi.fn(async () => {
+      events.push("sign-in");
+      return { status: "success" as const, session: { clearStorageData, clearCache } as never };
+    }),
+    fetchJson: fetchJson as never,
     log,
   });
   const run = () => importer.run((progress) => messages.push(progress));
-  /** Everything that left the importer other than the returned review. */
-  const leaked = () => JSON.stringify([messages, logCalls]);
-  return { run, events, messages, logCalls, leaked, page, harvest, fetch, teardown };
+  return {
+    run,
+    events,
+    messages,
+    logCalls,
+    fetch,
+    fetchJson,
+    requests,
+    clearStorageData,
+    clearCache,
+  };
 }
 
 describe("createWorkdayImporter", () => {
-  it("harvests UI requests, reads them only through the guarded fetch, and maps the review", async () => {
+  it("fetches app-root first and passes only its two session values to allowlisted data reads", async () => {
     const h = harness();
     const review = await h.run();
-
-    expect(h.messages.map(({ stage }) => stage)).toEqual(["signing-in", "fetching", "review"]);
     expect(h.events).toEqual([
-      "harvest academic-record-get",
-      `fetch ${ACADEMIC_URL}`,
-      "harvest current-registrations-get",
-      `fetch ${NAV_CONTEXT_URL}`,
-      `fetch ${REGISTRATIONS_URL}`,
-      "teardown",
+      "sign-in",
+      `fetch ${APP_ROOT}`,
+      `fetch ${ACADEMIC}`,
+      `fetch ${COURSES}`,
     ]);
-    expect(h.harvest.mock.calls.map(([page, target]) => [page, target.uiUrl])).toEqual([
-      [h.page, "https://www.myworkday.com/lsu/d/task/2998$30300.htmld"],
-      [h.page, "https://www.myworkday.com/lsu/d/task/2998$28771.htmld"],
+    expect(h.requests).toEqual([
+      { url: APP_ROOT, headers: undefined },
+      { url: ACADEMIC, headers: DATA_HEADERS },
+      { url: COURSES, headers: DATA_HEADERS },
     ]);
-    for (const [page, request, allowed] of h.fetch.mock.calls) {
-      expect(page).toBe(h.page);
-      expect(request).toEqual({ method: "GET", url: request.url, headers: HEADERS });
-      expect(allowed).toEqual([
-        expect.objectContaining({
-          id: request.url === ACADEMIC_URL ? "academic-record-get" : "current-registrations-get",
-        }),
-      ]);
-    }
-    expect(review.completed).toEqual(expect.arrayContaining(["CSC 1350"]));
-    expect(review.inProgress.flatMap((term) => term.courses)).toEqual(
-      expect.arrayContaining(["CSC 4330"]),
-    );
-    expect(h.teardown).toHaveBeenCalledOnce();
+    expect(h.fetchJson.mock.calls.map(([, url]) => url)).toEqual([APP_ROOT, ACADEMIC, COURSES]);
+    expect(review.completed).toContain("CSC 1350");
+    expect(review.inProgress.flatMap((term) => term.courses)).toContain("CSC 4330");
+    expect(h.messages.map(({ stage }) => stage)).toEqual(["signing-in", "fetching", "review"]);
+    expect(h.clearStorageData).toHaveBeenCalledOnce();
+    expect(h.clearCache).toHaveBeenCalledOnce();
   });
 
-  it("keeps the harvested token and raw responses out of progress events and logs", async () => {
+  it("never fetches a non-allowlisted URL", async () => {
     const h = harness();
-    const review = await h.run();
-
-    expect(h.logCalls.length).toBeGreaterThan(0);
-    expect(h.leaked()).not.toContain(TOKEN);
-    expect(JSON.stringify(review)).not.toContain(TOKEN);
-    expect(JSON.stringify(h.logCalls)).not.toContain("generic-hub");
-    expect(JSON.stringify(h.logCalls)).not.toContain("Enrollments");
-    expect(JSON.stringify(h.logCalls)).not.toContain("My Enrolled Courses");
-  });
-
-  it("does not fetch until the harvest has produced a token-bearing request", async () => {
-    let release!: (requests: HarvestedRequest[]) => void;
-    const h = harness({
-      harvest: (target) =>
-        target.endpoint.id === "academic-record-get"
-          ? new Promise((resolve) => (release = resolve))
-          : Promise.resolve([{ url: REGISTRATIONS_URL, headers: HEADERS }]),
-    });
-    const running = h.run();
-    await vi.waitFor(() => expect(h.harvest).toHaveBeenCalledOnce());
+    await expect(
+      h.fetchJson(session, "https://www.myworkday.com/lsu/private-profile"),
+    ).rejects.toThrow();
     expect(h.fetch).not.toHaveBeenCalled();
-    release([{ url: ACADEMIC_URL, headers: HEADERS }]);
-    await running;
-    expect(h.fetch.mock.calls[0]?.[1].headers?.["session-secure-token"]).toBe(TOKEN);
   });
 
-  it("emits a generic error, never fetches, and tears down when the harvest times out", async () => {
-    const h = harness({ harvest: () => Promise.reject(new WorkdayHarvestTimeoutError()) });
-
-    await expect(h.run()).rejects.toBeInstanceOf(WorkdayHarvestTimeoutError);
-    expect(h.messages.map(({ stage }) => stage)).toEqual(["signing-in", "fetching", "error"]);
+  it("emits an error when app-root does not include the session token", async () => {
+    const h = harness({ missingToken: true });
+    await expect(h.run()).rejects.toThrow("Workday session headers are unavailable");
     expect(h.messages.at(-1)).toEqual({
       stage: "error",
       message: "Could not import records from Workday.",
     });
-    expect(h.fetch).not.toHaveBeenCalled();
-    expect(h.teardown).toHaveBeenCalledOnce();
+    expect(h.fetchJson).toHaveBeenCalledOnce();
+    expect(h.clearStorageData).toHaveBeenCalledOnce();
   });
 
-  it("offers the upload fallback and tears down when no candidate parses", async () => {
-    const h = harness({ fetch: async () => ({ status: 200, json: { body: {} } }) });
+  it("offers the transcript fallback when a direct data endpoint returns non-2xx", async () => {
+    const h = harness({ failUrl: ACADEMIC });
+    await expect(h.run()).rejects.toBeInstanceOf(WorkdayShapeError);
+    expect(h.messages.at(-1)).toMatchObject({ stage: "error", fallback: "upload" });
+    expect(h.fetchJson.mock.calls.map(([, url]) => url)).toEqual([APP_ROOT, ACADEMIC]);
+    expect(h.clearStorageData).toHaveBeenCalledOnce();
+  });
 
+  it("uses the transcript PDF fallback when a data shape changes", async () => {
+    const h = harness({ responses: { [ACADEMIC]: { body: {} } } });
     await expect(h.run()).rejects.toBeInstanceOf(WorkdayShapeError);
     expect(h.messages.at(-1)).toEqual({
       stage: "error",
       fallback: "upload",
       message: "Workday's pages changed. Import your transcript PDF instead.",
     });
-    expect(h.teardown).toHaveBeenCalledOnce();
+    expect(h.clearStorageData).toHaveBeenCalledOnce();
+    expect(h.clearCache).toHaveBeenCalledOnce();
   });
 
-  it("offers the upload fallback when the harvest finds no candidates", async () => {
-    const h = harness({ harvest: async () => [] });
-
-    await expect(h.run()).rejects.toBeInstanceOf(WorkdayShapeError);
-    expect(h.messages.at(-1)).toMatchObject({ stage: "error", fallback: "upload" });
-    expect(h.fetch).not.toHaveBeenCalled();
-    expect(h.teardown).toHaveBeenCalledOnce();
+  it("clears the session after failure and keeps session values and response data out of output", async () => {
+    const h = harness({ throwFetch: true });
+    await expect(h.run()).rejects.toThrow("sensitive response body");
+    expect(h.clearStorageData).toHaveBeenCalledOnce();
+    expect(h.clearCache).toHaveBeenCalledOnce();
+    const exported = JSON.stringify([h.messages, h.logCalls]);
+    expect(exported).not.toContain(TOKEN);
+    expect(exported).not.toContain(VERSION);
+    expect(exported).not.toContain("private sentinel");
   });
 
-  it("emits a generic error when every candidate is rejected by Workday", async () => {
-    const h = harness({ fetch: async () => ({ status: 401, json: null }) });
-
-    await expect(h.run()).rejects.not.toBeInstanceOf(WorkdayShapeError);
+  it("clears session state after a successful review without writing imported data", async () => {
+    const h = harness();
+    const review = await h.run();
+    expect(review.completed.length).toBeGreaterThan(0);
+    expect(h.clearStorageData).toHaveBeenCalledOnce();
+    expect(h.clearCache).toHaveBeenCalledOnce();
+  });
+  it("reports cleanup failures after attempting both session cleanup operations", async () => {
+    const h = harness({ cleanupError: true });
+    await expect(h.run()).rejects.toThrow("Workday session cleanup failed");
+    expect(h.clearStorageData).toHaveBeenCalledOnce();
+    expect(h.clearCache).toHaveBeenCalledOnce();
     expect(h.messages.at(-1)).toEqual({
       stage: "error",
       message: "Could not import records from Workday.",
     });
-    expect(h.teardown).toHaveBeenCalledOnce();
-  });
-
-  it("emits a generic error and tears down when the guarded fetch throws", async () => {
-    const h = harness({
-      fetch: async () => {
-        throw new Error("sensitive response body");
-      },
-    });
-
-    await expect(h.run()).rejects.toThrow("sensitive response body");
-    expect(h.messages.at(-1)).toEqual({
-      stage: "error",
-      message: "Could not import records from Workday.",
-    });
-    expect(h.teardown).toHaveBeenCalledOnce();
-    expect(JSON.stringify(h.logCalls)).not.toContain("sensitive response body");
-  });
-
-  it("still reports a failed teardown when the import had already failed", async () => {
-    const h = harness({
-      fetch: async () => {
-        throw new Error("sensitive response body");
-      },
-      teardown: async () => {
-        throw new Error("EBUSY locked profile");
-      },
-    });
-
-    await expect(h.run()).rejects.toThrow("sensitive response body");
-    expect(h.logCalls).toContainEqual(["workday import", "error", { previousStage: "teardown" }]);
-    expect(h.leaked()).not.toContain("EBUSY");
   });
 });
