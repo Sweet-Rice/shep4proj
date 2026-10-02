@@ -9,7 +9,7 @@ describe("code signing & notarization configuration", () => {
   const entitlementsPath = path.join(desktopDir, "build", "entitlements.mac.plist");
   const releaseWorkflowPath = path.join(rootDir, ".github/workflows/release.yml");
 
-  it("configures macOS hardened runtime, entitlements, and notarization in electron-builder.json", () => {
+  it("configures macOS hardened runtime and entitlements without notarization", () => {
     expect(fs.existsSync(builderConfigPath)).toBe(true);
 
     const config = JSON.parse(fs.readFileSync(builderConfigPath, "utf-8")) as {
@@ -23,7 +23,7 @@ describe("code signing & notarization configuration", () => {
 
     expect(config.mac.hardenedRuntime).toBe(true);
     expect(config.mac.entitlements).toBe("build/entitlements.mac.plist");
-    expect(config.mac.notarize).toBeDefined();
+    expect(config.mac.notarize).toBe(false);
   });
 
   it("provides macOS entitlements.mac.plist file for security entitlements", () => {

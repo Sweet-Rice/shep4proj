@@ -59,4 +59,4 @@ The catalog command loads the configured 2026–2027 catalog for CSC and reports
 
 ## Point the desktop app at the deployed API
 
-In GitHub repository settings, add or update the repository **Actions variable** `JEVSCHEDULE_API_URL` with the public HTTPS base URL of the API (for example, `https://api.example.org`, without an endpoint path). The release workflow requires this variable and rejects non-HTTPS values; packaged releases use it as the build-time API URL. A non-empty runtime `JEVSCHEDULE_API_URL` overrides the build-time value, and local builds without either setting use `http://127.0.0.1:3000`.
+In GitHub repository settings, add or update the repository **Actions variable** `JEVSCHEDULE_API_URL` with the public HTTPS base URL of the API (for example, `https://api.example.org`, without an endpoint path). When set, the release workflow rejects non-HTTPS values; without it, packaged releases use the local server at `http://127.0.0.1:3000`. A non-empty runtime `JEVSCHEDULE_API_URL` overrides the build-time value.
