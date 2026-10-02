@@ -326,6 +326,27 @@ describe("SemesterBoard", () => {
     expect(onMoveCourse).not.toHaveBeenCalled();
   });
 
+  it("forgets the dragged course when a drag is cancelled", () => {
+    const onMoveCourse = vi.fn();
+    render(<SemesterBoard plan={samplePlan} onMoveCourse={onMoveCourse} />);
+    const card = screen.getByTestId("course-card-CSC 1350");
+    fireEvent.dragStart(card, { dataTransfer: { setData: vi.fn(), effectAllowed: "move" } });
+    fireEvent.dragEnd(card);
+    fireEvent.drop(screen.getByTestId("term-column-1"), { dataTransfer: { getData: () => "" } });
+    expect(onMoveCourse).not.toHaveBeenCalled();
+  });
+
+  it("moves the course once when dragend follows a successful drop", () => {
+    const onMoveCourse = vi.fn();
+    render(<SemesterBoard plan={samplePlan} onMoveCourse={onMoveCourse} />);
+    const card = screen.getByTestId("course-card-CSC 1350");
+    fireEvent.dragStart(card, { dataTransfer: { setData: vi.fn(), effectAllowed: "move" } });
+    fireEvent.drop(screen.getByTestId("term-column-1"), { dataTransfer: { getData: () => "" } });
+    fireEvent.dragEnd(card);
+    expect(onMoveCourse).toHaveBeenCalledTimes(1);
+    expect(onMoveCourse).toHaveBeenCalledWith(0, 0, 1, 1);
+  });
+
   it("removes a course from its term with the icon button and shows its credits", () => {
     const handleRemove = vi.fn();
     render(
