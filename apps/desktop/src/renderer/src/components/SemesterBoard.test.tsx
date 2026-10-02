@@ -117,6 +117,30 @@ describe("SemesterBoard", () => {
     ).toBeNull();
   });
 
+  it("lists every season seen in the warning", () => {
+    const summerPlan: Plan = {
+      creditLimit: 12,
+      terms: [{ season: "Summer", year: 2027, courses: ["CSC 1350"] }],
+    };
+    render(
+      <SemesterBoard
+        plan={summerPlan}
+        courseHistory={{
+          "CSC 1350": [
+            { term: "LSUAM_FALL_2026", sectionCount: 2 },
+            { term: "LSUAM_FALL_2027", sectionCount: 2 },
+            { term: "LSUAM_SPRING_2027", sectionCount: 1 },
+          ],
+        }}
+        onMoveCourse={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByTestId("course-card-CSC 1350").querySelector(".course-validation-warning"),
+    ).toHaveTextContent(/^Not offered in Summer terms so far \(seen: Fall, Spring\)\.$/);
+  });
+
   it("moves course between terms when Move buttons are clicked", async () => {
     const user = userEvent.setup();
     const handleMove = vi.fn();
