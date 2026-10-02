@@ -37,10 +37,12 @@ describe("electron-builder configuration", () => {
       scripts: Record<string, string>;
     };
 
-    expect(pkg.scripts["dist"]).toBe("pnpm build && electron-builder");
-    expect(pkg.scripts["dist:win"]).toBe("pnpm build && electron-builder --win");
-    expect(pkg.scripts["dist:mac"]).toBe("pnpm build && electron-builder --mac");
-    expect(pkg.scripts["dist:linux"]).toBe("pnpm build && electron-builder --linux");
+    expect(pkg.scripts["dist"]).toBe("pnpm build && electron-builder --publish never");
+    expect(pkg.scripts["dist:win"]).toBe("pnpm build && electron-builder --win --publish never");
+    expect(pkg.scripts["dist:mac"]).toBe("pnpm build && electron-builder --mac --publish never");
+    expect(pkg.scripts["dist:linux"]).toBe(
+      "pnpm build && electron-builder --linux --publish never",
+    );
   });
 
   it("has app icon resources in build directory", () => {

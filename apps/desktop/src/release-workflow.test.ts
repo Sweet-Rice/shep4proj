@@ -46,6 +46,29 @@ describe("release.yml workflow configuration", () => {
     expect(content).toContain("dist:mac");
   });
 
+  it("disables electron-builder publishing and grants release upload permissions", () => {
+    const workflow = fs.readFileSync(releaseWorkflowPath, "utf-8");
+    const installerIndex = workflow.indexOf("name: Build Desktop Installer");
+    const nextStepIndex = workflow.indexOf("\n      - name:", installerIndex + 1);
+    const installerStep = workflow.slice(installerIndex, nextStepIndex);
+    expect(workflow).toMatch(/^permissions:\r?\n {2}contents: write$/m);
+    expect(installerStep).not.toContain("GH_TOKEN");
+
+    const builderConfigPath = path.join(rootDir, "apps/desktop/electron-builder.json");
+    const builderConfig = JSON.parse(fs.readFileSync(builderConfigPath, "utf-8")) as {
+      publish: null;
+    };
+    expect(builderConfig.publish).toBeNull();
+
+    const packagePath = path.join(rootDir, "apps/desktop/package.json");
+    const desktopPackage = JSON.parse(fs.readFileSync(packagePath, "utf-8")) as {
+      scripts: Record<string, string>;
+    };
+    for (const name of ["dist", "dist:win", "dist:mac", "dist:linux"]) {
+      expect(desktopPackage.scripts[name]).toContain("--publish never");
+    }
+  });
+
   it("uses softprops/action-gh-release to upload release installer assets", () => {
     const content = fs.readFileSync(releaseWorkflowPath, "utf-8");
 
