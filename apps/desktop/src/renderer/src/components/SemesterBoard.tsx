@@ -69,6 +69,11 @@ export function SemesterBoard({
     e.dataTransfer.effectAllowed = "move";
   };
 
+  const handleDragEnd = () => {
+    setDragOverTerm(null);
+    setDragData(null);
+  };
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
@@ -220,6 +225,7 @@ export function SemesterBoard({
                         data-testid={`course-card-${code}`}
                         draggable
                         onDragStart={(e) => handleDragStart(e, termIndex, courseIndex, code)}
+                        onDragEnd={handleDragEnd}
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, termIndex, courseIndex)}
                       >
