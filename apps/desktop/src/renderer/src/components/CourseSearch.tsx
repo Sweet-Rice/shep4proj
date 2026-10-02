@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   typicalTerms,
   type Course,
@@ -11,6 +11,12 @@ export interface CourseSearchProps {
   courses: Course[];
   completedCourses?: Set<CourseCode>;
   onSelectCourse?: (course: Course) => void;
+  /** Text for the per-row select button; defaults to "Select". */
+  selectLabel?: string;
+  /** Codes already selected; their button shows "Added" and is disabled. */
+  selectedCodes?: ReadonlySet<CourseCode>;
+  /** Called whenever the search text changes. */
+  onQueryChange?: (query: string) => void;
   onToggleCompleted?: (code: CourseCode) => void;
   placeholder?: string;
 }
@@ -26,10 +32,16 @@ export function CourseSearch({
   courses,
   completedCourses = new Set(),
   onSelectCourse,
+  selectLabel,
+  selectedCodes,
+  onQueryChange,
   onToggleCompleted,
   placeholder = "Search by course code or title (e.g. CSC 1350)...",
 }: CourseSearchProps) {
   const { query, setQuery, clearQuery, results, totalCount, hasMatches } = useCourseSearch(courses);
+  useEffect(() => {
+    onQueryChange?.(query);
+  }, [query]);
 
   return (
     <div className="course-search-container" data-testid="course-search-container">
@@ -88,6 +100,7 @@ export function CourseSearch({
         <ul className="course-results-list" data-testid="course-results-list">
           {results.map((course) => {
             const isCompleted = completedCourses.has(course.code);
+            const isSelected = selectedCodes?.has(course.code) ?? false;
 
             return (
               <li
@@ -107,10 +120,12 @@ export function CourseSearch({
                   {onSelectCourse && (
                     <button
                       type="button"
-                      className="btn btn-sm btn-secondary btn-select"
+                      className={`btn btn-sm ${selectLabel && !isSelected ? "btn-primary" : "btn-secondary"} btn-select`}
                       onClick={() => onSelectCourse(course)}
+                      disabled={isSelected}
+                      aria-label={selectLabel ? `${selectLabel} ${course.code}` : undefined}
                     >
-                      Select
+                      {isSelected ? "Added" : (selectLabel ?? "Select")}
                     </button>
                   )}
 

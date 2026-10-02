@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   type CompletedInput,
   type CourseCode,
@@ -28,6 +28,27 @@ export interface SemesterBoardProps {
   completed?: CompletedInput[] | Set<CourseCode>;
 }
 
+/** "One of: MATH 1022 completed or planned in the same term; or MATH 1023 …" → "One of: MATH 1022, MATH 1023". */
+function compactPrereq(text: string): string {
+  if (!text.startsWith("One of:")) return text;
+  return text.replace(/ completed or planned in the same term/g, "").replace(/;\s*or\s+/g, ", ");
+}
+
+/** Suggests the regular term after the plan's latest one (Fall → Spring → Fall), skipping taken terms. */
+function suggestNextTerm(
+  terms: Plan["terms"],
+  currentYear: number,
+): { season: Season; year: number } {
+  const order: Record<Season, number> = { Spring: 0, Summer: 1, Fall: 2, Winter: 3 };
+  const latest = [...terms].sort((a, b) => b.year - a.year || order[b.season] - order[a.season])[0];
+  if (!latest) return { season: "Fall", year: currentYear };
+  return latest.season === "Spring"
+    ? { season: "Fall", year: latest.year }
+    : latest.season === "Summer"
+      ? { season: "Fall", year: latest.year }
+      : { season: "Spring", year: latest.year + 1 };
+}
+
 interface DraggedCourseData {
   sourceTermIndex: number;
   sourceCourseIndex: number;
@@ -47,8 +68,17 @@ export function SemesterBoard({
   const currentYear = new Date().getFullYear();
   const [dragData, setDragData] = useState<DraggedCourseData | null>(null);
   const [dragOverTerm, setDragOverTerm] = useState<number | null>(null);
-  const [newSeason, setNewSeason] = useState<Season>("Fall");
-  const [newYear, setNewYear] = useState<number>(currentYear);
+  const suggested = suggestNextTerm(plan.terms, currentYear);
+  const [newSeason, setNewSeason] = useState<Season>(suggested.season);
+  const [newYear, setNewYear] = useState<number>(suggested.year);
+  const termCount = plan.terms.length;
+  // After a term is added or removed, move the form on to the next sensible term.
+  useEffect(() => {
+    const next = suggestNextTerm(plan.terms, currentYear);
+    setNewSeason(next.season);
+    setNewYear(next.year);
+  }, [termCount]);
+  const termExists = plan.terms.some((term) => term.season === newSeason && term.year === newYear);
   const validation = courseDetails
     ? plannerTools.validatePlan({ ...plan, courseDetails }, completed)
     : null;
@@ -112,6 +142,7 @@ export function SemesterBoard({
 
   const handleAddTermSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (termExists) return;
     if (onAddTerm) {
       onAddTerm(newSeason, newYear);
     }
@@ -263,7 +294,7 @@ export function SemesterBoard({
                             {issue.type === "missing_course"
                               ? "Catalog data unavailable for this course."
                               : issue.type === "prerequisite"
-                                ? `Missing prerequisite: ${issue.missingPrerequisites.join(", ")}`
+                                ? `Missing prerequisite: ${issue.missingPrerequisites.map(compactPrereq).join(", ")}`
                                 : issue.type === "prerequisite_warning"
                                   ? issue.message
                                   : null}
@@ -349,10 +380,20 @@ export function SemesterBoard({
                   max={currentYear + 8}
                 />
               </label>
-              <button type="submit" className="btn btn-primary" data-testid="add-term-btn">
+              <button
+                type="submit"
+                className="btn btn-primary"
+                data-testid="add-term-btn"
+                disabled={termExists}
+              >
                 Add Term
               </button>
             </div>
+            {termExists && (
+              <p className="add-term-hint" role="status">
+                {newSeason} {newYear} is already in your plan.
+              </p>
+            )}
           </form>
         )}
       </div>

@@ -196,7 +196,8 @@ describe("SemesterBoard", () => {
     const addTermBtn = screen.getByTestId("add-term-btn");
     await user.click(addTermBtn);
 
-    expect(handleAddTerm).toHaveBeenCalledWith("Fall", new Date().getFullYear());
+    // Defaults to the term after the plan's latest (Spring 2027 → Fall 2027).
+    expect(handleAddTerm).toHaveBeenCalledWith("Fall", 2027);
     expect(screen.getByRole("spinbutton", { name: "Enter Year" })).toHaveAttribute(
       "min",
       String(new Date().getFullYear() - 8),

@@ -17,7 +17,7 @@ function statusLabel(status: string): string {
     ? "Satisfied"
     : status === "partially_satisfied"
       ? "Partially satisfied"
-      : "Unsatisfied";
+      : "Not started";
 }
 
 function courseLabel(code: CourseCode, minGrade: string | null): string {

@@ -3,6 +3,7 @@ import type { CourseCode, CourseDetail, EligibilityResult } from "@jevschedule/s
 import { useCatalogCourses, useCourseDetails } from "../hooks/useCatalog.js";
 import { useCompletedCourses } from "../hooks/useCompletedCourses.js";
 import { plannerTools } from "../services/plannerTools.js";
+import { matchesCourseQuery } from "./courseFilter.js";
 import { formatCreditsDisplay } from "./CourseSearch.js";
 
 const PAGE_SIZE = 25;
@@ -58,9 +59,19 @@ function EligibilitySections({
 }) {
   const { details, loading, error } = useCourseDetails(codes);
   const [expanded, setExpanded] = useState<Set<CourseCode>>(new Set());
+  const [query, setQuery] = useState("");
+  const [undergradOnly, setUndergradOnly] = useState(true);
 
   if (error) return <p role="alert">{SERVER_ALERT}</p>;
-  if (loading) return <p role="status">Checking eligibility…</p>;
+  if (loading)
+    return (
+      <div className="eligible-loading">
+        <p role="status">Checking eligibility…</p>
+        <p className="eligible-loading-hint">
+          Checking prerequisites for every course in the catalog. This can take up to a minute.
+        </p>
+      </div>
+    );
 
   const groups: Record<EligibilityResult["status"], ListedCourse[]> = {
     eligible: [],
@@ -69,7 +80,8 @@ function EligibilitySections({
   };
   for (const { course, result } of plannerTools.getEligible(Object.values(details), completed)) {
     const detail = details[course.code];
-    if (detail) groups[result.status].push({ detail, result });
+    if (detail && matchesCourseQuery(detail, query) && (!undergradOnly || isUndergrad(detail.code)))
+      groups[result.status].push({ detail, result });
   }
   for (const list of Object.values(groups)) {
     list.sort((a, b) => a.detail.code.localeCompare(b.detail.code));
@@ -88,6 +100,23 @@ function EligibilitySections({
 
   return (
     <>
+      <div className="eligible-search">
+        <input
+          type="search"
+          aria-label="Search eligible courses"
+          placeholder="Filter by code, department or title, e.g. CSC or calculus"
+          value={query}
+          onChange={(event) => setQuery(event.currentTarget.value)}
+        />
+        <label className="eligible-undergrad-toggle">
+          <input
+            type="checkbox"
+            checked={undergradOnly}
+            onChange={(event) => setUndergradOnly(event.currentTarget.checked)}
+          />
+          Undergraduate only
+        </label>
+      </div>
       <div className="eligible-summary" aria-label="Eligibility summary">
         <SummaryTile
           tone="success"
@@ -163,6 +192,12 @@ function EligibilitySections({
       </section>
     </>
   );
+}
+
+/** LSU numbers graduate courses 5000 and up. */
+function isUndergrad(code: CourseCode): boolean {
+  const number = Number(/\d{4}/.exec(code)?.[0]);
+  return !Number.isFinite(number) || number < 5000;
 }
 
 function SummaryTile({

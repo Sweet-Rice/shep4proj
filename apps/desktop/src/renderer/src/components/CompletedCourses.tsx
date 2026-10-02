@@ -87,30 +87,12 @@ export function CompletedCourses() {
       <header className="page-header">
         <h1>Completed courses</h1>
         <p className="page-subtitle">
-          Search the LSU catalog and track the courses you've finished.
+          Track the courses you've finished. Search the LSU catalog on the right to add more.
         </p>
       </header>
       <div className="courses-layout">
-        <section className="courses-catalog card" aria-label="Course catalog">
-          {catalogLoading ? (
-            <p>Loading course catalog…</p>
-          ) : catalogError ? (
-            <p role="alert">
-              Course catalog unavailable: {catalogError.message}. Courses can&apos;t be verified or
-              marked completed until the server is reachable.
-            </p>
-          ) : (
-            <CourseSearch
-              courses={courses}
-              completedCourses={completed}
-              onToggleCompleted={(code) => {
-                if (loaded) void handleSearchToggle(code);
-              }}
-            />
-          )}
-        </section>
         <div className="courses-side">
-          <section className="card" aria-labelledby="completed-heading">
+          <section className="card completed-panel" aria-labelledby="completed-heading">
             <div className="completed-heading-row">
               <h2 id="completed-heading">Your completed courses</h2>
               {loaded && (
@@ -165,7 +147,8 @@ export function CompletedCourses() {
             </p>
             {loaded && codes.length === 0 && (
               <p className="empty-state">
-                No courses marked complete yet. Search the catalog or import your record below.
+                No courses marked complete yet. Search the catalog or import your record on the
+                right.
               </p>
             )}
             <ul className="completed-courses">
@@ -193,13 +176,31 @@ export function CompletedCourses() {
               ))}
             </ul>
           </section>
-          <section className="card" aria-label="Import transcript">
+          <section className="card import-panel" aria-label="Import transcript">
             <ImportProgressFlow
               catalogCodes={new Set(courses.map((course) => course.code))}
               onImportComplete={() => void refresh()}
             />
           </section>
         </div>
+        <section className="courses-catalog card" aria-label="Course catalog">
+          {catalogLoading ? (
+            <p>Loading course catalog…</p>
+          ) : catalogError ? (
+            <p role="alert">
+              Course catalog unavailable: {catalogError.message}. Courses can&apos;t be verified or
+              marked completed until the server is reachable.
+            </p>
+          ) : (
+            <CourseSearch
+              courses={courses}
+              completedCourses={completed}
+              onToggleCompleted={(code) => {
+                if (loaded) void handleSearchToggle(code);
+              }}
+            />
+          )}
+        </section>
       </div>
       {dialog && (
         <MarkPrereqsDialog

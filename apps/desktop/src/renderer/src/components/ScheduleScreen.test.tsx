@@ -114,8 +114,26 @@ afterEach(() => {
   Reflect.deleteProperty(window, "jevschedule");
 });
 
+async function addCourse(user: ReturnType<typeof userEvent.setup>, code: string) {
+  const button = await screen.findByRole("button", { name: `Add course ${code}` });
+  await waitFor(() => expect(button).toBeEnabled());
+  await user.click(button);
+}
+
+async function addSection(user: ReturnType<typeof userEvent.setup>, code: string) {
+  await user.click(
+    await within(await screen.findByRole("region", { name: `Sections for ${code}` })).findByRole(
+      "button",
+      { name: "Add to schedule" },
+    ),
+  );
+}
+
+const SERVER_ALERT =
+  "Couldn't reach the JevSchedule server. It may be waking up, which can take up to a minute. Try again.";
+
 describe("ScheduleScreen", () => {
-  it("selects the plan term and adds overlapping catalog sections to the calendar", async () => {
+  it("lists one course's sections at a time and flags a clashing section red", async () => {
     const user = userEvent.setup();
     const { listSections } = setup();
     render(<ScheduleScreen />);
@@ -123,129 +141,101 @@ describe("ScheduleScreen", () => {
     await waitFor(() =>
       expect(screen.getByRole("combobox", { name: "Term" })).toHaveValue("LSUAM_FALL_2026"),
     );
-    expect(screen.getByRole("option", { name: "Fall 2026" })).toBeInTheDocument();
-
-    const addCourseSelect = screen.getByRole("combobox", { name: "Add course" });
-    await user.selectOptions(addCourseSelect, "CSC 4330");
-    await user.click(screen.getByRole("button", { name: "Add course" }));
-    await user.selectOptions(screen.getByRole("combobox", { name: "Add course" }), "CSC 1350");
-    await user.click(screen.getByRole("button", { name: "Add course" }));
-
+    await addCourse(user, "CSC 4330");
     expect(await screen.findByText("A. Professor")).toBeInTheDocument();
-    expect(screen.getByText("Taylor Hall")).toBeInTheDocument();
-    expect(screen.getByText("Mon, Wed 10:00 AM–10:50 AM")).toBeInTheDocument();
-    await waitFor(() => expect(listSections).toHaveBeenCalledWith("CSC 4330", "LSUAM_FALL_2026"));
-    await waitFor(() => expect(listSections).toHaveBeenCalledWith("CSC 1350", "LSUAM_FALL_2026"));
-
-    const csc4330 = within(screen.getByRole("region", { name: "Sections for CSC 4330" }));
-    const csc1350 = within(screen.getByRole("region", { name: "Sections for CSC 1350" }));
-    await user.click(csc4330.getByRole("button", { name: "Add to schedule" }));
-    await user.click(csc1350.getByRole("button", { name: "Add to schedule" }));
-
+    await addSection(user, "CSC 4330");
     expect(screen.getAllByTestId("meeting-block-CSC 4330-Mon")).toHaveLength(1);
-    expect(screen.getAllByTestId("meeting-block-CSC 1350-Mon")).toHaveLength(1);
-    expect(screen.getByRole("alert")).toHaveTextContent("Schedule Conflict Detected");
-  }, 15_000);
+    expect(screen.getByRole("button", { name: "Add course CSC 4330" })).toHaveTextContent("Added");
 
-  it("removes a section from the calendar and clears its conflict", async () => {
-    const user = userEvent.setup();
-    setup();
-    render(<ScheduleScreen />);
-    await screen.findByRole("combobox", { name: "Term" });
-    for (const code of ["CSC 4330", "CSC 1350"]) {
-      await user.selectOptions(screen.getByRole("combobox", { name: "Add course" }), code);
-      await user.click(screen.getByRole("button", { name: "Add course" }));
-      await user.click(
-        await within(
-          await screen.findByRole("region", { name: `Sections for ${code}` }),
-        ).findByRole("button", { name: "Add to schedule" }),
-      );
-    }
-    expect(screen.getByRole("alert")).toHaveTextContent("Schedule Conflict Detected");
+    await addCourse(user, "CSC 1350");
+    const csc1350 = await screen.findByRole("region", { name: "Sections for CSC 1350" });
+    expect(screen.queryByRole("region", { name: "Sections for CSC 4330" })).not.toBeInTheDocument();
+    expect(within(csc1350).getByText("002-LEC").closest("li")).toHaveClass("conflict");
+    expect(within(csc1350).getByText("Time conflict with CSC 4330 001")).toBeInTheDocument();
 
-    await user.click(
-      within(screen.getByTestId("meeting-block-CSC 4330-Mon")).getByRole("button", {
-        name: "Remove section CSC 4330 001",
-      }),
+    await addSection(user, "CSC 1350");
+    expect(screen.getByTestId("schedule-conflict-banner")).toHaveTextContent(
+      "Schedule Conflict Detected",
     );
-
-    expect(screen.queryByTestId("meeting-block-CSC 4330-Mon")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("meeting-block-CSC 4330-Wed")).not.toBeInTheDocument();
-    expect(screen.getAllByTestId("meeting-block-CSC 1350-Mon")).toHaveLength(1);
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(listSections).toHaveBeenCalledWith("CSC 1350", "LSUAM_FALL_2026");
   }, 15_000);
 
-  it("removes a course from the list and offers it again", async () => {
+  it("hides the previous course's sections when searching for another course", async () => {
     const user = userEvent.setup();
     setup();
     render(<ScheduleScreen />);
-    await screen.findByRole("combobox", { name: "Term" });
-    await user.selectOptions(screen.getByRole("combobox", { name: "Add course" }), "CSC 4330");
-    await user.click(screen.getByRole("button", { name: "Add course" }));
+
+    await addCourse(user, "CSC 4330");
     expect(
       await screen.findByRole("region", { name: "Sections for CSC 4330" }),
     ).toBeInTheDocument();
-    const addCourse = screen.getByRole("combobox", { name: "Add course" });
-    expect(within(addCourse).queryByRole("option", { name: /CSC 4330/ })).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText("Search Courses"), "1350");
 
-    await user.click(
-      within(screen.getByRole("region", { name: "Courses to schedule" })).getByRole("button", {
-        name: "Remove",
-      }),
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("region", { name: "Sections for CSC 4330" }),
+      ).not.toBeInTheDocument(),
     );
-
-    expect(screen.queryByRole("region", { name: "Sections for CSC 4330" })).not.toBeInTheDocument();
-    expect(
-      within(screen.getByRole("combobox", { name: "Add course" })).getByRole("option", {
-        name: /CSC 4330/,
-      }),
-    ).toBeInTheDocument();
   });
 
-  it("offers every plan term and requests sections with the selected period id", async () => {
+  it("opens a details panel from the calendar and removes the section on confirm", async () => {
     const user = userEvent.setup();
-    const spring = { season: "Spring" as const, year: 2027, courses: ["CSC 4330" as const] };
+    setup();
+    render(<ScheduleScreen />);
+    for (const code of ["CSC 4330", "CSC 1350"]) {
+      await addCourse(user, code);
+      await addSection(user, code);
+    }
+    expect(screen.getByTestId("schedule-conflict-banner")).toBeInTheDocument();
+
+    await user.click(screen.getByTestId("meeting-block-CSC 4330-Mon"));
+    const panel = screen.getByRole("region", { name: "CSC 4330 001 details" });
+    expect(within(panel).getByText("Taylor Hall")).toBeInTheDocument();
+    expect(within(panel).getByText("Software Engineering")).toBeInTheDocument();
+
+    await user.click(within(panel).getByRole("button", { name: "Keep" }));
+    expect(screen.queryByRole("region", { name: "CSC 4330 001 details" })).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("meeting-block-CSC 4330-Mon")).toHaveLength(1);
+
+    await user.click(screen.getByTestId("meeting-block-CSC 4330-Mon"));
+    await user.click(screen.getByRole("button", { name: "Remove from schedule" }));
+    expect(screen.queryByTestId("meeting-block-CSC 4330-Mon")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("meeting-block-CSC 1350-Mon")).toHaveLength(1);
+    expect(screen.queryByTestId("schedule-conflict-banner")).not.toBeInTheDocument();
+  }, 15_000);
+
+  it("lists only courses with sections in the selected term", async () => {
+    const user = userEvent.setup();
+    const spring = { season: "Spring" as const, year: 2027, courses: [] };
     const { listSections } = setup({ planTerms: [...plan.terms, spring] });
     render(<ScheduleScreen />);
 
-    const termSelect = await screen.findByRole("combobox", { name: "Term" });
-    expect(within(termSelect).getByRole("option", { name: "Spring 2027" })).toBeInTheDocument();
-    await user.selectOptions(screen.getByRole("combobox", { name: "Add course" }), "CSC 4330");
-    await user.click(screen.getByRole("button", { name: "Add course" }));
-    await user.selectOptions(termSelect, "LSUAM_SPRING_2027");
-
-    await waitFor(() => expect(listSections).toHaveBeenCalledWith("CSC 4330", "LSUAM_SPRING_2027"));
+    await user.selectOptions(
+      await screen.findByRole("combobox", { name: "Term" }),
+      "LSUAM_SPRING_2027",
+    );
+    expect(await screen.findByRole("button", { name: "Add course CSC 4330" })).toBeEnabled();
+    await waitFor(() => expect(listSections).toHaveBeenCalledWith("CSC 1350", "LSUAM_SPRING_2027"));
+    expect(screen.queryByRole("button", { name: "Add course CSC 1350" })).not.toBeInTheDocument();
   });
 
   it("shows only the selected term's sections on the calendar and keeps the others", async () => {
     const user = userEvent.setup();
-    const spring = { season: "Spring" as const, year: 2027, courses: ["CSC 4330" as const] };
+    const spring = { season: "Spring" as const, year: 2027, courses: [] };
     setup({ planTerms: [...plan.terms, spring] });
     render(<ScheduleScreen />);
 
     const termSelect = await screen.findByRole("combobox", { name: "Term" });
-    await user.selectOptions(screen.getByRole("combobox", { name: "Add course" }), "CSC 4330");
-    await user.click(screen.getByRole("button", { name: "Add course" }));
-    await user.click(
-      await within(await screen.findByRole("region", { name: "Sections for CSC 4330" })).findByRole(
-        "button",
-        { name: "Add to schedule" },
-      ),
-    );
+    await addCourse(user, "CSC 4330");
+    await addSection(user, "CSC 4330");
     expect(screen.getAllByTestId("meeting-block-CSC 4330-Mon")).toHaveLength(1);
 
     await user.selectOptions(termSelect, "LSUAM_SPRING_2027");
+    expect(screen.queryByTestId("meeting-block-CSC 4330-Mon")).not.toBeInTheDocument();
+    await addCourse(user, "CSC 4330");
     expect(await screen.findByText("003-LEC")).toBeInTheDocument();
-    expect(screen.queryByTestId("meeting-block-CSC 4330-Mon")).not.toBeInTheDocument();
-
-    await user.click(
-      within(screen.getByRole("region", { name: "Sections for CSC 4330" })).getByRole("button", {
-        name: "Add to schedule",
-      }),
-    );
+    await addSection(user, "CSC 4330");
     expect(screen.getAllByTestId("meeting-block-CSC 4330-Tue")).toHaveLength(1);
-    expect(screen.queryByTestId("meeting-block-CSC 4330-Mon")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("schedule-conflict-banner")).not.toBeInTheDocument();
 
     await user.selectOptions(termSelect, "LSUAM_FALL_2026");
     await waitFor(() =>
@@ -254,49 +244,13 @@ describe("ScheduleScreen", () => {
     expect(screen.queryByTestId("meeting-block-CSC 4330-Tue")).not.toBeInTheDocument();
   });
 
-  it("hides another term's conflict banner and restores it when switching back", async () => {
-    const user = userEvent.setup();
-    const spring = { season: "Spring" as const, year: 2027, courses: ["CSC 4330" as const] };
-    setup({ planTerms: [...plan.terms, spring] });
-    render(<ScheduleScreen />);
-
-    const termSelect = await screen.findByRole("combobox", { name: "Term" });
-    for (const code of ["CSC 4330", "CSC 1350"]) {
-      await user.selectOptions(screen.getByRole("combobox", { name: "Add course" }), code);
-      await user.click(screen.getByRole("button", { name: "Add course" }));
-      await user.click(
-        await within(
-          await screen.findByRole("region", { name: `Sections for ${code}` }),
-        ).findByRole("button", { name: "Add to schedule" }),
-      );
-    }
-    expect(screen.getByTestId("schedule-conflict-banner")).toBeInTheDocument();
-
-    await user.selectOptions(termSelect, "LSUAM_SPRING_2027");
-    expect(await screen.findByText("003-LEC")).toBeInTheDocument();
-    expect(screen.queryByTestId("schedule-conflict-banner")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("meeting-block-CSC 4330-Mon")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("meeting-block-CSC 1350-Mon")).not.toBeInTheDocument();
-
-    await user.selectOptions(termSelect, "LSUAM_FALL_2026");
-    expect(await screen.findByTestId("schedule-conflict-banner")).toHaveTextContent(
-      "Schedule Conflict Detected (2 sections overlap)",
-    );
-    expect(screen.getAllByTestId("meeting-block-CSC 4330-Mon")).toHaveLength(1);
-    expect(screen.getAllByTestId("meeting-block-CSC 1350-Mon")).toHaveLength(1);
-  }, 15_000);
-
   it("shows the server error for section requests", async () => {
     const user = userEvent.setup();
     setup({ rejectSections: true });
     render(<ScheduleScreen />);
-    await screen.findByRole("combobox", { name: "Term" });
-    await user.selectOptions(screen.getByRole("combobox", { name: "Add course" }), "CSC 4330");
-    await user.click(screen.getByRole("button", { name: "Add course" }));
+    await addCourse(user, "CSC 4330");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Couldn't reach the JevSchedule server. It may be waking up, which can take up to a minute. Try again.",
-    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(SERVER_ALERT);
   });
 
   it("shows one server error when the course catalog cannot be loaded", async () => {
@@ -304,22 +258,22 @@ describe("ScheduleScreen", () => {
     render(<ScheduleScreen />);
 
     await screen.findByRole("combobox", { name: "Term" });
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Couldn't reach the JevSchedule server. It may be waking up, which can take up to a minute. Try again.",
-    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(SERVER_ALERT);
     expect(screen.getAllByRole("alert")).toHaveLength(1);
   });
 
-  it("shows a loading status while sections are requested", async () => {
+  it("shows a loading status while a planned course's sections are requested", async () => {
     const user = userEvent.setup();
-    setup({ pendingSections: true });
+    setup({
+      pendingSections: true,
+      planTerms: [{ season: "Fall", year: 2026, courses: ["CSC 4330"] }],
+    });
     render(<ScheduleScreen />);
     await screen.findByRole("combobox", { name: "Term" });
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
-    await user.selectOptions(screen.getByRole("combobox", { name: "Add course" }), "CSC 4330");
-    await user.click(screen.getByRole("button", { name: "Add course" }));
+    expect(screen.queryByText("Loading sections…")).not.toBeInTheDocument();
 
-    expect(await screen.findByRole("status")).toHaveTextContent("Loading sections…");
+    await user.click(await screen.findByRole("button", { name: "CSC 4330" }));
+    expect(await screen.findByText("Loading sections…")).toHaveAttribute("role", "status");
   });
 
   it("prompts the user to add a plan term when none exist", async () => {
@@ -331,7 +285,6 @@ describe("ScheduleScreen", () => {
       await screen.findByText("Add a term in the Plan tab to build a schedule."),
     ).toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "Term" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Courses to schedule" })).not.toBeInTheDocument();
   });
 
   describe("starting from the plan", () => {
@@ -339,65 +292,41 @@ describe("ScheduleScreen", () => {
       { season: "Spring" as const, year: 2027, courses: ["CSC 4330" as const] },
       { season: "Fall" as const, year: 2026, courses: ["CSC 1350" as const, "CSC 3102" as const] },
     ];
-    const listed = () =>
-      within(screen.getByRole("region", { name: "Courses to schedule" }))
-        .getAllByRole("listitem")
-        .map((item) => within(item).getByText(/^[A-Z]+ \d+/).textContent);
+    const chips = () =>
+      within(screen.getByLabelText("Courses in your plan for this term"))
+        .getAllByRole("button")
+        .map((button) => button.textContent);
 
-    it("defaults to the earliest plan term and lists its courses in plan order", async () => {
+    it("defaults to the earliest plan term and offers its courses as shortcuts", async () => {
+      const user = userEvent.setup();
       const { listSections } = setup({ planTerms: twoTerms });
       render(<ScheduleScreen />);
 
       await waitFor(() =>
         expect(screen.getByRole("combobox", { name: "Term" })).toHaveValue("LSUAM_FALL_2026"),
       );
-      expect(listed()).toEqual(["CSC 1350", "CSC 3102"]);
-      await waitFor(() => expect(listSections).toHaveBeenCalledWith("CSC 1350", "LSUAM_FALL_2026"));
-      expect(listSections).toHaveBeenCalledWith("CSC 3102", "LSUAM_FALL_2026");
+      await waitFor(() => expect(chips()).toEqual(["CSC 1350", "CSC 3102"]));
+      await user.click(screen.getByRole("button", { name: "CSC 1350" }));
       expect(await screen.findByText("B. Professor")).toBeInTheDocument();
+      expect(listSections).toHaveBeenCalledWith("CSC 1350", "LSUAM_FALL_2026");
     });
 
-    it("replaces the courses with the selected term's and requests its period id", async () => {
+    it("switches the shortcuts with the term and requests its period id", async () => {
       const user = userEvent.setup();
-      const { listSections } = setup({ planTerms: twoTerms });
+      const { listSections, save } = setup({ planTerms: twoTerms });
       render(<ScheduleScreen />);
 
       await user.selectOptions(
         await screen.findByRole("combobox", { name: "Term" }),
         "LSUAM_SPRING_2027",
       );
-
-      expect(listed()).toEqual(["CSC 4330"]);
-      await waitFor(() =>
-        expect(listSections).toHaveBeenCalledWith("CSC 4330", "LSUAM_SPRING_2027"),
-      );
+      expect(chips()).toEqual(["CSC 4330"]);
+      await user.click(screen.getByRole("button", { name: "CSC 4330" }));
       expect(await screen.findByText("C. Professor")).toBeInTheDocument();
+      expect(listSections).toHaveBeenCalledWith("CSC 4330", "LSUAM_SPRING_2027");
       expect(listSections.mock.calls.map(([, term]) => term)).toSatisfy((terms: string[]) =>
         terms.every((term) => /^LSUAM_(SPRING|SUMMER|FALL|WINTER)_\d{4}$/.test(term)),
       );
-    });
-
-    it("keeps edits until the term changes and never writes them to the plan", async () => {
-      const user = userEvent.setup();
-      const { save } = setup({ planTerms: twoTerms });
-      render(<ScheduleScreen />);
-      const termSelect = await screen.findByRole("combobox", { name: "Term" });
-
-      await user.click(
-        within(
-          within(screen.getByRole("region", { name: "Courses to schedule" }))
-            .getByText("CSC 1350")
-            .closest("li")!,
-        ).getByRole("button", { name: "Remove" }),
-      );
-      await user.selectOptions(screen.getByRole("combobox", { name: "Add course" }), "CSC 4330");
-      await user.click(screen.getByRole("button", { name: "Add course" }));
-      expect(listed()).toEqual(["CSC 3102", "CSC 4330"]);
-
-      await user.selectOptions(termSelect, "LSUAM_SPRING_2027");
-      expect(listed()).toEqual(["CSC 4330"]);
-      await user.selectOptions(termSelect, "LSUAM_FALL_2026");
-      expect(listed()).toEqual(["CSC 1350", "CSC 3102"]);
       expect(save).not.toHaveBeenCalled();
     });
 

@@ -1,6 +1,6 @@
 .schedule-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+  grid-template-columns: minmax(400px, 0.9fr) minmax(0, 1.1fr);
   gap: var(--space-6);
   align-items: start;
 }
@@ -287,4 +287,95 @@
   .calendar-grid {
     min-width: 560px;
   }
+}
+
+.schedule-term-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.schedule-term-field select {
+  min-width: 200px;
+}
+.schedule-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.schedule-catalog .course-results-list {
+  max-height: 420px;
+}
+.section-list-item.conflict {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  box-shadow: inset 3px 0 0 var(--danger);
+}
+.section-list-item.scheduled {
+  border-color: var(--success);
+}
+.section-list-conflict {
+  margin: var(--space-1) 0 0;
+  color: var(--danger);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+.section-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.section-list-header h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+.meeting-block.selectable {
+  cursor: pointer;
+}
+.meeting-block.selectable:hover {
+  filter: brightness(1.15);
+}
+.meeting-block.selectable:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+}
+.schedule-plan-chips {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.schedule-plan-chips > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.schedule-inspect {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  border-left: 3px solid var(--accent);
+}
+.schedule-inspect.conflict {
+  border-left-color: var(--danger);
+}
+.schedule-inspect-heading h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+.schedule-inspect-meta {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.schedule-inspect p {
+  margin: 0;
+}
+.schedule-inspect-actions {
+  display: flex;
+  gap: var(--space-2);
 }
