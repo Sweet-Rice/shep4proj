@@ -171,4 +171,31 @@ describe("MarkPrereqsDialog", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(trigger).toHaveFocus();
   });
+
+  it("keeps Tab and Shift+Tab inside the dialog", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <button type="button">Outside</button>
+        <MarkPrereqsDialog
+          isOpen={true}
+          targetCourse="CSC 2250"
+          unfulfilledPrereqs={["CSC 1350"]}
+          onAccept={vi.fn()}
+          onDecline={vi.fn()}
+          onCancel={vi.fn()}
+        />
+      </>,
+    );
+    const dialog = screen.getByRole("dialog");
+
+    for (let i = 0; i < 5; i++) {
+      await user.tab();
+      expect(dialog).toContainElement(document.activeElement as HTMLElement);
+    }
+    for (let i = 0; i < 5; i++) {
+      await user.tab({ shift: true });
+      expect(dialog).toContainElement(document.activeElement as HTMLElement);
+    }
+  });
 });
