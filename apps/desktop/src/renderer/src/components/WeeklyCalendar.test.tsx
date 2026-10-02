@@ -4,7 +4,7 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import type { Section } from "@jevschedule/shared";
-import { WeeklyCalendar, formatMinuteToTime } from "./WeeklyCalendar.js";
+import { WeeklyCalendar, formatMinuteToTime, formatTimeRange } from "./WeeklyCalendar.js";
 
 const overlappingSections: Section[] = [
   {
@@ -58,6 +58,62 @@ describe("WeeklyCalendar & formatMinuteToTime", () => {
     expect(formatMinuteToTime(720)).toBe("12:00 PM");
     expect(formatMinuteToTime(780)).toBe("1:00 PM");
     expect(formatMinuteToTime(1020)).toBe("5:00 PM");
+  });
+
+  it("formats compact time ranges, repeating the meridiem only across noon", () => {
+    expect(formatTimeRange(630, 710)).toBe("10:30–11:50 AM");
+    expect(formatTimeRange(990, 1160)).toBe("4:30–7:20 PM");
+    expect(formatTimeRange(690, 740)).toBe("11:30 AM–12:20 PM");
+  });
+
+  it("hides the location on short blocks but keeps it in the title", () => {
+    render(<WeeklyCalendar sections={[overlappingSections[0]!]} />);
+
+    const block = screen.getByTestId("meeting-block-CSC 1350-Mon");
+    expect(block).toHaveAttribute("title", expect.stringContaining("Coates 0214"));
+    expect(block).toHaveAttribute("title", expect.stringContaining("Dr. Duncan"));
+    expect(block).not.toHaveTextContent("Coates 0214");
+  });
+
+  it("summarizes section and credit totals and gives each course its own tone", () => {
+    render(<WeeklyCalendar sections={calendarSections} />);
+
+    expect(screen.getByText("2 sections · 8 credits")).toBeInTheDocument();
+    expect(screen.getByTestId("meeting-block-CSC 1350-Mon")).toHaveClass("tone-0");
+    expect(screen.getByTestId("meeting-block-CSC 1350-Fri")).toHaveClass("tone-0");
+    expect(screen.getByTestId("meeting-block-MATH 1550-Tue")).toHaveClass("tone-1");
+  });
+
+  it("extends the time grid to fit meetings outside the default hours", () => {
+    const evening: Section = {
+      ...overlappingSections[0]!,
+      meetings: [{ days: ["Thu"], startMinute: 990, endMinute: 1160 }], // 4:30 - 7:20 PM
+    };
+    render(<WeeklyCalendar sections={[evening]} />);
+
+    expect(screen.getByTestId("time-label-20")).toBeInTheDocument();
+    expect(screen.queryByTestId("time-label-21")).not.toBeInTheDocument();
+  });
+
+  it("extends the time grid upward for meetings before the default start", () => {
+    const early: Section = {
+      ...overlappingSections[0]!,
+      meetings: [{ days: ["Tue"], startMinute: 430, endMinute: 500 }], // 7:10 - 8:20 AM
+    };
+    render(<WeeklyCalendar sections={[early]} />);
+
+    expect(screen.getByTestId("time-label-7")).toBeInTheDocument();
+    expect(screen.queryByTestId("time-label-6")).not.toBeInTheDocument();
+  });
+
+  it("uses singular wording for one section and one credit", () => {
+    const single: Section = {
+      ...overlappingSections[0]!,
+      credits: { ...overlappingSections[0]!.credits, min: 1, max: 1 },
+    };
+    render(<WeeklyCalendar sections={[single]} />);
+
+    expect(screen.getByText("1 section · 1 credit")).toBeInTheDocument();
   });
 
   it("renders weekly calendar container with Mon-Fri headers and time grid", () => {

@@ -12,36 +12,110 @@
   top: 0;
   min-width: 0;
 }
+.schedule-sidebar > .card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.schedule-sidebar > .card h2 {
+  margin: 0;
+}
+.schedule-add-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-2);
+}
+.schedule-course-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
 .schedule-course-list li {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 0;
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--border);
+}
+.schedule-course-list li:last-child {
+  border-bottom: 0;
+}
+.schedule-course-code {
+  font-weight: var(--weight-semibold);
 }
 .section-list {
   margin-top: var(--space-4);
+}
+.section-list > h2 {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-3);
+}
+.section-list-items {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.section-list-item {
+  padding: var(--space-3) var(--space-4);
+}
+.section-list-item:hover {
+  border-color: var(--accent);
 }
 .section-list-heading {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-.section-list-item p {
-  margin: var(--space-2) 0;
+.section-list-heading h3 {
+  margin: 0;
 }
-.section-list-meetings {
+.section-list-item p {
+  margin: var(--space-1) 0;
+}
+.section-list-meta,
+.section-list-seats {
   font-size: var(--text-sm);
   color: var(--text-muted);
+}
+.section-list-item .btn {
+  margin-top: var(--space-2);
+}
+.section-list-meetings {
+  list-style: none;
+  margin: var(--space-1) 0;
+  padding: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text);
+}
+.weekly-calendar-container {
+  padding: var(--space-4);
+}
+.calendar-header {
+  margin-bottom: var(--space-4);
+}
+.calendar-header h2 {
+  margin: 0;
+}
+.calendar-subtitle {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.conflict-alert-banner {
+  margin-top: var(--space-3);
 }
 .calendar-grid {
   position: relative;
   display: grid;
   grid-template-columns: 64px repeat(5, minmax(0, 1fr));
-  grid-template-rows: 36px calc(var(--hours) * 56px);
+  grid-template-rows: 36px calc(var(--hours) * 64px);
+  margin: 0 0 var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  overflow: hidden;
 }
 .grid-header-corner {
   grid-column: 1;
@@ -51,10 +125,14 @@
   grid-row: 1;
   display: grid;
   place-items: center;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   font-size: var(--text-sm);
   background: var(--surface-2);
+  border-top: 0;
   border-left: 1px solid var(--border);
+}
+.grid-header-day:nth-child(6) {
+  border-top-right-radius: var(--radius-sm);
 }
 .time-label {
   position: absolute;
@@ -72,8 +150,11 @@
   grid-row: 2;
   position: relative;
   border-left: 1px solid var(--border);
-  background: linear-gradient(to bottom, var(--border) 1px, transparent 1px) 0 0/100%
-    calc(100% / var(--hours));
+  background:
+    linear-gradient(to bottom, var(--border) 1px, transparent 1px) 0 0/100%
+      calc(100% / var(--hours)),
+    linear-gradient(to bottom, var(--surface-2) 1px, transparent 1px) 0 0/100%
+      calc(50% / var(--hours));
 }
 .meeting-block {
   position: absolute;
@@ -82,14 +163,47 @@
   box-sizing: border-box;
   border-radius: var(--radius-sm);
   padding: 4px 6px;
-  background: var(--accent-soft);
-  border-left: 3px solid var(--accent);
+  --tone: var(--accent);
+  --tone-soft: var(--accent-soft);
+  background: var(--tone-soft);
+  border-left: 3px solid var(--tone);
   font-size: var(--text-xs);
   overflow: hidden;
+}
+.meeting-block.tone-1 {
+  --tone: var(--success);
+  --tone-soft: var(--success-soft);
+}
+.meeting-block.tone-2 {
+  --tone: var(--warning);
+  --tone-soft: var(--warning-soft);
+}
+.meeting-block.tone-3 {
+  --tone: var(--info);
+  --tone-soft: var(--info-soft);
+}
+.meeting-block .block-title {
+  font-family: var(--font);
+  font-weight: var(--weight-semibold);
+  color: var(--text);
+}
+.meeting-block {
+  container-type: inline-size;
+}
+/* Drop the section number rather than show a half-cut "00…" in narrow blocks. */
+@container (max-width: 130px) {
+  .block-section {
+    display: none;
+  }
+}
+.block-section {
+  font-weight: var(--weight-regular);
+  color: var(--text-muted);
 }
 .meeting-block.conflict {
   background: var(--danger-soft);
   border-left-color: var(--danger);
+  box-shadow: inset 0 0 0 1px var(--danger);
 }
 .meeting-block.multi-lane {
   padding: 2px 2px;
@@ -115,15 +229,20 @@
 }
 .block-header {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
+  align-items: center;
   gap: 2px;
   min-width: 0;
 }
 .block-title,
-.block-sub,
 .block-time {
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.block-title {
+  flex: 1 1 auto;
 }
 .meeting-block .conflict-badge {
   flex: 0 0 auto;
