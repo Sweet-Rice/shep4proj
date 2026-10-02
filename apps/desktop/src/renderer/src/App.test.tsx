@@ -53,4 +53,13 @@ describe("App tabs", () => {
     expect(screen.getByRole("heading", { name: "Degree Progress" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Completed courses" })).not.toBeInTheDocument();
   });
+  it("shows the Plan screen in its tab", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("tab", { name: "Plan" }));
+
+    expect(screen.getByRole("tab", { name: "Plan" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("heading", { name: "Plan" })).toBeInTheDocument();
+  });
 });

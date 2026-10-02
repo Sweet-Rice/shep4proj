@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   DEFAULT_CREDIT_LIMIT,
   type CourseCode,
@@ -7,12 +7,9 @@ import {
   type Season,
 } from "@jevschedule/shared";
 
-const DEFAULT_PLAN: Plan = {
+const EMPTY_PLAN: Plan = {
   creditLimit: DEFAULT_CREDIT_LIMIT,
-  terms: [
-    { season: "Fall", year: 2026, courses: ["CSC 1350", "MATH 1550", "ENGL 1001"] },
-    { season: "Spring", year: 2027, courses: ["CSC 1351", "MATH 1552"] },
-  ],
+  terms: [],
 };
 
 interface JevScheduleGlobal {
@@ -31,10 +28,14 @@ function getPlanApi() {
   return globalWin.window?.jevschedule?.plan ?? null;
 }
 
-export function usePlan(initialPlan: Plan = DEFAULT_PLAN) {
+export function usePlan(initialPlan: Plan = EMPTY_PLAN) {
   const [plan, setPlan] = useState<Plan>(initialPlan);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [saving, setSaving] = useState(false);
+  // Only one save may be in flight: a later save is built from the optimistic state, so
+  // rolling back an earlier failed save would otherwise diverge from what was persisted.
+  const savingRef = useRef(false);
 
   // Load plan from IPC store on mount
   useEffect(() => {
@@ -50,7 +51,7 @@ export function usePlan(initialPlan: Plan = DEFAULT_PLAN) {
       .get()
       .then((savedPlan) => {
         if (!cancelled) {
-          if (savedPlan && savedPlan.terms.length > 0) {
+          if (savedPlan) {
             setPlan(savedPlan);
           }
           setLoaded(true);
@@ -71,18 +72,24 @@ export function usePlan(initialPlan: Plan = DEFAULT_PLAN) {
   // Save updated plan to store
   const savePlan = useCallback(
     async (nextPlan: Plan) => {
+      if (savingRef.current) return;
       const prevPlan = plan;
       setPlan(nextPlan);
       setError(null);
 
       const api = getPlanApi();
       if (api) {
+        savingRef.current = true;
+        setSaving(true);
         try {
           await api.save(nextPlan);
         } catch (err) {
           setPlan(prevPlan);
           setError(err instanceof Error ? err : new Error(String(err)));
           throw err;
+        } finally {
+          savingRef.current = false;
+          setSaving(false);
         }
       }
     },
@@ -180,6 +187,7 @@ export function usePlan(initialPlan: Plan = DEFAULT_PLAN) {
   return {
     plan,
     loaded,
+    saving,
     error,
     moveCourse,
     addCourseToTerm,

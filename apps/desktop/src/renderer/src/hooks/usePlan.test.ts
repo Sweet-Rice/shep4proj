@@ -54,6 +54,24 @@ describe("usePlan", () => {
     expect(result.current.plan).toEqual(savedPlan);
   });
 
+  it("keeps a saved credit limit when the saved plan has no terms", async () => {
+    const savedPlan: Plan = { creditLimit: 12, terms: [] };
+    mockGet.mockResolvedValueOnce(savedPlan);
+
+    const { result } = renderHook(() => usePlan());
+
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    expect(result.current.plan).toEqual(savedPlan);
+  });
+
+  it("uses an empty plan when no plan is saved", async () => {
+    mockGet.mockResolvedValueOnce(null);
+    const { result } = renderHook(() => usePlan());
+
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    expect(result.current.plan.terms).toEqual([]);
+  });
+
   it("moves courses between terms and persists to store", async () => {
     const initialPlan: Plan = {
       creditLimit: 18,
@@ -106,5 +124,39 @@ describe("usePlan", () => {
     });
 
     expect(result.current.plan.terms.length).toBe(initialLength);
+  });
+
+  it("ignores edits while a save is pending, so a failed save restores the persisted plan", async () => {
+    const persisted: Plan = {
+      creditLimit: 18,
+      terms: [{ season: "Fall", year: 2026, courses: ["CSC 1350"] }],
+    };
+    mockGet.mockResolvedValueOnce(persisted);
+    let rejectSave!: (error: Error) => void;
+    mockSave.mockReturnValueOnce(
+      new Promise<void>((_, reject) => {
+        rejectSave = reject;
+      }),
+    );
+    const { result } = renderHook(() => usePlan());
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    let pending!: Promise<void>;
+    act(() => {
+      pending = result.current.addTerm("Spring", 2027);
+    });
+    expect(result.current.saving).toBe(true);
+    await act(async () => {
+      await result.current.removeCourseFromTerm(0, "CSC 1350");
+    });
+    expect(mockSave).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      rejectSave(new Error("disk full"));
+      await pending.catch(() => {});
+    });
+    expect(result.current.plan).toEqual(persisted);
+    expect(result.current.saving).toBe(false);
+    expect(result.current.error?.message).toBe("disk full");
   });
 });

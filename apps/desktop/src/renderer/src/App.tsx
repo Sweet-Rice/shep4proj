@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { CompletedCourses } from "./components/CompletedCourses.js";
 import { DegreeProgressScreen } from "./components/DegreeProgressScreen.js";
+import { PlanScreen } from "./components/PlanScreen.js";
 
-type TabId = "courses" | "progress";
+type TabId = "courses" | "progress" | "plan";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "courses", label: "Courses" },
   { id: "progress", label: "Degree progress" },
+  { id: "plan", label: "Plan" },
 ];
 
 export function App() {
@@ -33,7 +35,13 @@ export function App() {
         ))}
       </nav>
       <section role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
-        {tab === "courses" ? <CompletedCourses /> : <DegreeProgressScreen />}
+        {tab === "courses" ? (
+          <CompletedCourses />
+        ) : tab === "progress" ? (
+          <DegreeProgressScreen />
+        ) : (
+          <PlanScreen />
+        )}
       </section>
     </>
   );
