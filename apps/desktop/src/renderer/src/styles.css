@@ -78,6 +78,25 @@ main {
   color: light-dark(#805500, #ffd27d);
 }
 
+.eligible-courses-screen ul {
+  padding: 0;
+  list-style: none;
+}
+
+.eligible-courses-screen li {
+  padding: 0.25rem 0;
+}
+
+.eligible-courses-screen li ul {
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+
+.eligible-courses-screen [role="note"] {
+  margin: 0.25rem 0;
+  color: light-dark(#805500, #ffd27d);
+}
+
 .section-list-items,
 .section-list-meetings {
   list-style: none;
