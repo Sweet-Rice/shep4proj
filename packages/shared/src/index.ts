@@ -41,6 +41,13 @@ export type { AcademicPeriodId, Meeting, Section, Weekday } from "./section.js";
 export { typicalTerms } from "./typical-terms.js";
 export type { CourseOfferingHistory, TypicalTerm } from "./typical-terms.js";
 export { createPlannerTools } from "./planner-tools.js";
+export {
+  getPlannerToolDefinitions,
+  PlannerToolInputSchemas,
+  proposePlan,
+  publicCompletedCodes,
+} from "./planner-tool-definitions.js";
+export type { PlannerToolDefinition, PlannerToolName } from "./planner-tool-definitions.js";
 export type {
   EligibleCourse,
   PlannerTools,
