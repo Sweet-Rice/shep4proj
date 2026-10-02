@@ -91,6 +91,10 @@ it exceeds the limit. Edit the limit with **Credit limit per semester**. The pla
 are stored locally and survive restarts; controls stay disabled until the saved plan loads
 and while a save is in progress, and a failed save restores the previous plan with an error.
 
+The schedule builder identifies sections by term, course, section number, and type. Conflict
+highlights follow the shared meeting-overlap rules, so same-number lecture and lab sections
+stay distinct and sections from different terms never conflict.
+
 ### Windows (PowerShell)
 
 ```powershell

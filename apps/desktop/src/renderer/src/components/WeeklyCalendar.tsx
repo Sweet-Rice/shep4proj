@@ -1,5 +1,5 @@
-import type { Section, Weekday } from "@jevschedule/shared";
-import { findScheduleConflicts, getSectionKey } from "../hooks/useScheduleBuilder.js";
+import { findConflicts, type Section, type Weekday } from "@jevschedule/shared";
+import { getSectionKey } from "../hooks/useScheduleBuilder.js";
 
 export const CALENDAR_DAYS: Weekday[] = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
@@ -76,7 +76,14 @@ export function WeeklyCalendar({
   startHour = 8,
   endHour = 18,
 }: WeeklyCalendarProps) {
-  const conflicts = conflictingSectionKeys ?? findScheduleConflicts(sections);
+  const conflicts =
+    conflictingSectionKeys ??
+    new Set(
+      findConflicts(sections).flatMap(({ first, second }) => [
+        getSectionKey(first),
+        getSectionKey(second),
+      ]),
+    );
 
   const startMinuteTotal = startHour * 60;
   const endMinuteTotal = endHour * 60;
