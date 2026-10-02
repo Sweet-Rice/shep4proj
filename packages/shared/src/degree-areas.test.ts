@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { evaluateRequirements } from "./evaluate-requirements.js";
-import { groupRequirementsByArea } from "./degree-areas.js";
 import { DegreeProgramSchema } from "./requirements.js";
+import { groupRequirementsByArea } from "./index.js";
 
 const program = DegreeProgramSchema.parse({
   id: "area-test",
