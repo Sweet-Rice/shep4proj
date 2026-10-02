@@ -99,6 +99,20 @@ describe("WeeklyCalendar & formatMinuteToTime", () => {
     expect(mathBlock).toHaveClass("conflict");
     expect(screen.getByTestId(`conflict-badge-${cscSectionKey}`)).toBeInTheDocument();
   });
+  it("positions conflicting meetings in separate lanes", () => {
+    render(<WeeklyCalendar sections={overlappingSections} />);
+
+    const cscBlock = screen.getByTestId("meeting-block-CSC 1350-Mon");
+    const mathBlock = screen.getByTestId("meeting-block-MATH 1550-Mon");
+    expect(cscBlock).toHaveClass("multi-lane");
+    expect(mathBlock).toHaveClass("multi-lane");
+
+    expect(cscBlock.style.left).toBe("calc(0% + 2px)");
+    expect(cscBlock.style.width).toBe("calc(50% - 4px)");
+    expect(mathBlock.style.left).toBe("calc(50% + 2px)");
+    expect(mathBlock.style.width).toBe("calc(50% - 4px)");
+    expect(screen.getByTestId(`conflict-badge-${cscSectionKey}`)).toHaveAccessibleName("Conflict");
+  });
 
   it("does not flag sections from different terms", () => {
     const fallSection = overlappingSections[0]!;
