@@ -185,6 +185,20 @@ describe("EligibleCoursesScreen", () => {
     expect(within(eligible).queryByRole("button", { name: /Show more/ })).not.toBeInTheDocument();
   });
 
+  it("shows a count tile per group that scrolls to its section", async () => {
+    const user = userEvent.setup();
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    render(<EligibleCoursesScreen />);
+
+    const tiles = await screen.findByLabelText("Eligibility summary");
+    expect(within(tiles).getByRole("button", { name: /2\s*Eligible now/i })).toBeInTheDocument();
+    expect(within(tiles).getByRole("button", { name: /1\s*Needs review/i })).toBeInTheDocument();
+    await user.click(within(tiles).getByRole("button", { name: /1\s*Blocked/i }));
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView.mock.contexts[0]).toBe(document.getElementById("blocked-heading"));
+  });
+
   it("keeps a course blocked by an uncompleted corequisite, since no term is planned here", async () => {
     const user = userEvent.setup();
     const withCoreq: CourseDetail = {
