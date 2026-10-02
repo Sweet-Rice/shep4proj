@@ -85,6 +85,25 @@ describe("startWatchChecker", () => {
     checker.stop();
   });
 
+  it.each([null, "2026-10-01T00:00:00.000Z"])(
+    "never notifies or advances the checkpoint for a never-opened watch (last notified %s)",
+    async (lastNotifiedAt) => {
+      const { store, rows } = storeWith(local("unopened", lastNotifiedAt));
+      const notify = vi.fn();
+      const markNotified = vi.spyOn(store, "markNotified");
+      const checker = startWatchChecker({
+        store,
+        client: { get: vi.fn(async () => ({ ...detail, lastOpenedAt: null })) },
+        notify,
+      });
+      await checker.check();
+      expect(notify).not.toHaveBeenCalled();
+      expect(markNotified).not.toHaveBeenCalled();
+      expect(rows.get("unopened")?.lastNotifiedAt).toBe(lastNotifiedAt);
+      checker.stop();
+    },
+  );
+
   it("removes local watches that the server no longer knows", async () => {
     const { store, rows } = storeWith(local("deleted"));
     const checker = startWatchChecker({
@@ -101,13 +120,15 @@ describe("startWatchChecker", () => {
     vi.useFakeTimers();
     const { store } = storeWith(local("scheduled"));
     const get = vi.fn(async () => ({ ...detail, lastOpenedAt: null }));
-    const checker = startWatchChecker({ store, client: { get }, notify: vi.fn() });
+    const notify = vi.fn();
+    const checker = startWatchChecker({ store, client: { get }, notify });
     await vi.advanceTimersByTimeAsync(0);
     expect(get).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(DEFAULT_WATCH_CHECK_INTERVAL_MS - 1);
     expect(get).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(1);
     expect(get).toHaveBeenCalledTimes(2);
+    expect(notify).not.toHaveBeenCalled();
     checker.stop();
   });
 
