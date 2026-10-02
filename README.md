@@ -35,12 +35,13 @@ actual number shown, for example, “Showing 50 of 2629 courses.”
 
 ## Importing your courses
 
-On the Courses tab, start a Workday import to open a visible browser sign-in window. Sign
-in through LSU SSO and Duo yourself. JevSchedule reads current-term courses without
-changing them, shows progress stages, and presents a review before anything is saved. After
-confirmation, the Degree progress tab can show the official audit from that import alongside
-the catalog-based plan. If the audit is unavailable, the catalog plan remains available.
-If you prefer, or Workday's page format is not recognized, upload a transcript PDF instead.
+The first Workday import opens an in-app sign-in popup. Sign in through LSU SSO and Duo
+yourself; the popup stays open until JevSchedule has read your Workday session, or until you
+close it. JevSchedule then reads the course history and shows a review before anything is
+saved. Your Workday sign-in stays available to later imports until you
+quit JevSchedule. The official audit is shown on Degree progress after confirmation when
+available; the catalog-based plan remains available if the audit is unavailable. If you
+prefer, or Workday's page format is not recognized, upload a transcript PDF instead.
 
 ## What JevSchedule never does
 
@@ -50,11 +51,12 @@ If you prefer, or Workday's page format is not recognized, upload a transcript P
 
 ## What stays on your device
 
-Your Workday session, cookies, and raw Workday responses never leave your machine. The app
-calls only allowlisted GET endpoints for read-only Workday access. Completed courses and
-your plan are stored in local SQLite on your device. The server contains only public LSU
-catalog and section data; it holds no user data. See [SECURITY.md](SECURITY.md) for the
-data-handling rules.
+Your Workday session, cookies, and raw Workday responses never leave your machine. The
+session is held only in memory until JevSchedule exits; session data and tokens are never
+written to disk. The app calls only allowlisted GET endpoints for read-only Workday access.
+Completed courses and your plan are stored in local SQLite on your device. The server
+contains only public LSU catalog and section data; it holds no user data. See
+[SECURITY.md](SECURITY.md) for the data-handling rules.
 
 ## The JevSchedule server
 

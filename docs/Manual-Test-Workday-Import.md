@@ -1,45 +1,23 @@
-# Manual Test: Workday Transcript Import Checklist
+# Manual Test: Workday Course Import
 
-This checklist documents the manual testing procedures and verification results for direct Workday transcript import and fallback review across target desktop operating systems (Windows and macOS).
+This live test requires an LSU Workday account and Duo. Never save screenshots, logs, tokens, cookies, or Workday response bodies from the sign-in session. CI and ordinary manual tests must not contact live Workday.
 
-## Target Operating Systems
+## Sign-in and session reuse
 
-- **Windows**: Windows 11 x64 (Build 22631)
-- **macOS**: macOS Sequoia / Sonoma (Apple Silicon arm64 & Intel x64)
+1. Start JevSchedule and open **Courses**.
+2. Select **Start Workday Import**. On a fresh app run, confirm exactly one modal popup opens inside JevSchedule and shows the Microsoft or LSU sign-in page.
+3. Confirm the popup has no tabs, address bar, menu bar, developer tools, or right-click context menu. Complete LSU SSO and Duo. If Microsoft or Duo opens its own MFA window, confirm it opens with the same restrictions and closing it leaves the sign-in popup open.
+4. Confirm the popup stays open through every sign-in step, including the initial Workday `/lsu/d/...` shell and sign-in pages that try to close their window. The app probes `/lsu/app-root` through the popup's session and closes the popup only after the response contains a non-empty session token and client version.
+5. Confirm the import fetches the allowlisted course records and reaches review, or shows a clean error with the transcript-PDF fallback. No course is saved until the user confirms the review.
+6. Start another import before quitting JevSchedule. Confirm the existing session is reused and no sign-in popup opens while its token is valid.
+7. If the session is expired, confirm the app opens one fresh sign-in popup. If a course-data GET returns 401/403, confirm the current attempt is cleared and the importer retries once after fresh sign-in.
+8. Close the popup with its close button during sign-in. Confirm the import shows a clean error with Try Again, the app keeps running, and no popup or MFA window is left behind. Confirm the popup has no timeout: it stays open until sign-in completes or you close it.
+9. Quit JevSchedule. Confirm its in-memory Workday session is cleared. Restart the app and confirm the next import requires sign-in again.
 
-## Test Verification Matrix
+## Data and privacy checks
 
-| Step | Verification Item | Windows 11 Status | macOS Status | Notes |
-| :--- | :--- | :---: | :---: | :--- |
-| 1 | Workday Credential Sign-in & Authentication | **PASS** | **PASS** | Session tokens securely stored in `safeStorage`. |
-| 2 | Direct Academic Record Fetch (`GET /academic-record`) | **PASS** | **PASS** | Endpoint fetch wrapped with allowlist guard. |
-| 3 | Import Review Screen Display | **PASS** | **PASS** | Renders checklist of parsed courses, grades, and terms. |
-| 4 | Unrecognized Lines Handling | **PASS** | **PASS** | Unmatched lines listed in dedicated review panel. |
-| 5 | Course Confirmation & SQLite Local Store Writing | **PASS** | **PASS** | Selected courses persisted to `completed_courses` table. |
-| 6 | Fallback Upload Trigger on Connection Error | **PASS** | **PASS** | "Upload Transcript Instead" fallback reachable. |
-
-## Detailed Verification Results
-
-### Windows 11 x64 Verification
-- **Date**: 2026-10-01
-- **Installer / Build**: `JevSchedule Setup.exe` (NSIS)
-- **Result**: **PASS** (6/6 items verified)
-- **Details**: Direct sign-in, academic record fetching, review screen checklist, and local SQLite persistence verified on clean Windows 11 environment.
-
-### macOS arm64 / x64 Verification
-- **Date**: 2026-10-01
-- **Installer / Build**: `JevSchedule.dmg` / `.app`
-- **Result**: **PASS** (6/6 items verified)
-- **Details**: Hardened runtime, Gatekeeper assessment, transcript review screen, and local store persistence verified on macOS environment.
-
-## Academic progress audit
-
-After confirming a Workday import that includes an academic progress audit:
-
-1. Open **Degree progress** and verify the imported Workday audit is selected.
-2. Expand a requirement and inspect its status and any courses used to satisfy it.
-3. Select the catalog-plan view and verify the local degree requirements remain available.
-4. With no stored audit, verify the catalog plan still appears with the prompt to import from Workday.
-5. If audit retrieval or parsing fails during import, verify the course review can still be confirmed and the Degree progress screen reports that the audit is unavailable.
-
-The parser, local audit store, confirmation IPC, and Degree progress view have automated fixture/mock coverage. No Electron smoke was performed for this change.
+- The app-root probe and Academic Record, View My Courses, and Academic Progress reads use the same Electron session and allowlisted GET endpoints.
+- Confirm the review contains expected completed and in-progress courses; malformed course data offers the transcript-PDF fallback. An unavailable or malformed Academic Progress response does not block course review.
+- Confirm nothing is written before review confirmation. After confirmation, only the reviewed course data is saved.
+- The session partition is random and in-memory only, reused until the app exits; cookies, cache, and tokens are never written to disk. Session cookies and cache are cleared on quit or when all windows close.
+- Never record or share token/header values, cookies, raw response data, student names/IDs, or Workday URLs containing sensitive query values.

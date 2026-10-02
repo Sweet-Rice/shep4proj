@@ -24,7 +24,7 @@ Each endpoint gets one entry with the following fields:
   placeholders, e.g.:
   `https://{tenant}.wd5.myworkday.com/wday/authgwy/{instance}/api/...`
   Never a literal, fully-resolved URL copied from a capture.
-- **Required headers**: header *names* only (e.g. `X-Workday-Client`,
+- **Required headers**: header _names_ only (e.g. `X-Workday-Client`,
   `Accept`), never header values, cookies, or tokens.
 - **Redacted fixture path**: path under `/fixtures/workday/` to a
   hand-redacted sample response (fake names, fake IDs, no session data).
@@ -55,7 +55,7 @@ allowlist entry cannot make them callable:
 - **Profile / personal-info edit**: any endpoint that writes to name,
   address, contact info, emergency contacts, or other personal data.
 
-These are read-*write* or sensitive by nature; this app only ever reads
+These are read-_write_ or sensitive by nature; this app only ever reads
 completed-course history.
 
 ## Change process
@@ -68,7 +68,17 @@ change.
 
 ## Entries
 
+### app-root-get
+
+- Purpose: Session bootstrap. The importer reads only `sessionSecureToken` and `uiClientVersion`, then discards the rest of the response.
+- Method: GET
+- URL pattern: `https://www.myworkday.com/lsu/app-root`
+- Required headers: none beyond the session cookie.
+- Fixture: none; responses contain session and personal data and are never saved.
+- Notes: The two selected values are held only in memory and sent as `session-secure-token` and `x-workday-client` headers for the course-data requests.
+
 ### academic-record-get
+
 - Purpose: Reads the student's academic record — completed/in-progress term
   coursework and transfer credit — the source of truth for completed
   courses. Returned as JSON with a top-level `title`, `widget`, `body`, and
@@ -80,31 +90,19 @@ change.
 - Method: GET
 - URL pattern: `https://www.myworkday.com/lsu/generic-hub/task/2998$30300.htmld?clientRequestID=<uuid>`
 - Required headers: `session-secure-token`, `x-workday-client`, `accept`,
-  `content-type`, `referer` (plus the session cookie, which
-  `page.evaluate(fetch)` sends automatically).
+  `referer` (plus the session cookie supplied by Electron's in-memory session).
 - Fixture: `fixtures/workday/academic-record.synthetic.json` (added by T-312)
 - Notes:
-  - An equivalent body is also served at
-    `GET /lsu/generic-hub/page-context-id/<contextId>.htmld` — same shape,
-    different addressing. Both variants are allowlisted.
-  - This `page-context-id/<contextId>` pattern is **generic**: it isn't tied
-    to task 2998$30300, and is also allowlisted by `current-registrations-get`
-    below, since both tasks have been observed served from a `page-context-id`
-    URL in practice, with the context id varying per session.
-  - Called by the Workday UI from `https://www.myworkday.com/lsu/d/task/2998$30300.htmld`,
-    which is only an HTML shell (~33 KB) — the actual data comes from the
-    `generic-hub` call above (~200 KB JSON).
-  - `session-secure-token` is session-bound and must never be recorded in a
-    fixture or log. The app harvests it, together with the other required
-    header values, in memory from the Workday UI's own outgoing requests
-    after sign-in (T-321); the values are never logged, stored, or sent to
-    the renderer.
+  - The same shape is also allowlisted at
+    `GET /lsu/generic-hub/page-context-id/<contextId>.htmld`; the direct task URL is tried first.
+  - The app-root session token and client version are held only in memory, never logged, stored, or sent to the renderer.
 
 
 ### current-registrations-get
+
 - Purpose: Reads the student's current-term registrations ("View My
   Courses") — enrolled courses with their section(s), and dropped/withdrawn
-  sections. The academic record above only lists *graded* coursework, so
+  sections. The academic record above only lists _graded_ coursework, so
   this is the only source for in-progress registrations. Returned as JSON
   with a top-level `title`/`widget`/`body`; enrolled courses live in a
   `widget:"grid"` labelled "My Enrolled Courses" (course-level column ids
@@ -117,32 +115,21 @@ change.
   a "Dropped/Withdrawn Sections" column (`485.x`/`479.x` in the observed
   capture). Parsed by `parseCurrentRegistrations` (T-320).
 - Method: GET
-- URL pattern: `https://www.myworkday.com/lsu/generic-hub/page-context-id/<contextId>.htmld`
-- Required headers: same as `academic-record-get` — `session-secure-token`,
-  `x-workday-client`, `accept`, `content-type`, `referer` (plus the session
-  cookie).
-- Fixture: `fixtures/workday/current-registrations.synthetic.json` (added
-  by T-320)
+- URL pattern: `https://www.myworkday.com/lsu/generic-hub/task/2998$28771.htmld` or `https://www.myworkday.com/lsu/generic-hub/page-context-id/<contextId>.htmld`
+- Required headers: `session-secure-token`, `x-workday-client`, `accept`,
+  `referer` (plus the session cookie supplied by Electron's in-memory session).
+- Fixture: `fixtures/workday/current-registrations.synthetic.json` (added by T-320)
 - Notes:
-  - Observed in practice served at
-    `GET /lsu/generic-hub/page-context-id/<contextId>.htmld` (context id
-    varies per session). See `extractCurrentRegistrationsFromHar`, which picks
-    the matching HAR entry by grid content rather than by URL, precisely
-    because the context id can't be relied on.
-  - The inferred `https://www.myworkday.com/lsu/generic-hub/task/2998$28771.htmld?clientRequestID=<uuid>`
-    URL is **not allowlisted** until a human capture confirms it. Task 2998$28771
-    contains neither `regist` nor `drop`, so if ever directly observed it
-    would not be incidentally caught by `DENY_PATTERNS` (which target the
-    registration *write* APIs, not this read-only task id) — verified by a
-    dedicated test in `allowlist.test.ts`.
+  - The page-context response was observed in a redacted capture; the direct task URL is tried first and its direct-GET behavior remains part of the supervised live test.
+  - Both routes use the same parser; task URLs are tried with the session headers from app-root.
+
 ### Observed but not allowlisted
 
-| Endpoint | Why not |
-| --- | --- |
-| `GET /lsu/task/2998$30300.htmld` (HUB_NAV) | Navigation-panel metadata for the Academics hub only; carries no course data, so there's nothing here worth the allowlist surface area. |
-| `GET /lsu/task/2998$28771.htmld` (HUB_NAV) | Same as above, for "View My Courses" — navigation-panel metadata only, no grid data. |
-| `GET /lsu/app-root` | Not used: the session token and other required header values are harvested in memory from the Workday UI's own outgoing requests after sign-in (T-321), never logged or stored. |
-| `GET /wday/sirg/protectedapi/asorInternal/v1/lsu/registration` | Registration-related; stays on the deny side per `SECURITY.md` — never allowlist. |
+| Endpoint                                                       | Why not                                                                                                                                 |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /lsu/task/2998$30300.htmld` (HUB_NAV)                     | Navigation-panel metadata for the Academics hub only; carries no course data, so there's nothing here worth the allowlist surface area. |
+| `GET /lsu/task/2998$28771.htmld` (HUB_NAV)                     | Same as above, for "View My Courses" — navigation-panel metadata only, no grid data.                                                    |
+| `GET /wday/sirg/protectedapi/asorInternal/v1/lsu/registration` | Registration-related; stays on the deny side per `SECURITY.md` — never allowlist.                                                       |
 
 ## How this was captured
 

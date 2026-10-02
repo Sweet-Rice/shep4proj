@@ -1,17 +1,6 @@
-import {
-  ALLOWED_ENDPOINTS,
-  guardedFetch,
-  type AllowedEndpoint,
-  type PageLike as GuardedPage,
-} from "@jevschedule/workday/allowlist";
-import {
-  launchWorkdayBrowser,
-  teardownWorkdayBrowser,
-  waitForWorkdayLogin,
-  WORKDAY_TENANT_URL,
-  type PageLike,
-  type WorkdayBrowserSession,
-} from "@jevschedule/workday/browser";
+import { parseAcademicProgress } from "@jevschedule/workday/academic-progress";
+import type { AcademicProgressResult } from "@jevschedule/workday/academic-progress";
+import type { Session } from "electron";
 import { WorkdayShapeError, parseAcademicRecord } from "@jevschedule/workday/academic-record";
 import { parseCurrentRegistrations } from "@jevschedule/workday/current-registrations";
 import type { PlanTerm, CourseCode } from "@jevschedule/shared";
@@ -19,31 +8,33 @@ import type { StoreImport } from "../shared/workday-import.js";
 import { mapAcademicRecord, mapCurrentRegistrations } from "../shared/workday-import.js";
 import type { WorkdayImportProgress, WorkdayImportReview } from "../shared/ipc.js";
 import type { Logger } from "./log/logger.js";
-import type { HarvestTarget, HarvestWorkdayRequests } from "./workday-harvest.js";
+import type { WorkdaySessionCredentials, WorkdaySignInResult } from "./workday-signin.js";
 
-/** Workday UI page for "View My Academic Record"; its data request is `academic-record-get`. */
-const ACADEMIC_RECORD_UI_URL = "https://www.myworkday.com/lsu/d/task/2998$30300.htmld";
-/** Workday UI page for "View My Courses"; its data request is `current-registrations-get`. */
-const CURRENT_REGISTRATIONS_UI_URL = "https://www.myworkday.com/lsu/d/task/2998$28771.htmld";
+const HOME_URL = "https://www.myworkday.com/lsu/d/home.htmld";
+const ACADEMIC_RECORD_URL = "https://www.myworkday.com/lsu/generic-hub/task/2998$30300.htmld";
+const ACADEMIC_PROGRESS_URL = "https://www.myworkday.com/lsu/generic-hub/task/2998$43459.htmld";
+const REGISTRATIONS_URL = "https://www.myworkday.com/lsu/generic-hub/task/2998$28771.htmld";
+
+export class WorkdayAuthenticationError extends Error {
+  constructor() {
+    super("Workday authentication expired");
+    this.name = "WorkdayAuthenticationError";
+  }
+}
 
 export interface WorkdayImporterDependencies {
-  launch: typeof launchWorkdayBrowser;
-  waitForLogin: typeof waitForWorkdayLogin;
-  teardown: typeof teardownWorkdayBrowser;
-  /** Observes the signed-in Workday UI's own requests to learn their URL and session headers. */
-  harvest: HarvestWorkdayRequests;
-  fetch: typeof guardedFetch;
+  signIn: () => Promise<WorkdaySignInResult>;
+  clearSession: () => Promise<void>;
+  fetchJson: (
+    session: Session,
+    url: string,
+    headers?: Readonly<Record<string, string>>,
+  ) => Promise<unknown>;
   log: Logger;
 }
 
 export interface WorkdayImporter {
   run(emit: (progress: WorkdayImportProgress) => void): Promise<WorkdayImportReview>;
-}
-
-function endpoint(id: string): AllowedEndpoint {
-  const found = ALLOWED_ENDPOINTS.find((item) => item.id === id);
-  if (!found) throw new Error("Workday endpoint is not configured");
-  return found;
 }
 
 function reviewFromMaps(academic: StoreImport, registrations: StoreImport): WorkdayImportReview {
@@ -66,99 +57,80 @@ function reviewFromMaps(academic: StoreImport, registrations: StoreImport): Work
   return { completed, inProgress: [...terms.values()], skipped };
 }
 
-/**
- * Creates the main-process Workday importer (T-321). It signs in through a disposable browser,
- * harvests the session headers from the Workday UI's own data requests, re-reads each payload
- * only through `guardedFetch`, and maps it for review. Nothing is saved here: the renderer
- * confirms the review separately. Harvested header values stay in locals of `run` and never
- * reach a log line, a progress event, or the returned review.
- */
-export function createWorkdayImporter(deps: WorkdayImporterDependencies): WorkdayImporter {
-  /**
-   * Fetches the harvested candidates for `target` through the guarded fetch and returns the
-   * first payload `parse` accepts. Several UI requests can share one allowlisted URL shape, so
-   * the payload is chosen by its parsed content rather than by URL.
-   */
-  async function readHarvested<T>(
-    page: PageLike,
-    target: HarvestTarget,
-    parse: (json: unknown) => T,
-  ): Promise<T> {
-    const candidates = await deps.harvest(page, target);
-    let failure: Error | undefined;
-    for (const candidate of candidates) {
-      // At runtime the signed-in page is a Playwright Page, which also satisfies the guard's page.
-      const response = await deps.fetch(
-        page as unknown as GuardedPage,
-        { method: target.endpoint.method, url: candidate.url, headers: candidate.headers },
-        [target.endpoint],
-      );
-      if (response.status < 200 || response.status >= 300) {
-        failure ??= new Error("Workday could not provide the requested records");
-        continue;
-      }
-      try {
-        return parse(response.json);
-      } catch (error) {
-        if (!(error instanceof WorkdayShapeError)) throw error;
-        failure = error;
-      }
-    }
-    throw (
-      failure ??
-      new WorkdayShapeError("No Workday UI request returned the expected records", target.uiUrl)
-    );
+function readSessionHeaders(
+  credentials: WorkdaySessionCredentials,
+): Readonly<Record<string, string>> {
+  const { sessionSecureToken, uiClientVersion } = credentials;
+  if (sessionSecureToken.trim().length === 0 || uiClientVersion.trim().length === 0) {
+    throw new Error("Workday session headers are unavailable");
   }
-
+  return {
+    "session-secure-token": sessionSecureToken,
+    "x-workday-client": uiClientVersion,
+    accept: "application/json",
+    referer: HOME_URL,
+  };
+}
+/** Fetches a Workday review without navigating to or rendering any authenticated pages. */
+export function createWorkdayImporter(deps: WorkdayImporterDependencies): WorkdayImporter {
   return {
     async run(emit) {
-      let session: WorkdayBrowserSession | undefined;
       let stage = "signing-in";
       let reviewResult: WorkdayImportReview | undefined;
-      let failed = false;
-      let failure: unknown;
-      emit({ stage: "signing-in" });
-      deps.log.info("workday import", stage);
       try {
-        session = await deps.launch({ startUrl: WORKDAY_TENANT_URL });
-        const login = await deps.waitForLogin(session);
-        if (login.status !== "success") throw new Error("Workday sign-in was not completed");
+        let authenticationAttempt = 0;
+        while (true) {
+          emit({ stage: "signing-in" });
+          deps.log.info("workday import", stage);
+          const signIn = await deps.signIn();
+          if (signIn.status !== "success") throw new Error("Workday sign-in was not completed");
 
-        stage = "fetching";
-        emit({ stage: "fetching" });
-        deps.log.info("workday import", stage);
-
-        const academic = mapAcademicRecord(
-          await readHarvested(
-            login.page,
-            { uiUrl: ACADEMIC_RECORD_UI_URL, endpoint: endpoint("academic-record-get") },
-            parseAcademicRecord,
-          ),
-        );
-        const registrations = mapCurrentRegistrations(
-          await readHarvested(
-            login.page,
-            {
-              uiUrl: CURRENT_REGISTRATIONS_UI_URL,
-              endpoint: endpoint("current-registrations-get"),
-            },
-            parseCurrentRegistrations,
-          ),
-        );
-        reviewResult = reviewFromMaps(academic, registrations);
-        stage = "review";
-        emit({ stage: "review" });
-        deps.log.info("workday import", stage, {
-          completed: reviewResult.completed.length,
-          inProgress: reviewResult.inProgress.reduce(
-            (count, term) => count + term.courses.length,
-            0,
-          ),
-          skipped: reviewResult.skipped.length,
-        });
+          stage = "fetching";
+          emit({ stage: "fetching" });
+          deps.log.info("workday import", stage);
+          try {
+            const headers = readSessionHeaders(signIn);
+            const academic = mapAcademicRecord(
+              parseAcademicRecord(
+                await deps.fetchJson(signIn.session, ACADEMIC_RECORD_URL, headers),
+              ),
+            );
+            const registrations = mapCurrentRegistrations(
+              parseCurrentRegistrations(
+                await deps.fetchJson(signIn.session, REGISTRATIONS_URL, headers),
+              ),
+            );
+            let academicProgress: AcademicProgressResult | null = null;
+            try {
+              academicProgress = parseAcademicProgress(
+                await deps.fetchJson(signIn.session, ACADEMIC_PROGRESS_URL, headers),
+              );
+            } catch (error) {
+              if (error instanceof WorkdayAuthenticationError) throw error;
+              deps.log.warn("workday import", "academic-progress-unavailable");
+            }
+            reviewResult = { ...reviewFromMaps(academic, registrations), academicProgress };
+            stage = "review";
+            emit({ stage: "review" });
+            deps.log.info("workday import", stage, {
+              completed: reviewResult.completed.length,
+              inProgress: reviewResult.inProgress.reduce(
+                (count, term) => count + term.courses.length,
+                0,
+              ),
+              skipped: reviewResult.skipped.length,
+            });
+            break;
+          } catch (error) {
+            if (!(error instanceof WorkdayAuthenticationError) || authenticationAttempt > 0) {
+              throw error;
+            }
+            authenticationAttempt += 1;
+            await deps.clearSession();
+            stage = "signing-in";
+          }
+        }
       } catch (error) {
-        failed = true;
-        failure = error;
         if (error instanceof WorkdayShapeError) {
           emit({
             stage: "error",
@@ -169,22 +141,8 @@ export function createWorkdayImporter(deps: WorkdayImporterDependencies): Workda
           emit({ stage: "error", message: "Could not import records from Workday." });
         }
         deps.log.warn("workday import", "error", { previousStage: stage });
-      } finally {
-        if (session) {
-          try {
-            await deps.teardown(session);
-          } catch (error) {
-            // The profile may be left on disk, so this must be visible even after an earlier failure.
-            deps.log.warn("workday import", "error", { previousStage: "teardown" });
-            if (!failed) {
-              failed = true;
-              failure = error;
-              emit({ stage: "error", message: "Could not import records from Workday." });
-            }
-          }
-        }
+        throw error;
       }
-      if (failed) throw failure;
       if (!reviewResult) throw new Error("Workday import did not produce a review");
       return reviewResult;
     },

@@ -3,13 +3,18 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const state = vi.hoisted(() => ({
   apiBaseUrl: undefined as string | undefined,
   windowOptions: undefined as Record<string, unknown> | undefined,
+  appListeners: {} as Record<string, (event?: { preventDefault: () => void }) => void>,
+  clearWorkdaySession: vi.fn(async () => undefined),
+  quit: vi.fn(),
 }));
 
 vi.mock("electron", () => ({
   app: {
     getPath: () => "/user-data",
-    on: vi.fn(),
-    quit: vi.fn(),
+    on: vi.fn((event: string, listener: (arg?: { preventDefault: () => void }) => void) => {
+      state.appListeners[event] = listener;
+    }),
+    quit: state.quit,
     whenReady: () => Promise.resolve(),
   },
   BrowserWindow: class {
@@ -48,6 +53,10 @@ vi.mock("./store/academic-progress.js", () => ({
   createAcademicProgressStore: () => ({ getAudit: vi.fn(), saveAudit: vi.fn() }),
 }));
 vi.mock("./store/plan.js", () => ({ createPlanStore: () => ({}) }));
+vi.mock("./workday-signin.js", () => ({
+  clearWorkdaySession: state.clearWorkdaySession,
+  openWorkdaySignIn: vi.fn(),
+}));
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -55,6 +64,9 @@ afterEach(() => {
   vi.resetModules();
   state.apiBaseUrl = undefined;
   state.windowOptions = undefined;
+  state.appListeners = {};
+  state.clearWorkdaySession.mockClear();
+  state.quit.mockClear();
 });
 
 describe("main API URL wiring", () => {
@@ -80,5 +92,15 @@ describe("main API URL wiring", () => {
         backgroundColor: "#F7F6FA",
       }),
     );
+  });
+
+  it("clears the in-memory Workday session before quitting", async () => {
+    await import("./index.js");
+    await vi.waitFor(() => expect(state.appListeners["before-quit"]).toBeDefined());
+    const event = { preventDefault: vi.fn() };
+    state.appListeners["before-quit"]?.(event);
+    expect(event.preventDefault).toHaveBeenCalledOnce();
+    await vi.waitFor(() => expect(state.clearWorkdaySession).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(state.quit).toHaveBeenCalledOnce());
   });
 });
