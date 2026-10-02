@@ -66,6 +66,11 @@ override the default `http://127.0.0.1:3000` server URL.
 The desktop renderer opens to the **Courses** screen; use the **Degree progress** tab to view
 degree requirements. Only the selected planner screen is mounted.
 
+Degree evaluation assigns courses to explicit requirements before open credit buckets, and
+each completed course counts at most once. Requirement results retain the catalog display
+order. Fixed groups are **unsatisfied** with no matched courses, **partially satisfied**
+with some, and **satisfied** when all are complete.
+
 ### Windows (PowerShell)
 
 ```powershell

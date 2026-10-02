@@ -85,6 +85,30 @@ describe("evaluateRequirements", () => {
     expect(fixed.fulfilledCourses).toHaveLength(2);
     expect(fixed.missingCourses).toHaveLength(0);
   });
+  it("reports fixed requirements as partial when some required courses are completed", () => {
+    const oneCourse = evaluateRequirements(sampleDegree, ["CSC 1350"]);
+    expect(oneCourse.requirements[0]).toMatchObject({
+      status: "partially_satisfied",
+      isSatisfied: false,
+      fulfilledCourses: [{ code: "CSC 1350" }],
+      missingCourses: [{ code: "MATH 1550", minGrade: "C" }],
+    });
+
+    const allCourses = evaluateRequirements(sampleDegree, ["CSC 1350", "MATH 1550"]);
+    expect(allCourses.requirements[0]).toMatchObject({
+      status: "satisfied",
+      isSatisfied: true,
+      missingCourses: [],
+    });
+
+    const noCourses = evaluateRequirements(sampleDegree, []);
+    expect(noCourses.requirements[0]).toMatchObject({
+      status: "unsatisfied",
+      isSatisfied: false,
+      fulfilledCourses: [],
+      missingCourses: [{ code: "CSC 1350" }, { code: "MATH 1550", minGrade: "C" }],
+    });
+  });
 
   it("enforces minimum letter grade on fixed requirements", () => {
     // MATH 1550 requires minGrade "C". A grade of "D" should fail.
@@ -95,7 +119,7 @@ describe("evaluateRequirements", () => {
 
     const fixedFailed = failedResult.requirements[0]! as EvaluatedFixedRequirement;
     expect(fixedFailed.isSatisfied).toBe(false);
-    expect(fixedFailed.status).toBe("unsatisfied");
+    expect(fixedFailed.status).toBe("partially_satisfied");
     expect(fixedFailed.missingCourses).toEqual([{ code: "MATH 1550", minGrade: "C" }]);
 
     // A grade of "B" should pass.
@@ -197,6 +221,58 @@ describe("evaluateRequirements", () => {
       isSatisfied: true,
       missingCount: 0,
     });
+  });
+
+  it("allocates completed courses to explicit requirements before open buckets", () => {
+    const degree = DegreeProgramSchema.parse({
+      ...sampleDegree,
+      requirements: [
+        {
+          kind: "creditBucket",
+          id: "open-first",
+          label: "Open Electives",
+          semester: 1,
+          credits: 3,
+          category: "Electives",
+          eligibleCourses: [],
+        },
+        {
+          kind: "fixed",
+          id: "fixed-after",
+          label: "Required Course",
+          semester: 2,
+          courses: [{ code: "CSC 1350" }],
+        },
+      ],
+    });
+
+    const result = evaluateRequirements(degree, [
+      { code: "CSC 1350", credits: 4 },
+      { code: "OTHER 1000", credits: 3 },
+    ]);
+    expect(result.requirements.map((requirement) => requirement.id)).toEqual([
+      "open-first",
+      "fixed-after",
+    ]);
+    expect(result.requirements[0]).toMatchObject({
+      status: "satisfied",
+      fulfilledCourses: [{ code: "OTHER 1000" }],
+    });
+    expect(result.requirements[1]).toMatchObject({
+      status: "satisfied",
+      fulfilledCourses: [{ code: "CSC 1350" }],
+    });
+    const assigned = result.requirements.flatMap((requirement) =>
+      requirement.kind === "fixed"
+        ? requirement.fulfilledCourses.map(({ code }) => code)
+        : requirement.kind === "chooseN"
+          ? requirement.fulfilledOptions.map(({ code }) => code)
+          : requirement.fulfilledCourses.map(({ code }) => code),
+    );
+    expect(assigned).toHaveLength(2);
+    expect(new Set(assigned).size).toBe(2);
+    expect(result.totalCreditsFulfilled).toBe(7);
+    expect(result.unusedCompletedCourses).toEqual([]);
   });
 
   it("evaluates credit buckets with custom credits and open categories", () => {

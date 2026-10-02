@@ -19,7 +19,7 @@ export type CompletedInput = CourseCode | CompletedCourseInput;
 
 export interface EvaluatedFixedRequirement extends FixedRequirement {
   isSatisfied: boolean;
-  status: "satisfied" | "unsatisfied";
+  status: "satisfied" | "partially_satisfied" | "unsatisfied";
   fulfilledCourses: CourseRef[];
   missingCourses: CourseRef[];
 }
@@ -116,10 +116,19 @@ export function evaluateRequirements(
   catalog?: Map<CourseCode, Course> | Course[],
 ): DegreeEvaluation {
   const available = normalizeCompleted(completed);
-  const evaluatedRequirements: EvaluatedRequirement[] = [];
+  const evaluatedRequirements: EvaluatedRequirement[] = new Array(degree.requirements.length);
+  const processingOrder = degree.requirements
+    .map((requirement, index) => ({ requirement, index }))
+    .sort((a, b) => {
+      const aIsOpenBucket =
+        a.requirement.kind === "creditBucket" && a.requirement.eligibleCourses.length === 0;
+      const bIsOpenBucket =
+        b.requirement.kind === "creditBucket" && b.requirement.eligibleCourses.length === 0;
+      return Number(aIsOpenBucket) - Number(bIsOpenBucket) || a.index - b.index;
+    });
   let totalCreditsFulfilled = 0;
 
-  for (const requirement of degree.requirements) {
+  for (const { requirement, index } of processingOrder) {
     switch (requirement.kind) {
       case "fixed": {
         const fulfilledCourses: CourseRef[] = [];
@@ -144,13 +153,17 @@ export function evaluateRequirements(
         const isSatisfied = missingCourses.length === 0;
         totalCreditsFulfilled += reqCredits;
 
-        evaluatedRequirements.push({
+        evaluatedRequirements[index] = {
           ...requirement,
           isSatisfied,
-          status: isSatisfied ? "satisfied" : "unsatisfied",
+          status: isSatisfied
+            ? "satisfied"
+            : fulfilledCourses.length > 0
+              ? "partially_satisfied"
+              : "unsatisfied",
           fulfilledCourses,
           missingCourses,
-        });
+        };
         break;
       }
 
@@ -178,7 +191,7 @@ export function evaluateRequirements(
         const isSatisfied = missingCount === 0;
         totalCreditsFulfilled += reqCredits;
 
-        evaluatedRequirements.push({
+        evaluatedRequirements[index] = {
           ...requirement,
           isSatisfied,
           status: isSatisfied
@@ -188,7 +201,7 @@ export function evaluateRequirements(
               : "unsatisfied",
           fulfilledOptions,
           missingCount,
-        });
+        };
         break;
       }
 
@@ -225,7 +238,7 @@ export function evaluateRequirements(
         const isSatisfied = fulfilledCredits >= requirement.credits;
         totalCreditsFulfilled += fulfilledCredits;
 
-        evaluatedRequirements.push({
+        evaluatedRequirements[index] = {
           ...requirement,
           isSatisfied,
           status: isSatisfied
@@ -235,7 +248,7 @@ export function evaluateRequirements(
               : "unsatisfied",
           fulfilledCredits,
           fulfilledCourses,
-        });
+        };
         break;
       }
     }
