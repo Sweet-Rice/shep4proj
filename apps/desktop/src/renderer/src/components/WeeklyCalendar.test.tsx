@@ -35,6 +35,8 @@ const overlappingSections: Section[] = [
   },
 ];
 
+const cscSectionKey = "LSUAM_FALL_2026|CSC 1350|001|LEC";
+
 describe("WeeklyCalendar & formatMinuteToTime", () => {
   afterEach(() => {
     cleanup();
@@ -85,20 +87,34 @@ describe("WeeklyCalendar & formatMinuteToTime", () => {
 
     expect(cscBlock).toHaveClass("conflict");
     expect(mathBlock).toHaveClass("conflict");
-    expect(screen.getByTestId("conflict-badge-CSC 1350-001")).toBeInTheDocument();
+    expect(screen.getByTestId(`conflict-badge-${cscSectionKey}`)).toBeInTheDocument();
+  });
+
+  it("does not flag sections from different terms", () => {
+    const fallSection = overlappingSections[0]!;
+    const springSection: Section = { ...fallSection, term: "LSUAM_SPRING_2027" };
+
+    render(<WeeklyCalendar sections={[fallSection, springSection]} />);
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    const meetingBlocks = screen.getAllByTestId("meeting-block-CSC 1350-Mon");
+    expect(meetingBlocks).toHaveLength(2);
+    expect(screen.queryByTestId(`conflict-badge-${cscSectionKey}`)).not.toBeInTheDocument();
+    for (const block of meetingBlocks) {
+      expect(block).not.toHaveClass("conflict");
+    }
   });
 
   it("calls onRemoveSection when remove button is clicked", async () => {
     const user = userEvent.setup();
     const handleRemove = vi.fn();
 
-    render(<WeeklyCalendar sections={SAMPLE_SECTIONS} onRemoveSection={handleRemove} />);
+    render(<WeeklyCalendar sections={overlappingSections} onRemoveSection={handleRemove} />);
 
-    const removeBtns = screen.getAllByTestId("remove-section-CSC 1350-001");
-    expect(removeBtns.length).toBeGreaterThan(0);
+    const removeBtn = screen.getByTestId(`remove-section-${cscSectionKey}`);
 
-    await user.click(removeBtns[0]!);
+    await user.click(removeBtn);
 
-    expect(handleRemove).toHaveBeenCalledWith("CSC 1350-001");
+    expect(handleRemove).toHaveBeenCalledWith(cscSectionKey);
   });
 });
