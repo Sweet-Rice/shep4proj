@@ -125,6 +125,22 @@ describe("ALLOWED_ENDPOINTS: academic-record-get", () => {
     ).toThrow(EndpointNotAllowedError);
   });
 });
+describe("ALLOWED_ENDPOINTS: academic-progress-get", () => {
+  const url = "https://www.myworkday.com/lsu/generic-hub/task/2998$43459.htmld";
+
+  it("allows the observed read-only task endpoint", () => {
+    expect(() => assertAllowed("GET", `${url}?clientRequestID=11111111-1111-4111-8111-111111111111`, ALLOWED_ENDPOINTS))
+      .not.toThrow();
+  });
+
+  it("rejects POST and continues to enforce deny patterns", () => {
+    expect(() => assertAllowed("POST", url, ALLOWED_ENDPOINTS)).toThrow(EndpointNotAllowedError);
+    expect(() =>
+      assertAllowed("GET", "https://www.myworkday.com/lsu/generic-hub/task/registration.htmld", ALLOWED_ENDPOINTS),
+    ).toThrow(EndpointNotAllowedError);
+    expect(DENY_PATTERNS.some((pattern) => pattern.test(url))).toBe(false);
+  });
+});
 
 describe("ALLOWED_ENDPOINTS: current-registrations-get", () => {
   it("rejects the unconfirmed task/2998$28771.htmld variant until directly observed", () => {

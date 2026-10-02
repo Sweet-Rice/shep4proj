@@ -22,6 +22,12 @@ export const ALLOWED_ENDPOINTS: readonly AllowedEndpoint[] = [
       "Read the student's academic record (completed/in-progress coursework and transfer credit).",
   },
   {
+    id: "academic-progress-get",
+    method: "GET",
+    pattern: /^https:\/\/www\.myworkday\.com\/lsu\/generic-hub\/task\/2998\$43459\.htmld(\?.*)?$/,
+    description: "Read the student's official degree requirement statuses, credit progress, remaining requirements, and courses used to satisfy them.",
+  },
+  {
     id: "current-registrations-get",
     method: "GET",
     // Matches the observed `page-context-id/<contextId>.htmld` route for
