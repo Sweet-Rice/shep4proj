@@ -4,11 +4,11 @@ JevSchedule is a desktop course planner for LSU CSC students. It shows what a st
 
 ## Install
 
-Download the installer for your platform from [GitHub Releases](https://github.com/Sweet-Rice/shep4proj/releases):
+Download the Windows or Linux installer from [GitHub Releases](https://github.com/Sweet-Rice/shep4proj/releases):
 
 - Windows: `*.exe` (NSIS installer). If SmartScreen warns, choose **More info → Run anyway**.
-- macOS: `*.dmg` or `*.zip`. Builds are unsigned; if Gatekeeper blocks the app, right-click it and choose **Open**.
 - Linux: `*.AppImage`.
+- macOS: v1.0.0 does not include an installer; macOS users can build from source.
 
 In v1.0.0, installers connect to a JevSchedule server that you run yourself. The default address is `http://127.0.0.1:3000`; set the `JEVSCHEDULE_API_URL` environment variable to use a different server URL.
 
@@ -25,22 +25,21 @@ The fixture seed provides local sample data. Instead, you can load public catalo
 
 ## Importing your courses
 
-On the Courses tab, start a Workday import to open a visible sign-in window. Sign in through LSU SSO and Duo yourself. JevSchedule reads current-term courses without changing them, shows progress stages, and presents a review before anything is saved. If you prefer, or Workday's page format is not recognized, upload a transcript PDF instead.
+On the Courses tab, start a Workday import to open a visible Playwright sign-in window. Sign in through LSU SSO and Duo yourself. JevSchedule reads current-term courses without changing them, shows progress stages, and presents a review before anything is saved. If you prefer, or Workday's page format is not recognized, upload a transcript PDF instead.
 
 ## What JevSchedule never does
 
 - It never registers for courses, drops or withdraws from courses, or reserves seats.
 - It is read-only toward LSU and Workday.
-- It does not provide seat alerts.
-- The app runs only while its window is open; it has no tray or background process.
+- The app has no tray icon or background process.
 
 ## What stays on your device
 
-Your Workday session, cookies, and raw Workday responses never leave your machine. The app calls only allowlisted, read-only Workday endpoints. Completed courses and your plan are stored in local SQLite on your device. See [SECURITY.md](SECURITY.md) for the data-handling rules.
+Your Workday session, cookies, and raw Workday responses never leave your machine. The app calls only allowlisted GET endpoints for read-only Workday access. Completed courses and your plan are stored in local SQLite on your device. See [SECURITY.md](SECURITY.md) for the data-handling rules.
 
 ## The JevSchedule server
 
-The server is the app's one external component. It scrapes public LSU catalog, section, and offering-history data. For v1.0.0, you run the server yourself; there is no hosted production server.
+The server is the app's one external component. It scrapes public LSU catalog and section data, and retains section snapshots for offering-history queries. For v1.0.0, you run the server yourself.
 
 ## Repo structure
 
