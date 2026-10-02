@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import { useState } from "react";
@@ -19,6 +19,7 @@ const sampleDegree: DegreeProgram = {
       kind: "fixed",
       id: "req-fixed",
       label: "Core CSC Courses",
+      area: "Computer Science",
       semester: 1,
       courses: [
         { code: "CSC 1350", minGrade: null },
@@ -29,6 +30,7 @@ const sampleDegree: DegreeProgram = {
       kind: "chooseN",
       id: "req-choose",
       label: "English Elective",
+      area: "English Composition",
       semester: 2,
       n: 1,
       options: [
@@ -64,15 +66,13 @@ function InteractiveDegreeProgressWrapper({
   initialCompleted?: CourseCode[];
 }) {
   const [completed, setCompleted] = useState<Set<CourseCode>>(new Set(initialCompleted));
-  const handleToggle = (code: CourseCode) => {
-    setCompleted((prev) => {
-      const next = new Set(prev);
+  const handleToggle = (code: CourseCode) =>
+    setCompleted((previous) => {
+      const next = new Set(previous);
       if (next.has(code)) next.delete(code);
       else next.add(code);
       return next;
     });
-  };
-
   return (
     <DegreeProgressView
       degree={sampleDegree}
@@ -86,38 +86,35 @@ function InteractiveDegreeProgressWrapper({
 describe("DegreeProgressView", () => {
   afterEach(() => cleanup());
 
-  it("renders degree title, credit totals, and initial unsatisfied progress state", () => {
-    render(<InteractiveDegreeProgressWrapper initialCompleted={[]} />);
+  it("groups area cards in first appearance order and shows progress counts", () => {
+    render(<InteractiveDegreeProgressWrapper />);
     expect(screen.getByText("Computer Science, B.S.")).toBeInTheDocument();
     expect(screen.getByTestId("overall-status")).toHaveTextContent("In Progress");
-    expect(screen.getByTestId("req-status-req-fixed")).toHaveTextContent("Unsatisfied");
-    expect(screen.getByTestId("req-status-req-choose")).toHaveTextContent("Unsatisfied");
+    expect(screen.getByTestId("area-computer-science")).toHaveTextContent("0 of 2 courses");
+    expect(screen.getByTestId("area-english-composition")).toHaveTextContent("0 of 1 courses");
+    expect(screen.getAllByRole("progressbar")).toHaveLength(3);
+    expect(screen.queryByText(/Semester/i)).not.toBeInTheDocument();
     expect(screen.getByText("Credit-Hour Summary")).toBeInTheDocument();
-    expect(screen.getByTestId("overall-remaining")).toHaveTextContent("120 hrs");
   });
 
-  it("uses catalog hours while completing and removing fixed courses", async () => {
+  it("expands completed and still-required lists and updates area and overall progress when toggled", async () => {
     const user = userEvent.setup();
-    render(<InteractiveDegreeProgressWrapper initialCompleted={[]} />);
-    expect(screen.getByTestId("bucket-progress-req-fixed")).toHaveTextContent("0 / 7 credits");
-    expect(screen.getByTestId("bucket-remaining-req-fixed")).toHaveTextContent("7 credits left");
-
-    await user.click(screen.getByRole("checkbox", { name: /CSC 1350/i }));
-    expect(screen.getByTestId("bucket-progress-req-fixed")).toHaveTextContent("4 / 7 credits");
-    expect(screen.getByTestId("bucket-remaining-req-fixed")).toHaveTextContent("3 credits left");
-    expect(screen.getByTestId("overall-fulfilled")).toHaveTextContent("4 hrs");
-    expect(screen.getByTestId("req-status-req-fixed")).toHaveTextContent("Partially Satisfied");
-
-    await user.click(screen.getByRole("checkbox", { name: /CSC 1351/i }));
-    expect(screen.getByTestId("req-status-req-fixed")).toHaveTextContent(/^Satisfied$/);
-    expect(screen.getByTestId("bucket-progress-req-fixed")).toHaveTextContent("7 / 7 credits");
-    expect(screen.getByTestId("bucket-remaining-req-fixed")).toHaveTextContent("0 credits left");
-    expect(screen.getByTestId("overall-fulfilled")).toHaveTextContent("7 hrs");
-
-    await user.click(screen.getByRole("checkbox", { name: /CSC 1350/i }));
-    expect(screen.getByTestId("bucket-progress-req-fixed")).toHaveTextContent("3 / 7 credits");
-    expect(screen.getByTestId("bucket-remaining-req-fixed")).toHaveTextContent("4 credits left");
-    expect(screen.getByTestId("overall-fulfilled")).toHaveTextContent("3 hrs");
-    expect(screen.getByTestId("req-status-req-fixed")).toHaveTextContent("Partially Satisfied");
+    render(<InteractiveDegreeProgressWrapper />);
+    const area = screen.getByTestId("area-computer-science");
+    await user.click(within(area).getByText("Computer Science"));
+    expect(within(area).getByRole("heading", { name: "Completed" })).toBeInTheDocument();
+    expect(within(area).getByRole("heading", { name: "Still required" })).toBeInTheDocument();
+    const areaProgress = within(area).getByRole("progressbar", {
+      name: "Computer Science progress",
+    });
+    const overallProgress = screen.getByRole("progressbar", { name: "Overall degree progress" });
+    expect(areaProgress).toHaveAttribute("aria-valuenow", "0");
+    const overallBefore = Number(overallProgress.getAttribute("aria-valuenow"));
+    await user.click(within(area).getByRole("checkbox", { name: "CSC 1350" }));
+    expect(areaProgress).toHaveAttribute("aria-valuenow", "50");
+    expect(
+      within(area).getByRole("heading", { name: "Completed" }).parentElement,
+    ).toHaveTextContent("CSC 1350");
+    expect(Number(overallProgress.getAttribute("aria-valuenow"))).toBeGreaterThan(overallBefore);
   });
 });
