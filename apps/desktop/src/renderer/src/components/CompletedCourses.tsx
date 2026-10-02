@@ -26,6 +26,11 @@ export function CompletedCourses() {
   const [inputError, setInputError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<PrereqDialogState | null>(null);
   const codes = [...new Set([...completed, ...(selected ? [selected] : [])])].sort();
+  const catalogByCode = new Map(courses.map((course) => [course.code, course]));
+  const completedCredits = [...completed].reduce(
+    (sum, code) => sum + (catalogByCode.get(code)?.credits.min ?? 0),
+    0,
+  );
 
   async function handleSearchToggle(code: CourseCode) {
     if (completed.has(code)) {
@@ -79,7 +84,12 @@ export function CompletedCourses() {
 
   return (
     <main>
-      <h1>Completed courses</h1>
+      <header className="page-header">
+        <h1>Completed courses</h1>
+        <p className="page-subtitle">
+          Search the LSU catalog and mark what you have finished. Everything stays on this device.
+        </p>
+      </header>
       <div className="courses-layout">
         <section className="courses-catalog card" aria-label="Course catalog">
           {catalogLoading ? (
@@ -101,7 +111,15 @@ export function CompletedCourses() {
         </section>
         <div className="courses-side">
           <section className="card" aria-labelledby="completed-heading">
-            <h2 id="completed-heading">Your completed courses</h2>
+            <div className="completed-heading-row">
+              <h2 id="completed-heading">Your completed courses</h2>
+              {loaded && (
+                <span className="badge badge-info" data-testid="completed-summary">
+                  {completed.size} {completed.size === 1 ? "course" : "courses"}
+                  {completedCredits > 0 && ` · ${completedCredits} cr`}
+                </span>
+              )}
+            </div>
             <p className="muted">
               Enter a course code to mark it complete or incomplete. Changes stay on this device.
             </p>
@@ -147,7 +165,11 @@ export function CompletedCourses() {
                     ? ""
                     : "Changes saved on this device."}
             </p>
-            {loaded && codes.length === 0 && <p>No courses marked complete yet.</p>}
+            {loaded && codes.length === 0 && (
+              <p className="empty-state">
+                No courses marked complete yet. Search the catalog or import your record below.
+              </p>
+            )}
             <ul className="completed-courses">
               {codes.map((code) => (
                 <li key={code}>
@@ -160,6 +182,9 @@ export function CompletedCourses() {
                     label={`${code} completed`}
                     disabled={!loaded || pending.has(code)}
                   />
+                  {catalogByCode.get(code) && (
+                    <span className="completed-course-title">{catalogByCode.get(code)?.title}</span>
+                  )}
                   {isCompleted(code) &&
                     !catalogLoading &&
                     !catalogError &&
