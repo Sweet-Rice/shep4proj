@@ -4,7 +4,7 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import type { Section } from "@jevschedule/shared";
-import { WeeklyCalendar, formatMinuteToTime, SAMPLE_SECTIONS } from "./WeeklyCalendar.js";
+import { WeeklyCalendar, formatMinuteToTime } from "./WeeklyCalendar.js";
 
 const overlappingSections: Section[] = [
   {
@@ -36,6 +36,16 @@ const overlappingSections: Section[] = [
 ];
 
 const cscSectionKey = "LSUAM_FALL_2026|CSC 1350|001|LEC";
+const calendarSections: Section[] = [
+  {
+    ...overlappingSections[0]!,
+    meetings: [{ days: ["Mon", "Wed", "Fri"], startMinute: 540, endMinute: 600 }],
+  },
+  {
+    ...overlappingSections[1]!,
+    meetings: [{ days: ["Tue", "Thu"], startMinute: 630, endMinute: 720 }],
+  },
+];
 
 describe("WeeklyCalendar & formatMinuteToTime", () => {
   afterEach(() => {
@@ -51,7 +61,7 @@ describe("WeeklyCalendar & formatMinuteToTime", () => {
   });
 
   it("renders weekly calendar container with Mon-Fri headers and time grid", () => {
-    render(<WeeklyCalendar sections={SAMPLE_SECTIONS} />);
+    render(<WeeklyCalendar sections={calendarSections} />);
 
     expect(screen.getByTestId("weekly-calendar")).toBeInTheDocument();
     expect(screen.getByText("Weekly Schedule")).toBeInTheDocument();
@@ -64,8 +74,8 @@ describe("WeeklyCalendar & formatMinuteToTime", () => {
     expect(screen.getByTestId("time-label-12")).toHaveTextContent("12:00 PM");
   });
 
-  it("renders sample section meeting blocks on corresponding weekday columns", () => {
-    render(<WeeklyCalendar sections={SAMPLE_SECTIONS} />);
+  it("renders the provided section meetings on their corresponding weekday columns", () => {
+    render(<WeeklyCalendar sections={calendarSections} />);
 
     // CSC 1350 meets Mon, Wed, Fri
     expect(screen.getByTestId("meeting-block-CSC 1350-Mon")).toBeInTheDocument();

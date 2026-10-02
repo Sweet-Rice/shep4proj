@@ -17,6 +17,8 @@ const api: JevscheduleApi = {
     listCourses: () => ipcRenderer.invoke(IPC_CHANNELS.catalogCourses),
     getCourseDetails: (codes) => ipcRenderer.invoke(IPC_CHANNELS.catalogCourseDetails, codes),
     getCourseHistory: (code) => ipcRenderer.invoke(IPC_CHANNELS.catalogCourseHistory, code),
+    listSections: (courseCode, term) =>
+      ipcRenderer.invoke(IPC_CHANNELS.catalogSections, courseCode, term),
     listDegrees: () => ipcRenderer.invoke(IPC_CHANNELS.catalogDegrees),
     getDegree: (id) => ipcRenderer.invoke(IPC_CHANNELS.catalogDegree, id),
   },

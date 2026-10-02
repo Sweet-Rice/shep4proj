@@ -1,5 +1,5 @@
 import type { IpcMain, IpcMainInvokeEvent } from "electron";
-import { CourseCodeSchema, PlanSchema } from "@jevschedule/shared";
+import { AcademicPeriodIdSchema, CourseCodeSchema, PlanSchema } from "@jevschedule/shared";
 import type { TranscriptParseResult } from "@jevschedule/workday";
 import { z } from "zod";
 import { IPC_CHANNELS } from "../shared/ipc.js";
@@ -25,6 +25,7 @@ const CompletedSetArgsSchema = z.tuple([CourseCodeSchema, z.boolean()]);
 const PlanSaveArgsSchema = z.tuple([PlanSchema]);
 const CatalogCourseDetailsArgsSchema = z.tuple([z.array(CourseCodeSchema).max(500)]);
 const CatalogCourseHistoryArgsSchema = z.tuple([CourseCodeSchema]);
+const CatalogSectionsArgsSchema = z.tuple([CourseCodeSchema, AcademicPeriodIdSchema]);
 const CatalogDegreeArgsSchema = z.tuple([z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)]);
 /**
  * Whether `frameUrl` is the app's own renderer at `rendererUrl`: the same origin for the dev
@@ -96,5 +97,9 @@ export function registerIpcHandlers(
   handle(IPC_CHANNELS.catalogDegree, (args) => {
     const [id] = CatalogDegreeArgsSchema.parse(args);
     return stores.catalog.getDegree(id);
+  });
+  handle(IPC_CHANNELS.catalogSections, (args) => {
+    const [courseCode, term] = CatalogSectionsArgsSchema.parse(args);
+    return stores.catalog.listSections(courseCode, term);
   });
 }

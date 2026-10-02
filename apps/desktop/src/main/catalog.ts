@@ -3,12 +3,15 @@ import {
   CourseSchema,
   DegreeProgramSchema,
   DegreeSummarySchema,
+  SectionSchema,
+  type AcademicPeriodId,
   type Course,
   type CourseCode,
   type CourseDetail,
   type CourseOfferingHistory,
   type DegreeProgram,
   type DegreeSummary,
+  type Section,
 } from "@jevschedule/shared";
 import { z } from "zod";
 
@@ -16,6 +19,7 @@ export interface CatalogClient {
   listCourses(): Promise<Course[]>;
   getCourseDetails(codes: readonly CourseCode[]): Promise<Record<CourseCode, CourseDetail>>;
   getCourseHistory(code: CourseCode): Promise<CourseOfferingHistory[]>;
+  listSections(courseCode: CourseCode, term: AcademicPeriodId): Promise<Section[]>;
   listDegrees(): Promise<DegreeSummary[]>;
   getDegree(id: string): Promise<DegreeProgram>;
 }
@@ -30,6 +34,7 @@ export function resolveApiBaseUrl(
 }
 
 const CoursesResponseSchema = z.object({ courses: z.array(CourseSchema) });
+const SectionsResponseSchema = z.object({ sections: z.array(SectionSchema) });
 const DegreesResponseSchema = z.object({ degrees: z.array(DegreeSummarySchema) });
 const CourseHistoryResponseSchema = z.object({
   history: z.array(
@@ -133,6 +138,14 @@ export function createCatalogClient(
       const result = history.map(({ term, sectionCount }) => ({ term, sectionCount }));
       courseHistory.set(code, result);
       return result;
+    },
+    async listSections(courseCode, term) {
+      const pathCode = courseCode.replace(" ", "-");
+      const { sections } = await json(
+        `/sections?course=${pathCode}&term=${term}`,
+        SectionsResponseSchema,
+      );
+      return sections;
     },
     async listDegrees() {
       if (degreesCache) return degreesCache;

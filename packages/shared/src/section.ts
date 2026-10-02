@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CreditsSchema } from "./course.js";
+import type { Season } from "./plan.js";
 
 /**
  * Course code as the Course Offerings portal lists it: like `CourseCodeSchema`, plus an optional
@@ -18,6 +19,10 @@ export type SectionCourseCode = z.infer<typeof SectionCourseCodeSchema>;
 export const AcademicPeriodIdSchema = z.string().regex(/^[A-Z0-9]+(?:_[A-Z0-9]+)*$/);
 
 export type AcademicPeriodId = z.infer<typeof AcademicPeriodIdSchema>;
+
+export function termToPeriodId(term: { season: Season; year: number }): AcademicPeriodId {
+  return AcademicPeriodIdSchema.parse(`LSUAM_${term.season.toUpperCase()}_${term.year}`);
+}
 
 export const WeekdaySchema = z.enum(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
 

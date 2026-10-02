@@ -4,6 +4,7 @@ import {
   MeetingSchema,
   SectionCourseCodeSchema,
   SectionSchema,
+  termToPeriodId,
   type Section,
 } from "./section.js";
 
@@ -41,6 +42,17 @@ describe("AcademicPeriodIdSchema", () => {
 
   it.each(["", "lsuam_fall_2026", "LSUAM__FALL", "_LSUAM", "LSUAM FALL"])("rejects %j", (id) => {
     expect(AcademicPeriodIdSchema.safeParse(id).success).toBe(false);
+  });
+});
+
+describe("termToPeriodId", () => {
+  it.each([
+    [{ season: "Fall", year: 2026 }, "LSUAM_FALL_2026"],
+    [{ season: "Spring", year: 2027 }, "LSUAM_SPRING_2027"],
+    [{ season: "Summer", year: 2027 }, "LSUAM_SUMMER_2027"],
+    [{ season: "Winter", year: 2027 }, "LSUAM_WINTER_2027"],
+  ] as const)("maps %j to %s", (term, periodId) => {
+    expect(termToPeriodId(term)).toBe(periodId);
   });
 });
 

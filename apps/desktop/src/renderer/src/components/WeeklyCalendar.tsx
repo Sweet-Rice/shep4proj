@@ -4,7 +4,7 @@ import { getSectionKey } from "../hooks/useScheduleBuilder.js";
 export const CALENDAR_DAYS: Weekday[] = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 export interface WeeklyCalendarProps {
-  sections?: Section[];
+  sections: Section[];
   conflictingSectionKeys?: Set<string>;
   onRemoveSection?: (sectionKey: string) => void;
   startHour?: number; // 8 = 8 AM (480 mins)
@@ -20,48 +20,6 @@ export function formatMinuteToTime(minutesAfterMidnight: number): string {
   return `${displayHour}:${displayMin} ${ampm}`;
 }
 
-export const SAMPLE_SECTIONS: Section[] = [
-  {
-    term: "LSUAM_FALL_2026",
-    courseCode: "CSC 1350",
-    sectionNumber: "001",
-    sectionType: "LEC",
-    credits: { min: 3, max: 3, note: null },
-    instructor: "Dr. Duncan",
-    location: "Coates 0214",
-    deliveryMode: "In Person",
-    enrollment: 45,
-    capacity: 50,
-    meetings: [{ days: ["Mon", "Wed", "Fri"], startMinute: 540, endMinute: 600 }],
-  },
-  {
-    term: "LSUAM_FALL_2026",
-    courseCode: "MATH 1550",
-    sectionNumber: "002",
-    sectionType: "LEC",
-    credits: { min: 5, max: 5, note: null },
-    instructor: "Dr. Smith",
-    location: "Lockett 0101",
-    deliveryMode: "In Person",
-    enrollment: 38,
-    capacity: 40,
-    meetings: [{ days: ["Tue", "Thu"], startMinute: 630, endMinute: 720 }],
-  },
-  {
-    term: "LSUAM_FALL_2026",
-    courseCode: "ENGL 1001",
-    sectionNumber: "005",
-    sectionType: "LEC",
-    credits: { min: 3, max: 3, note: null },
-    instructor: "Prof. Davis",
-    location: "Allen 0112",
-    deliveryMode: "In Person",
-    enrollment: 24,
-    capacity: 25,
-    meetings: [{ days: ["Mon", "Wed"], startMinute: 810, endMinute: 870 }],
-  },
-];
-
 interface CalendarMeetingSlot {
   section: Section;
   day: Weekday;
@@ -70,7 +28,7 @@ interface CalendarMeetingSlot {
 }
 
 export function WeeklyCalendar({
-  sections = SAMPLE_SECTIONS,
+  sections,
   conflictingSectionKeys,
   onRemoveSection,
   startHour = 8,

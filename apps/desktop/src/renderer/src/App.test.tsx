@@ -20,6 +20,7 @@ beforeEach(() => {
         getCourseDetails: async () => ({}),
         getCourseHistory: async () => [],
         listDegrees: async () => [],
+        listSections: async () => [],
         getDegree: async () => {
           throw new Error("none");
         },
@@ -73,6 +74,7 @@ describe("App tabs", () => {
       "Degree progress",
       "Eligible courses",
       "Plan",
+      "Schedule",
     ]);
     await user.click(screen.getByRole("tab", { name: "Eligible courses" }));
 
@@ -82,5 +84,8 @@ describe("App tabs", () => {
     );
     expect(screen.getByRole("heading", { name: "Eligible courses" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Plan" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Schedule" }));
+    expect(screen.getByRole("tab", { name: "Schedule" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("heading", { name: "Schedule" })).toBeInTheDocument();
   });
 });
