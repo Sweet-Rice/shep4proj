@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from "electron";
 import { readFile, stat } from "node:fs/promises";
 import { parseTranscriptPdf } from "@jevschedule/workday";
 import { guardedFetch } from "@jevschedule/workday/allowlist";
@@ -23,8 +23,11 @@ const rendererUrl = process.env.ELECTRON_RENDERER_URL ?? pathToFileURL(rendererH
 
 function createWindow(): void {
   const window = new BrowserWindow({
-    width: 900,
-    height: 650,
+    width: 1280,
+    height: 820,
+    minWidth: 1024,
+    minHeight: 680,
+    backgroundColor: nativeTheme.shouldUseDarkColors ? "#141118" : "#F7F6FA",
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
