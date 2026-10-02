@@ -78,6 +78,34 @@ describe.skipIf(!getTestDatabaseUrl())("watches routes", () => {
     expect(await db.select().from(watches)).toHaveLength(0);
   });
 
+  it("gets watch details without exposing its bearer ID", async () => {
+    const created = await app.inject({ method: "POST", url: "/watches", payload: identity });
+    const id = created.json<{ id: string }>().id;
+    const details = await app.inject({ method: "GET", url: `/watches/${id}` });
+    expect(details.statusCode).toBe(200);
+    expect(details.json()).toEqual({
+      ...identity,
+      enrollment: 78,
+      capacity: 80,
+      lastOpenedAt: null,
+    });
+    expect(details.body).not.toContain(id);
+    const openedAt = new Date("2026-10-01T12:34:56.000Z");
+    await db.update(watches).set({ lastOpenedAt: openedAt });
+    const timestamp = await app.inject({ method: "GET", url: `/watches/${id}` });
+    expect(timestamp.json()).toMatchObject({ ...identity, lastOpenedAt: openedAt.toISOString() });
+
+    const invalid = await app.inject({ method: "GET", url: "/watches/not-a-uuid" });
+    expect(invalid.statusCode).toBe(400);
+    expect(invalid.json()).toEqual({ error: "invalid watch id" });
+    const unknown = await app.inject({
+      method: "GET",
+      url: "/watches/0f6b6a1c-3c2e-4b55-9d1f-2b8c5f0e7a11",
+    });
+    expect(unknown.statusCode).toBe(404);
+    expect(unknown.json()).toEqual({ error: "Watch not found" });
+  });
+
   it("removes only the watch named by its opaque ID", async () => {
     const first = await app.inject({ method: "POST", url: "/watches", payload: identity });
     const second = await app.inject({ method: "POST", url: "/watches", payload: identity });

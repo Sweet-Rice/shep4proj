@@ -17,6 +17,30 @@ const DeleteWatchSchema = z.object({ id: z.string().uuid() });
 export function registerWatchRoutes(app: FastifyInstance, deps: { db: Db }): void {
   const { db } = deps;
 
+  app.get<{ Params: { id: string } }>("/watches/:id", async (request, reply) => {
+    if (!z.string().uuid().safeParse(request.params.id).success) {
+      return reply.status(400).send({ error: "invalid watch id" });
+    }
+    const [watch] = await db
+      .select({
+        term: watches.term,
+        courseCode: watches.courseCode,
+        sectionNumber: watches.sectionNumber,
+        sectionType: watches.sectionType,
+        enrollment: watches.lastEnrollment,
+        capacity: watches.lastCapacity,
+        lastOpenedAt: watches.lastOpenedAt,
+      })
+      .from(watches)
+      .where(eq(watches.id, request.params.id))
+      .limit(1);
+    if (!watch) return reply.status(404).send({ error: "Watch not found" });
+    return {
+      ...watch,
+      lastOpenedAt: watch.lastOpenedAt?.toISOString() ?? null,
+    };
+  });
+
   app.post<{ Body: unknown }>("/watches", async (request, reply) => {
     const parsed = WatchSectionSchema.safeParse(request.body);
     if (!parsed.success) return reply.status(400).send({ error: "invalid section" });

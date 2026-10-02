@@ -4,6 +4,7 @@ import { buildServer } from "./app.js";
 import { readListenConfig, readSeatPollConfig, readSectionScrapeConfig } from "./config.js";
 import { createDb } from "./db/client.js";
 import { DEFAULT_DEGREE_DATA_DIR } from "./degrees/load.js";
+import { requestLogSerializers } from "./request-log.js";
 import { startSectionScrapeSchedule, type Schedule } from "./sections/scheduler.js";
 import { runSectionScrape } from "./sections/scrape-job.js";
 import { shutdown } from "./shutdown.js";
@@ -20,7 +21,11 @@ const seatPoll = readSeatPollConfig();
 const databaseUrl = process.env["DATABASE_URL"];
 const database = databaseUrl ? createDb(databaseUrl) : undefined;
 const degreeDataDir = process.env["DEGREE_DATA_DIR"] || DEFAULT_DEGREE_DATA_DIR;
-const app = buildServer({ db: database?.db, degreeDataDir, logger: true });
+const app = buildServer({
+  db: database?.db,
+  degreeDataDir,
+  logger: { serializers: requestLogSerializers },
+});
 if (!database) {
   app.log.warn("DATABASE_URL is not set; /courses routes are disabled (see .env.example)");
 }

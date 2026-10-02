@@ -112,6 +112,11 @@ section history on demand and summarizes the Fall, Spring, or Summer terms recor
 courses warn when their term season has no recorded offerings; an empty archive stays quiet as
 history accumulates from semester section scrapes.
 
+Seat availability watches send a native notification when a section opens. The desktop checks
+saved watches at startup and every six hours, removes watches that no longer exist on the
+server, and records notification timestamps locally so it does not repeat an opening alert.
+Seat counts update daily.
+
 ### Windows (PowerShell)
 
 ```powershell

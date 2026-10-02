@@ -6,9 +6,8 @@ import type { Schedule } from "../sections/scheduler.js";
 import { pollWatchedSeats, startSeatPoller, type SeatPollResult } from "./seat-poller.js";
 
 /**
- * One seat poll that logs its openings and outcome. Openings are only logged until notification
- * delivery (T-513) subscribes. Logs name the section, never the watch ID: that's the student's
- * bearer token.
+ * One seat poll that logs openings and outcome. The desktop checks `lastOpenedAt` for native
+ * notifications. Logs name the section, never the watch ID: that's the student's bearer token.
  */
 export function createSeatPollRun(o: {
   db: Db;

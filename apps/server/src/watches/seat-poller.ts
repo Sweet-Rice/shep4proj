@@ -101,7 +101,11 @@ export async function pollWatchedSeats(o: {
       try {
         [updated] = await o.db
           .update(watches)
-          .set({ lastEnrollment: section.enrollment, lastCapacity: section.capacity })
+          .set({
+            lastEnrollment: section.enrollment,
+            lastCapacity: section.capacity,
+            ...(seatsOpened(before, section) ? { lastOpenedAt: new Date() } : {}),
+          })
           .where(
             and(
               eq(watches.id, row.id),

@@ -8,7 +8,8 @@
   },
   "files": [
     "out/**/*",
-    "package.json"
+    "package.json",
+    "resources/tray.png"
   ],
   "npmRebuild": false,
   "asar": true,

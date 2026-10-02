@@ -1,4 +1,13 @@
-import { app, BrowserWindow, dialog, ipcMain } from "electron";
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  Menu,
+  nativeImage,
+  Notification,
+  Tray,
+} from "electron";
 import { readFile, stat } from "node:fs/promises";
 import { parseTranscriptPdf } from "@jevschedule/workday";
 import { join } from "node:path";
@@ -8,11 +17,18 @@ import { isAppRendererUrl, registerIpcHandlers } from "./ipc.js";
 import { createCompletedStore } from "./store/completed.js";
 import { openLocalDb } from "./store/db.js";
 import { createPlanStore } from "./store/plan.js";
+import trayIconPath from "../../resources/tray.png?asset";
+import { createWatchStore } from "./store/watches.js";
+import { seatOpeningNotification, startWatchChecker } from "./watch-checker.js";
+import { createWatchClient } from "./watches.js";
 
 const rendererHtmlPath = fileURLToPath(new URL("../renderer/index.html", import.meta.url));
 const rendererUrl = process.env.ELECTRON_RENDERER_URL ?? pathToFileURL(rendererHtmlPath).href;
 
-function createWindow(): void {
+let tray: Tray | undefined;
+let mainWindow: BrowserWindow | undefined;
+
+function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
     width: 900,
     height: 650,
@@ -24,26 +40,54 @@ function createWindow(): void {
       preload: fileURLToPath(new URL("../preload/index.cjs", import.meta.url)),
     },
   });
+  mainWindow = window;
+  window.on("closed", () => {
+    if (mainWindow === window) mainWindow = undefined;
+  });
 
   if (process.env.ELECTRON_RENDERER_URL) {
     void window.loadURL(process.env.ELECTRON_RENDERER_URL);
   } else {
     void window.loadFile(rendererHtmlPath);
   }
+  return window;
+}
+
+function showWindow(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createWindow();
+  } else {
+    mainWindow.show();
+    mainWindow.focus();
+  }
 }
 
 void app.whenReady().then(() => {
   const db = openLocalDb(join(app.getPath("userData"), "jevschedule.sqlite"));
-  app.on("will-quit", () => db.close());
+  const apiBaseUrl = resolveApiBaseUrl(
+    process.env.JEVSCHEDULE_API_URL,
+    import.meta.env.MAIN_VITE_API_URL,
+  );
+  const watchStore = createWatchStore(db);
+  const watchChecker = startWatchChecker({
+    store: watchStore,
+    client: createWatchClient(apiBaseUrl),
+    notify(watch) {
+      new Notification(seatOpeningNotification(watch)).show();
+    },
+  });
+  app.on("will-quit", () => {
+    watchChecker.stop();
+    tray?.destroy();
+    db.close();
+  });
 
   registerIpcHandlers(
     ipcMain,
     {
       completed: createCompletedStore(db),
       plan: createPlanStore(db),
-      catalog: createCatalogClient(
-        resolveApiBaseUrl(process.env.JEVSCHEDULE_API_URL, import.meta.env.MAIN_VITE_API_URL),
-      ),
+      catalog: createCatalogClient(apiBaseUrl),
     },
     (event) => isAppRendererUrl(event.senderFrame?.url, rendererUrl),
     async () => {
@@ -60,13 +104,21 @@ void app.whenReady().then(() => {
     },
   );
 
+  tray = new Tray(nativeImage.createFromPath(trayIconPath).resize({ width: 16, height: 16 }));
+  tray.setToolTip("JevSchedule");
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      { label: "Open JevSchedule", click: showWindow },
+      { type: "separator" },
+      { label: "Quit", click: () => app.quit() },
+    ]),
+  );
+  tray.on("double-click", showWindow);
+
   createWindow();
 
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  app.on("activate", showWindow);
+  app.on("window-all-closed", () => {
+    if (process.platform !== "darwin" && watchStore.list().length === 0) app.quit();
   });
-});
-
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
 });

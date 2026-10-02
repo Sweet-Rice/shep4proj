@@ -139,6 +139,7 @@ export const watches = pgTable("watches", {
   lastEnrollment: integer("last_enrollment").notNull(),
   lastCapacity: integer("last_capacity").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  lastOpenedAt: timestamp("last_opened_at", { withTimezone: true }),
 });
 
 export type WatchRow = typeof watches.$inferSelect;

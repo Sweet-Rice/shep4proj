@@ -29,6 +29,15 @@ export const MIGRATIONS: readonly string[] = [
      id INTEGER PRIMARY KEY CHECK (id = 1),
      credit_limit INTEGER NOT NULL CHECK (credit_limit > 0)
    ) STRICT`,
+  `CREATE TABLE section_watches (
+     id TEXT PRIMARY KEY NOT NULL,
+     term TEXT NOT NULL,
+     course_code TEXT NOT NULL,
+     section_number TEXT NOT NULL,
+     section_type TEXT NOT NULL,
+     last_notified_at TEXT,
+     UNIQUE (term, course_code, section_number, section_type)
+   ) STRICT`,
 ];
 
 /** Thrown when the database was written by a newer app version than this one. */

@@ -77,9 +77,9 @@ describe.skipIf(!getTestDatabaseUrl())("pollWatchedSeats", () => {
     expect(first.openings).toEqual([
       { watchId: id, term: SECTION_FIXTURE_PERIOD, ...OPEN, enrollment: 38, capacity: 40 },
     ]);
-    expect(await db.select().from(watches)).toMatchObject([
-      { id, lastEnrollment: 38, lastCapacity: 40 },
-    ]);
+    const [saved] = await db.select().from(watches).where(eq(watches.id, id));
+    expect(saved).toMatchObject({ id, lastEnrollment: 38, lastCapacity: 40 });
+    expect(saved!.lastOpenedAt).toBeInstanceOf(Date);
 
     const second = await poll();
     expect(second.result.opened).toBe(0);
@@ -94,8 +94,14 @@ describe.skipIf(!getTestDatabaseUrl())("pollWatchedSeats", () => {
     expect(result.opened).toBe(0);
     expect(openings).toEqual([]);
     const rows = await db.select().from(watches);
-    expect(rows.find((row) => row.id === wasOpen)).toMatchObject({ lastEnrollment: 38 });
-    expect(rows.find((row) => row.id === stillFull)).toMatchObject({ lastEnrollment: 20 });
+    expect(rows.find((row) => row.id === wasOpen)).toMatchObject({
+      lastEnrollment: 38,
+      lastOpenedAt: null,
+    });
+    expect(rows.find((row) => row.id === stillFull)).toMatchObject({
+      lastEnrollment: 20,
+      lastOpenedAt: null,
+    });
   });
 
   it("matches a watch to its own section type when a course and number list several", async () => {
