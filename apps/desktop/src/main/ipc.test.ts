@@ -148,6 +148,20 @@ describe("registerIpcHandlers", () => {
     expect(ipc.invoke(IPC_CHANNELS.planGet)).toMatchObject({ terms: [] });
   });
 
+  it("stores nothing on Workday import and persists only on confirm", async () => {
+    await ipc.invoke(IPC_CHANNELS.workdayImport);
+    expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual([]);
+    expect(ipc.invoke(IPC_CHANNELS.planGet)).toMatchObject({ terms: [] });
+    ipc.invoke(IPC_CHANNELS.workdayConfirm, importedReview);
+    expect(ipc.invoke(IPC_CHANNELS.completedGet)).toEqual(["CSC 1350"]);
+    expect(ipc.invoke(IPC_CHANNELS.planGet)).toMatchObject({
+      terms: [
+        { season: "Fall", year: 2026, courses: ["CSC 4330", "CSC 3102"] },
+        { season: "Spring", year: 2027, courses: ["CSC 3200"] },
+      ],
+    });
+  });
+
   it("saves confirmed Workday completions and deduplicated in-progress courses before done", () => {
     ipc.invoke(IPC_CHANNELS.planSave, {
       creditLimit: 19,
