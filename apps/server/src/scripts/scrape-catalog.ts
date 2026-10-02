@@ -4,9 +4,7 @@ import { createDb } from "../db/client.js";
 import { runCatalogScrape } from "../catalog/scrape-job.js";
 import { runCatalogScrapeCommand } from "./catalog-scrape-command.js";
 
-// Runs the catalog scrape once against the live LSU catalog, for local/operator use only.
-// CI never runs this; it requires an installed Chrome or Edge browser, which the server image
-// does not contain.
+// For local one-off runs; deployed servers run this on a schedule (CATALOG_SCRAPE_ENABLED).
 
 // Scripts run with cwd = apps/server; the repo-root .env is shared with docker compose.
 if (!process.env.DATABASE_URL && existsSync("../../.env")) {

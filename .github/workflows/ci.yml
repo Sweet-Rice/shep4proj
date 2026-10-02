@@ -60,7 +60,7 @@ jobs:
 
       # Built before the migrate steps so the database is migrated from the image itself.
       - name: Build server image
-        run: docker build -f apps/server/Dockerfile -t jevschedule-server:ci .
+        run: docker build --platform linux/amd64 -f apps/server/Dockerfile -t jevschedule-server:ci .
 
       # migrate.mjs must never print DATABASE_URL, which holds the password. An unencoded
       # `#` in the password makes the URL unparsable, and the parser's error carries it.
@@ -111,6 +111,7 @@ jobs:
             --add-host=host.docker.internal:host-gateway \
             -e DATABASE_URL=postgres://jevschedule:jevschedule@host.docker.internal:5432/jevschedule \
             -e SECTION_SCRAPE_ENABLED=false \
+            -e CATALOG_SCRAPE_ENABLED=false \
             jevschedule-server:ci
           fail() {
             echo "$1" >&2

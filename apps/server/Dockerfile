@@ -1,13 +1,13 @@
-# Production image for the API server (apps/server). Build from the repo root, since the
-# server depends on the workspace packages:
+# Production image for the API server and scheduled section/catalog scrapes (apps/server).
+# Build from the repo root, since the server depends on the workspace packages:
 #
-#   docker build -f apps/server/Dockerfile -t jevschedule-server .
+#   docker build --platform linux/amd64 -f apps/server/Dockerfile -t jevschedule-server .
 #   docker run --rm -e DATABASE_URL=postgres://... jevschedule-server node docker/migrate.mjs
 #   docker run -d -p 3000:3000 -e DATABASE_URL=postgres://... jevschedule-server
 #
 # The server listens on 0.0.0.0:$PORT (3000) and answers GET /health.
 
-FROM node:24-alpine AS build
+FROM node:24-bookworm-slim AS build
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 WORKDIR /repo
@@ -30,7 +30,7 @@ RUN pnpm --filter @jevschedule/server... build
 # instead of linking back to /repo/packages.
 RUN pnpm --filter @jevschedule/server deploy --prod /out
 
-FROM node:24-alpine AS runtime
+FROM node:24-bookworm-slim AS runtime
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=3000 \
@@ -44,6 +44,13 @@ COPY --from=build /out/dist dist
 COPY --from=build /out/drizzle drizzle
 COPY --from=build /out/docker docker
 COPY data/degrees /app/data/degrees
+
+RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates \
+ && wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+ && apt-get purge -y wget && apt-get autoremove -y \
+ && apt-get install -y --no-install-recommends /tmp/chrome.deb \
+ && rm /tmp/chrome.deb && rm -rf /var/lib/apt/lists/*
+ENV CATALOG_BROWSER_CHANNEL=chrome
 
 USER node
 EXPOSE 3000
