@@ -15,6 +15,7 @@ const degree: DegreeProgram = {
     {
       kind: "fixed",
       id: "core",
+      area: "Computer Science",
       label: "Core courses",
       semester: 1,
       courses: [

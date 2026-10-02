@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup, waitFor } from "@testing-library/react";
+import { render, screen, cleanup, waitFor, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import type { Course, DegreeProgram, DegreeSummary } from "@jevschedule/shared";
@@ -17,6 +17,7 @@ const sampleDegree: DegreeProgram = {
     {
       kind: "fixed",
       id: "sem-1-courses",
+      area: "Computer Science",
       label: "Semester 1 Core Courses",
       semester: 1,
       courses: [
@@ -27,6 +28,7 @@ const sampleDegree: DegreeProgram = {
     {
       kind: "creditBucket",
       id: "gened-humanities",
+      area: "Humanities",
       label: "General Education Humanities",
       semester: 3,
       credits: 6,
@@ -91,13 +93,15 @@ describe("DegreeProgressScreen", () => {
     expect(mockListDegrees).toHaveBeenCalledOnce();
     expect(mockGetDegree).toHaveBeenCalledWith(summary.id);
     expect(screen.getByText("Software Engineering (2026-2027)")).toBeInTheDocument();
-    expect(screen.getByTestId("req-status-sem-1-courses")).toBeInTheDocument();
+    expect(screen.getByTestId("area-computer-science")).toHaveTextContent("0 of 2 courses");
   });
 
-  it("allows toggling courses directly on the progress screen", async () => {
+  it("allows toggling courses in an expanded area", async () => {
     const user = userEvent.setup();
     render(<DegreeProgressScreen />);
-    const checkbox = await screen.findByRole("checkbox", { name: /CSC 1350/i });
+    const area = await screen.findByTestId("area-computer-science");
+    await user.click(within(area).getByText("Computer Science"));
+    const checkbox = within(area).getByRole("checkbox", { name: /CSC 1350/i });
     await user.click(checkbox);
     expect(checkbox).toBeChecked();
     expect(mockCompletedSet).toHaveBeenCalledWith("CSC 1350", true);
@@ -112,12 +116,10 @@ describe("DegreeProgressScreen", () => {
     expect(screen.queryByText("Computer Science, B.S.")).not.toBeInTheDocument();
   });
 
-  it("shows totals and falls back to evaluator defaults when catalog loading fails", async () => {
+  it("keeps the overall credit summary when catalog loading fails", async () => {
     mockListCourses.mockRejectedValue(new Error("offline"));
     render(<DegreeProgressScreen />);
     expect(await screen.findByText("Credit-Hour Summary")).toBeInTheDocument();
-    expect(screen.getByTestId("bucket-remaining-gened-humanities")).toHaveTextContent(
-      "6 credits left",
-    );
+    expect(screen.getByTestId("overall-required")).toHaveTextContent("120 hrs");
   });
 });

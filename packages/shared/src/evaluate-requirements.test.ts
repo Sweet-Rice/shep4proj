@@ -14,6 +14,7 @@ const sampleDegree = DegreeProgramSchema.parse({
     {
       kind: "fixed",
       id: "req-fixed-core",
+      area: "Computer Science",
       label: "Core CSC",
       semester: 1,
       courses: [{ code: "CSC 1350" }, { code: "MATH 1550", minGrade: "C" }],
@@ -21,6 +22,7 @@ const sampleDegree = DegreeProgramSchema.parse({
     {
       kind: "chooseN",
       id: "req-choose-math",
+      area: "Mathematics",
       label: "Choose Math Option",
       semester: 2,
       n: 1,
@@ -32,6 +34,7 @@ const sampleDegree = DegreeProgramSchema.parse({
     {
       kind: "creditBucket",
       id: "req-bucket-gened",
+      area: "Natural Sciences",
       label: "General Education Natural Science",
       semester: 3,
       credits: 6,
@@ -41,6 +44,7 @@ const sampleDegree = DegreeProgramSchema.parse({
     {
       kind: "creditBucket",
       id: "req-bucket-open",
+      area: "Electives",
       label: "General Elective",
       semester: 4,
       credits: 3,
@@ -164,6 +168,7 @@ describe("evaluateRequirements", () => {
         {
           kind: "fixed",
           id: "req-fixed-biol",
+          area: "Biology",
           label: "Biology",
           semester: 1,
           courses: [{ code: "BIOL 1001" }],
@@ -171,6 +176,7 @@ describe("evaluateRequirements", () => {
         {
           kind: "creditBucket",
           id: "req-bucket-sci",
+          area: "Science",
           label: "Science",
           semester: 2,
           credits: 3,
@@ -198,6 +204,7 @@ describe("evaluateRequirements", () => {
         {
           kind: "chooseN",
           id: "req-choose-2",
+          area: "English",
           label: "Choose 2",
           semester: 1,
           n: 2,
@@ -230,6 +237,7 @@ describe("evaluateRequirements", () => {
         {
           kind: "creditBucket",
           id: "open-first",
+          area: "Electives",
           label: "Open Electives",
           semester: 1,
           credits: 3,
@@ -239,6 +247,7 @@ describe("evaluateRequirements", () => {
         {
           kind: "fixed",
           id: "fixed-after",
+          area: "Required",
           label: "Required Course",
           semester: 2,
           courses: [{ code: "CSC 1350" }],
@@ -320,6 +329,7 @@ function degreeWithOpenBucket() {
       {
         kind: "creditBucket",
         id: "sci-bucket",
+        area: "Science",
         label: "Science Bucket",
         semester: 1,
         credits: 6,
@@ -329,6 +339,7 @@ function degreeWithOpenBucket() {
       {
         kind: "creditBucket",
         id: "open-bucket",
+        area: "Electives",
         label: "Free Elective",
         semester: 2,
         credits: 3,

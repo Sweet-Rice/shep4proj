@@ -14,6 +14,8 @@ export const CourseRefSchema = z.object({
 const requirementBase = {
   id: SlugSchema,
   label: z.string().min(1),
+  /** Degree-audit area the requirement counts toward (e.g. "Computer Science", "Natural Sciences"); the progress screen groups requirements by area. */
+  area: z.string().min(1),
   /** Suggested semester (1-8) in the degree flowchart, or null when unplaced. */
   semester: z.number().int().min(1).max(8).nullable().default(null),
 };
@@ -62,6 +64,7 @@ export const DegreeProgramSchema = z
   })
   .superRefine((program, ctx) => {
     const seen = new Set<string>();
+    const kindsByArea = new Map<string, Set<"courses" | "credits">>();
     program.requirements.forEach((requirement, index) => {
       if (seen.has(requirement.id)) {
         ctx.addIssue({
@@ -79,7 +82,22 @@ export const DegreeProgramSchema = z
           path: ["requirements", index, "n"],
         });
       }
+
+      const unit = requirement.kind === "creditBucket" ? "credits" : "courses";
+      const kinds = kindsByArea.get(requirement.area) ?? new Set<"courses" | "credits">();
+      kinds.add(unit);
+      kindsByArea.set(requirement.area, kinds);
     });
+
+    for (const [area, kinds] of kindsByArea) {
+      if (kinds.size > 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `area ${area} mixes course and credit requirements`,
+          path: ["requirements"],
+        });
+      }
+    }
   });
 
 export type CourseRef = z.infer<typeof CourseRefSchema>;

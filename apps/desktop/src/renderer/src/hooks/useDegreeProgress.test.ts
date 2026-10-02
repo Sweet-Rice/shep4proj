@@ -15,6 +15,7 @@ const sampleDegree: DegreeProgram = {
     {
       kind: "fixed",
       id: "req-1",
+      area: "Computer Science",
       label: "Core CSC",
       semester: 1,
       courses: [{ code: "CSC 1350", minGrade: null }],

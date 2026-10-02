@@ -30,6 +30,7 @@ const degree: DegreeProgram = DegreeProgramSchema.parse({
     {
       kind: "fixed",
       id: "semester-1",
+      area: "Computer Science",
       label: "Semester 1",
       semester: 1,
       courses: [{ code: "CSC 1350" }],

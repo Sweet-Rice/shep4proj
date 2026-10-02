@@ -10,11 +10,9 @@
 # (Rev. 1/25/2024), whose legend defines the "C" marker; see "Minimum grades" below.
 #
 # Mapping used on this page:
-#   - each semester's named courses            -> one `fixed` requirement (sem-<n>-courses)
-#   - each placeholder line, e.g. "General Education course - Natural Sciences (3)"
-#                                              -> a `creditBucket` (sem-<n>-bucket-<k>);
-#                                                 `category` is the line without its credits,
-#                                                 wording kept as the page has it
+#   - semester course lines -> one fixed requirement per subject area
+#   - placeholder lines -> credit buckets grouped into the degree-audit areas below;
+#     each bucket keeps its catalog category wording and flowchart semester
 #   - the Software Engineering section lists no "X or Y" course items, so there are no
 #     `chooseN` requirements.
 #
@@ -76,196 +74,261 @@ catalogYear: "2026-2027"
 totalCredits: 120
 source: https://catalog.lsu.edu/preview_program.php?catoid=35&poid=14278
 requirements:
-  # Semester 1 (15 hours)
-  - id: sem-1-courses
+  # Computer Science requirements, split by flowchart semester.
+  - id: sem-1-csc
     kind: fixed
-    label: "Semester 1 courses"
+    label: Computer Science
+    area: Computer Science
     semester: 1
     courses:
       - { code: "CSC 1350", minGrade: C }
-      - { code: "ENGL 1001", minGrade: C }
-      - { code: "MATH 1550", minGrade: C }
-  - id: sem-1-bucket-1
-    kind: creditBucket
-    label: "General Education course - Natural Sciences"
-    semester: 1
-    credits: 3
-    category: "General Education course - Natural Sciences"
-    eligibleCourses:
-      - { code: "BIOL 1001", minGrade: C }
-      - { code: "BIOL 1201", minGrade: C }
-
-  # Semester 2 (15 hours)
-  - id: sem-2-courses
+  - id: sem-2-csc
     kind: fixed
-    label: "Semester 2 courses"
+    label: Computer Science
+    area: Computer Science
     semester: 2
     courses:
       - { code: "CSC 1351", minGrade: C }
-      - { code: "MATH 1552", minGrade: C }
-  - id: sem-2-bucket-1
-    kind: creditBucket
-    label: "General Education course - Natural Sciences"
-    semester: 2
-    credits: 3
-    category: "General Education course - Natural Sciences"
-  - id: sem-2-bucket-2
-    kind: creditBucket
-    label: "General Education course - Natural Sciences Lab"
-    semester: 2
-    credits: 1
-    category: "General Education course - Natural Sciences Lab"
-  - id: sem-2-bucket-3
-    kind: creditBucket
-    label: "General Education course - Humanities (English/Honors 2000-level)"
-    semester: 2
-    credits: 3
-    category: "General Education course - Humanities (English/Honors 2000-level)"
-
-  # Semester 3 (17 hours)
-  - id: sem-3-courses
+  - id: sem-3-csc
     kind: fixed
-    label: "Semester 3 courses"
+    label: Computer Science
+    area: Computer Science
     semester: 3
     courses:
       - { code: "CSC 2259", minGrade: C }
       - { code: "CSC 3102", minGrade: C }
-      - { code: "MATH 2090" }
-  - id: sem-3-bucket-1
-    kind: creditBucket
-    label: "General Education course - Natural Sciences"
-    semester: 3
-    credits: 3
-    category: "General Education course - Natural Sciences"
-  - id: sem-3-bucket-2
-    kind: creditBucket
-    label: "General Education course - Natural Sciences Lab"
-    semester: 3
-    credits: 1
-    category: "General Education course - Natural Sciences Lab"
-  - id: sem-3-bucket-3
-    kind: creditBucket
-    label: "General Education course - Humanities"
-    semester: 3
-    credits: 3
-    category: "General Education course - Humanities"
-
-  # Semester 4 (15 hours)
-  - id: sem-4-courses
+  - id: sem-4-csc
     kind: fixed
-    label: "Semester 4 courses"
+    label: Computer Science
+    area: Computer Science
     semester: 4
     courses:
       - { code: "CSC 2262" }
       - { code: "CSC 3304" }
       - { code: "CSC 3501" }
-      - { code: "ENGL 2000", minGrade: C }
-  - id: sem-4-bucket-1
-    kind: creditBucket
-    label: "General Education course - Humanities (Communication Studies course)"
-    semester: 4
-    credits: 3
-    category: "General Education course - Humanities (Communication Studies course)"
-
-  # Semester 5 (13 hours)
-  - id: sem-5-courses
+  - id: sem-5-csc
     kind: fixed
-    label: "Semester 5 courses"
+    label: Computer Science
+    area: Computer Science
     semester: 5
     courses:
       - { code: "CSC 3380", minGrade: C }
       - { code: "CSC 4101", minGrade: C }
       - { code: "CSC 3200", minGrade: C }
-      - { code: "IE 3302" }
-  - id: sem-5-bucket-1
-    kind: creditBucket
-    label: "Approved Technical Elective"
-    semester: 5
-    credits: 3
-    category: "Approved Technical Elective"
-
-  # Semester 6 (15 hours)
-  - id: sem-6-courses
+  - id: sem-6-csc
     kind: fixed
-    label: "Semester 6 courses"
+    label: Computer Science
+    area: Computer Science
     semester: 6
     courses:
       - { code: "CSC 4103", minGrade: C }
       - { code: "CSC 4402" }
       - { code: "CSC 4351" }
-  - id: sem-6-bucket-1
-    kind: creditBucket
-    label: "General Education course - Social Sciences"
-    semester: 6
-    credits: 3
-    category: "General Education course - Social Sciences"
-  - id: sem-6-bucket-2
-    kind: creditBucket
-    label: "Approved Technical Elective"
-    semester: 6
-    credits: 3
-    category: "Approved Technical Elective"
-
-  # Semester 7 (15 hours)
-  - id: sem-7-courses
+  - id: sem-7-csc
     kind: fixed
-    label: "Semester 7 courses"
+    label: Computer Science
+    area: Computer Science
     semester: 7
     courses:
       - { code: "CSC 4330", minGrade: C }
-  - id: sem-7-bucket-1
-    kind: creditBucket
-    label: "CSC SEG (2000-level or above) Elective"
-    semester: 7
-    credits: 3
-    category: "CSC SEG (2000-level or above) Elective"
-  - id: sem-7-bucket-2
-    kind: creditBucket
-    label: "Approved SEG Area Elective"
-    semester: 7
-    credits: 3
-    category: "Approved SEG Area Elective"
-  - id: sem-7-bucket-3
-    kind: creditBucket
-    label: "Approved Elective"
-    semester: 7
-    credits: 3
-    category: "Approved Elective"
-  - id: sem-7-bucket-4
-    kind: creditBucket
-    label: "General Education course - Social Sciences (2000-level)"
-    semester: 7
-    credits: 3
-    category: "General Education course - Social Sciences (2000-level)"
-
-  # Semester 8 (15 hours)
-  - id: sem-8-courses
+  - id: sem-8-csc
     kind: fixed
-    label: "Semester 8 courses"
+    label: Computer Science
+    area: Computer Science
     semester: 8
     courses:
       - { code: "CSC 4332" }
-  - id: sem-8-bucket-1
+
+  # Mathematics and Statistics
+  - id: sem-1-math
+    kind: fixed
+    label: Mathematics and Statistics
+    area: Mathematics and Statistics
+    semester: 1
+    courses:
+      - { code: "MATH 1550", minGrade: C }
+  - id: sem-2-math
+    kind: fixed
+    label: Mathematics and Statistics
+    area: Mathematics and Statistics
+    semester: 2
+    courses:
+      - { code: "MATH 1552", minGrade: C }
+  - id: sem-3-math
+    kind: fixed
+    label: Mathematics and Statistics
+    area: Mathematics and Statistics
+    semester: 3
+    courses:
+      - { code: "MATH 2090" }
+  - id: sem-5-math
+    kind: fixed
+    label: Mathematics and Statistics
+    area: Mathematics and Statistics
+    semester: 5
+    courses:
+      - { code: "IE 3302" }
+
+  # English Composition
+  - id: sem-1-engl
+    kind: fixed
+    label: English Composition
+    area: English Composition
+    semester: 1
+    courses:
+      - { code: "ENGL 1001", minGrade: C }
+  - id: sem-4-engl
+    kind: fixed
+    label: English Composition
+    area: English Composition
+    semester: 4
+    courses:
+      - { code: "ENGL 2000", minGrade: C }
+
+  # Natural Sciences
+  - id: sem-1-bucket-1
     kind: creditBucket
-    label: "CSC SEG (2000-level or above) Elective"
-    semester: 8
+    label: General Education course - Natural Sciences
+    area: Natural Sciences
+    semester: 1
     credits: 3
-    category: "CSC SEG (2000-level or above) Elective"
-  - id: sem-8-bucket-2
+    category: General Education course - Natural Sciences
+    eligibleCourses:
+      - { code: "BIOL 1001", minGrade: C }
+      - { code: "BIOL 1201", minGrade: C }
+  - id: sem-2-bucket-1
     kind: creditBucket
-    label: "Approved SEG Area Electives"
-    semester: 8
+    label: General Education course - Natural Sciences
+    area: Natural Sciences
+    semester: 2
     credits: 3
-    category: "Approved SEG Area Electives"
+    category: General Education course - Natural Sciences
+  - id: sem-2-bucket-2
+    kind: creditBucket
+    label: General Education course - Natural Sciences Lab
+    area: Natural Sciences
+    semester: 2
+    credits: 1
+    category: General Education course - Natural Sciences Lab
+  - id: sem-3-bucket-1
+    kind: creditBucket
+    label: General Education course - Natural Sciences
+    area: Natural Sciences
+    semester: 3
+    credits: 3
+    category: General Education course - Natural Sciences
+  - id: sem-3-bucket-2
+    kind: creditBucket
+    label: General Education course - Natural Sciences Lab
+    area: Natural Sciences
+    semester: 3
+    credits: 1
+    category: General Education course - Natural Sciences Lab
+
+  # Humanities
+  - id: sem-2-bucket-3
+    kind: creditBucket
+    label: General Education course - Humanities (English/Honors 2000-level)
+    area: Humanities
+    semester: 2
+    credits: 3
+    category: General Education course - Humanities (English/Honors 2000-level)
+  - id: sem-3-bucket-3
+    kind: creditBucket
+    label: General Education course - Humanities
+    area: Humanities
+    semester: 3
+    credits: 3
+    category: General Education course - Humanities
+  - id: sem-4-bucket-1
+    kind: creditBucket
+    label: General Education course - Humanities (Communication Studies course)
+    area: Humanities
+    semester: 4
+    credits: 3
+    category: General Education course - Humanities (Communication Studies course)
+
+  # Social Sciences
+  - id: sem-6-bucket-1
+    kind: creditBucket
+    label: General Education course - Social Sciences
+    area: Social Sciences
+    semester: 6
+    credits: 3
+    category: General Education course - Social Sciences
+  - id: sem-7-bucket-4
+    kind: creditBucket
+    label: General Education course - Social Sciences (2000-level)
+    area: Social Sciences
+    semester: 7
+    credits: 3
+    category: General Education course - Social Sciences (2000-level)
+
+  # Arts
   - id: sem-8-bucket-3
     kind: creditBucket
-    label: "General Education course - Arts"
+    label: General Education course - Arts
+    area: Arts
     semester: 8
     credits: 3
-    category: "General Education course - Arts"
+    category: General Education course - Arts
+
+  # Major Electives
+  - id: sem-5-bucket-1
+    kind: creditBucket
+    label: Approved Technical Elective
+    area: Major Electives
+    semester: 5
+    credits: 3
+    category: Approved Technical Elective
+  - id: sem-6-bucket-2
+    kind: creditBucket
+    label: Approved Technical Elective
+    area: Major Electives
+    semester: 6
+    credits: 3
+    category: Approved Technical Elective
+  - id: sem-7-bucket-1
+    kind: creditBucket
+    label: CSC SEG (2000-level or above) Elective
+    area: Major Electives
+    semester: 7
+    credits: 3
+    category: CSC SEG (2000-level or above) Elective
+  - id: sem-7-bucket-2
+    kind: creditBucket
+    label: Approved SEG Area Elective
+    area: Major Electives
+    semester: 7
+    credits: 3
+    category: Approved SEG Area Elective
+  - id: sem-8-bucket-1
+    kind: creditBucket
+    label: CSC SEG (2000-level or above) Elective
+    area: Major Electives
+    semester: 8
+    credits: 3
+    category: CSC SEG (2000-level or above) Elective
+  - id: sem-8-bucket-2
+    kind: creditBucket
+    label: Approved SEG Area Electives
+    area: Major Electives
+    semester: 8
+    credits: 3
+    category: Approved SEG Area Electives
+
+  # Approved Electives
+  - id: sem-7-bucket-3
+    kind: creditBucket
+    label: Approved Elective
+    area: Approved Electives
+    semester: 7
+    credits: 3
+    category: Approved Elective
   - id: sem-8-bucket-4
     kind: creditBucket
-    label: "Approved Elective"
+    label: Approved Elective
+    area: Approved Electives
     semester: 8
     credits: 3
-    category: "Approved Elective"
+    category: Approved Elective

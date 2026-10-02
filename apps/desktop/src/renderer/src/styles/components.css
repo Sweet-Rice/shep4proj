@@ -121,9 +121,8 @@ input[type="radio"] {
 }
 .card,
 .flow-card,
-.requirement-card,
+.area-card,
 .overall-totals-card,
-.bucket-total-card,
 .section-list-item,
 .modal-card,
 .degree-header,
@@ -136,9 +135,7 @@ input[type="radio"] {
 }
 .badge,
 .status-badge,
-.req-status-badge,
 .totals-badge,
-.bucket-badge,
 .term-credits-badge,
 .grade-badge,
 .term-badge,
