@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import { CompletedCourses } from "./CompletedCourses.js";
@@ -22,7 +22,7 @@ function installApi(
     jevschedule: {
       completed: { get: async () => completed, set },
       catalog: {
-        listCourses: async () => [course],
+        listCourses: async () => [course, { ...course, code: "CSC 4103" }],
         getCourseDetails: async () => ({}),
         listDegrees: async () => [],
         getDegree: async () => {
@@ -63,14 +63,19 @@ describe("CompletedCourses catalog membership", () => {
     installApi(set);
     render(<CompletedCourses />);
 
-    await user.click(await screen.findByRole("button", { name: "Mark Completed" }));
+    await user.click(
+      await within(await screen.findByTestId("course-item-CSC 1350")).findByRole("button", {
+        name: "Mark Completed",
+      }),
+    );
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Not in the LSU course catalog: CSC 1350",
     );
-    expect(screen.getByRole("button", { name: "Mark Completed" })).toHaveAttribute(
-      "aria-pressed",
-      "false",
-    );
+    expect(
+      within(screen.getByTestId("course-item-CSC 1350")).getByRole("button", {
+        name: "Mark Completed",
+      }),
+    ).toHaveAttribute("aria-pressed", "false");
   });
 
   it("allows manual entry of a catalog course to be completed", async () => {
@@ -85,6 +90,20 @@ describe("CompletedCourses catalog membership", () => {
     await user.click(screen.getByRole("button", { name: "Show course" }));
     await user.click(screen.getByRole("checkbox", { name: "CSC 1350 completed" }));
     await waitFor(() => expect(set).toHaveBeenCalledWith("CSC 1350", true));
+  });
+  it("normalizes manual suffixed entry to the catalog code", async () => {
+    const user = userEvent.setup();
+    const set = vi.fn().mockResolvedValue(undefined);
+    installApi(set);
+    render(<CompletedCourses />);
+
+    const input = screen.getByRole("textbox", { name: "Course code" });
+    await waitFor(() => expect(input).toBeEnabled());
+    await user.type(input, "CSC 4103G");
+    await user.click(screen.getByRole("button", { name: "Show course" }));
+    expect(input).toHaveValue("CSC 4103");
+    await user.click(screen.getByRole("checkbox", { name: "CSC 4103 completed" }));
+    await waitFor(() => expect(set).toHaveBeenCalledWith("CSC 4103", true));
   });
   it("flags a stored completion missing from the loaded catalog", async () => {
     const user = userEvent.setup();
