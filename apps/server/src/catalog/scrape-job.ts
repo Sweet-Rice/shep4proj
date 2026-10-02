@@ -127,6 +127,9 @@ export async function runCatalogScrape(o: {
         });
         continue;
       }
+      if (detail.creditsAssumed === true) {
+        o.log?.(`${entry.code}: credits not stated; assuming 3`);
+      }
       const row = toCourseRow(entry, detail, o.catalogYear);
       upserted += await upsertCourses(o.db, [row]);
     } catch (err) {

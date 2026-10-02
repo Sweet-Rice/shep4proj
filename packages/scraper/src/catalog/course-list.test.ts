@@ -9,6 +9,8 @@ const FIXTURE_DIR = fileURLToPath(
   new URL("../../../../fixtures/catalog/2026-2027/", import.meta.url),
 );
 const courseListHtml = readFileSync(`${FIXTURE_DIR}csc-course-list.html`, "utf8");
+const chemCourseListHtml = readFileSync(`${FIXTURE_DIR}chem-course-list.html`, "utf8");
+const eeCourseListPage2Html = readFileSync(`${FIXTURE_DIR}ee-course-list-page-2.html`, "utf8");
 const fixtureReadme = readFileSync(`${FIXTURE_DIR}README.md`, "utf8").replace(/\r\n/g, "\n");
 
 /** Source URL the README records for a fixture file. */
@@ -55,6 +57,35 @@ describe("parseCourseList", () => {
     expect(entries.find((entry) => entry.code === "CSC 9000")?.creditsText).toBe("1-12 per sem.");
   });
 
+  it("parses the HIST bare-credit row", () => {
+    const entries = parseCourseList(readFileSync(`${FIXTURE_DIR}hist-course-list.html`, "utf8"));
+    expect(entries).toHaveLength(100);
+    expect(entries.find((entry) => entry.code === "HIST 2025")).toMatchObject({
+      title: "Early Modern Europe",
+      creditsText: "3",
+    });
+  });
+
+  it("parses every row on the CHEM list page when credits are omitted", () => {
+    const entries = parseCourseList(chemCourseListHtml);
+    expect(entries).toHaveLength(78);
+    expect(entries.find((entry) => entry.code === "CHEM 1101")).toMatchObject({
+      title: "Principles of Chemistry I",
+      creditsText: null,
+      coid: "236828",
+    });
+  });
+
+  it("parses every row on EE page 2 when EE 7422 omits credits", () => {
+    const entries = parseCourseList(eeCourseListPage2Html);
+    expect(entries).toHaveLength(41);
+    expect(entries.find((entry) => entry.code === "EE 7422")).toMatchObject({
+      title: "Advanced Electric Machines",
+      creditsText: null,
+      coid: "232129",
+    });
+  });
+
   it("returns unique CSC course codes", () => {
     const codes = entries.map((entry) => entry.code);
     expect(new Set(codes).size).toBe(codes.length);
@@ -87,10 +118,19 @@ describe("parseCourseList", () => {
     expect(() => parseCourseList(html)).toThrow(/CSC 1350.*coid/);
   });
 
-  it("throws CatalogShapeError when a course code is listed twice", () => {
-    const row = '<a href="preview_course_nopop.php?catoid=35&coid=1">CSC 1350 Some Title (4)</a>';
-    expect(() => parseCourseList(pageWithRows(row, row))).toThrow(CatalogShapeError);
-    expect(() => parseCourseList(pageWithRows(row, row))).toThrow(/CSC 1350.*more than once/);
+  it("keeps only the first listing for duplicate course codes", () => {
+    const row1 = '<a href="preview_course_nopop.php?catoid=35&coid=1">CSC 1350 First Title (4)</a>';
+    const row2 = '<a href="preview_course_nopop.php?catoid=35&coid=2">CSC 1350 Later Title (4)</a>';
+    expect(parseCourseList(pageWithRows(row1, row2))).toMatchObject([
+      { code: "CSC 1350", title: "First Title", coid: "1" },
+    ]);
+  });
+
+  it("drops duplicate ECON 4610 listings from the captured page", () => {
+    const entries = parseCourseList(readFileSync(`${FIXTURE_DIR}econ-course-list.html`, "utf8"));
+    expect(entries.filter((entry) => entry.code === "ECON 4610")).toHaveLength(1);
+    expect(entries).toHaveLength(60);
+    expect(entries.find((entry) => entry.code === "ECON 4610")?.coid).toBe("229605");
   });
 
   it("throws CatalogShapeError when a course row precedes any department heading", () => {

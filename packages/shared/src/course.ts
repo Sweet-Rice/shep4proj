@@ -71,7 +71,7 @@ export const CourseSchema = z.object({
   code: CourseCodeSchema,
   title: z.string().trim().min(1),
   credits: CreditsSchema,
-  description: z.string().trim().min(1),
+  description: z.string().trim(),
   /** Original catalog wording, retained for prerequisite parsing and review. */
   prerequisiteText: z.string().nullable(),
 });
