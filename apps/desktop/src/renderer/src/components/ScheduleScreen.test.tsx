@@ -146,6 +146,61 @@ describe("ScheduleScreen", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Schedule Conflict Detected");
   }, 15_000);
 
+  it("removes a section from the calendar and clears its conflict", async () => {
+    const user = userEvent.setup();
+    setup();
+    render(<ScheduleScreen />);
+    await screen.findByRole("combobox", { name: "Term" });
+    for (const code of ["CSC 4330", "CSC 1350"]) {
+      await user.selectOptions(screen.getByRole("combobox", { name: "Add course" }), code);
+      await user.click(screen.getByRole("button", { name: "Add course" }));
+      await user.click(
+        await within(
+          await screen.findByRole("region", { name: `Sections for ${code}` }),
+        ).findByRole("button", { name: "Add to schedule" }),
+      );
+    }
+    expect(screen.getByRole("alert")).toHaveTextContent("Schedule Conflict Detected");
+
+    await user.click(
+      within(screen.getByTestId("meeting-block-CSC 4330-Mon")).getByRole("button", {
+        name: "Remove section CSC 4330 001",
+      }),
+    );
+
+    expect(screen.queryByTestId("meeting-block-CSC 4330-Mon")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("meeting-block-CSC 4330-Wed")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("meeting-block-CSC 1350-Mon")).toHaveLength(1);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  }, 15_000);
+
+  it("removes a course from the list and offers it again", async () => {
+    const user = userEvent.setup();
+    setup();
+    render(<ScheduleScreen />);
+    await screen.findByRole("combobox", { name: "Term" });
+    await user.selectOptions(screen.getByRole("combobox", { name: "Add course" }), "CSC 4330");
+    await user.click(screen.getByRole("button", { name: "Add course" }));
+    expect(
+      await screen.findByRole("region", { name: "Sections for CSC 4330" }),
+    ).toBeInTheDocument();
+    const addCourse = screen.getByRole("combobox", { name: "Add course" });
+    expect(within(addCourse).queryByRole("option", { name: /CSC 4330/ })).not.toBeInTheDocument();
+
+    await user.click(
+      within(screen.getByRole("region", { name: "Courses to schedule" })).getByRole("button", {
+        name: "Remove",
+      }),
+    );
+
+    expect(screen.queryByRole("region", { name: "Sections for CSC 4330" })).not.toBeInTheDocument();
+    expect(
+      within(screen.getByRole("combobox", { name: "Add course" })).getByRole("option", {
+        name: /CSC 4330/,
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("offers every plan term and requests sections with the selected period id", async () => {
     const user = userEvent.setup();
     const spring = { season: "Spring" as const, year: 2027, courses: [] };
