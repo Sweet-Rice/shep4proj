@@ -34,9 +34,10 @@ export function DegreeProgressView({
   const evaluation = useDegreeProgress(degree, completed, catalog);
   if (!evaluation) return null;
 
-  const percentComplete = Math.round(
-    (evaluation.totalCreditsFulfilled / evaluation.totalCreditsRequired) * 100,
-  );
+  const percentComplete =
+    evaluation.totalCreditsRequired > 0
+      ? Math.round((evaluation.totalCreditsFulfilled / evaluation.totalCreditsRequired) * 100)
+      : 0;
   const areas = groupRequirementsByArea(evaluation);
 
   return (
