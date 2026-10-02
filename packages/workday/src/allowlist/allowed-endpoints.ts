@@ -40,7 +40,7 @@ export const ALLOWED_ENDPOINTS: readonly AllowedEndpoint[] = [
     method: "GET",
     // Direct task URL plus the observed per-session page-context response.
     pattern:
-      /^https:\/\/www\.myworkday.com\/lsu\/generic-hub\/(task\/2998\$28771|page-context-id\/[A-Za-z0-9]+)\.htmld(\?.*)?$/,
+      /^https:\/\/www\.myworkday\.com\/lsu\/generic-hub\/(task\/2998\$28771|page-context-id\/[A-Za-z0-9]+)\.htmld(\?.*)?$/,
     description:
       "Read the student's current-term registrations (View My Courses): enrolled courses with their sections, and dropped/withdrawn sections.",
   },

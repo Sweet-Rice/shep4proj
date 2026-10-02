@@ -198,6 +198,16 @@ describe("ALLOWED_ENDPOINTS: current-registrations-get", () => {
     ).toThrow(EndpointNotAllowedError);
   });
 
+  it("matches only the exact www.myworkday.com host", () => {
+    expect(() =>
+      assertAllowed(
+        "GET",
+        "https://www.myworkdayXcom/lsu/generic-hub/task/2998$28771.htmld",
+        ALLOWED_ENDPOINTS,
+      ),
+    ).toThrow(EndpointNotAllowedError);
+  });
+
   it("rejects the registration write API and the drop API - the deny patterns win over any allowlist entry", () => {
     expect(() =>
       assertAllowed(
