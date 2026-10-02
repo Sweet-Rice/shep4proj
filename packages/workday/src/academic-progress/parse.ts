@@ -80,7 +80,7 @@ function statusFromText(text: string): AcademicRequirementStatus {
   const normalized = text.trim().toLowerCase().replace(/[\s_]+/g, " ");
   if (["satisfied", "complete", "completed"].includes(normalized)) return "satisfied";
   if (["in progress", "in-progress", "inprogress"].includes(normalized)) return "in-progress";
-  if (["not satisfied", "not complete", "not completed", "incomplete"].includes(normalized)) return "not-satisfied";
+  if (["not satisfied", "not-satisfied", "not complete", "not completed", "incomplete"].includes(normalized)) return "not-satisfied";
   return "unknown";
 }
 

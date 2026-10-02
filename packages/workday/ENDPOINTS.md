@@ -100,6 +100,7 @@ change.
     after sign-in (T-321); the values are never logged, stored, or sent to
     the renderer.
 
+
 ### current-registrations-get
 - Purpose: Reads the student's current-term registrations ("View My
   Courses") — enrolled courses with their section(s), and dropped/withdrawn
@@ -149,3 +150,21 @@ Endpoints in this document come from a redacted DevTools capture performed
 by a human with an LSU login, run via `pnpm --filter @jevschedule/workday
 capture`. See the wiki's Workday-Capture-Guide for the full capture
 procedure.
+
+### academic-progress-get
+- Purpose: Reads the student's Workday degree audit, including overall credit
+  totals, requirement statuses, remaining amounts, and registrations used to
+  satisfy requirements.
+- Method: GET
+- URL pattern: `https://www.myworkday.com/lsu/generic-hub/task/2998$43459.htmld`
+- Required headers: same as `academic-record-get` — `session-secure-token`,
+  `x-workday-client`, `accept`, `content-type`, `referer` (plus the session
+  cookie).
+- Fixture: `fixtures/workday/academic-progress.synthetic.json`
+- Notes:
+  - This route was observed in a Workday capture on 2026-10-02. The capture
+    itself is local-only and is not part of this repository.
+  - The response contains overall-progress grids and a requirement grid with
+    nested registration cells. The parser exposes no grades or student
+    identity fields.
+

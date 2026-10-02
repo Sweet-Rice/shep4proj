@@ -7,6 +7,7 @@ import {
 } from "@jevschedule/shared";
 import type { TranscriptParseResult } from "@jevschedule/workday";
 import type { AcademicRecordResult } from "@jevschedule/workday/academic-record";
+import type { AcademicProgressResult } from "@jevschedule/workday/academic-progress";
 import type { CurrentRegistrationsResult } from "@jevschedule/workday/current-registrations";
 
 const COMPLETED_GRADE = /^(?:[ABCD][+-]?|P|Pass)$/i;
@@ -44,6 +45,7 @@ export interface StoreImport {
   completed: CourseCode[];
   inProgress: PlanTerm[];
   skipped: SkippedCourse[];
+  academicProgress?: AcademicProgressResult | null;
 }
 
 type Outcome = "completed" | "in-progress" | { skip: string };

@@ -159,6 +159,9 @@ export function ImportProgressFlow({
 
       {stage === "review" && (workdayReview ?? uploadedResult) !== null && (
         <div className="flow-card review-card" data-testid="stage-review">
+          {workdayReview && workdayReview.academicProgress == null ? (
+            <p role="status">Academic progress unavailable.</p>
+          ) : null}
           <ImportReviewScreen
             parseResult={
               workdayReview

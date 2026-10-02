@@ -23,6 +23,9 @@ const api: JevscheduleApi = {
     listDegrees: () => ipcRenderer.invoke(IPC_CHANNELS.catalogDegrees),
     getDegree: (id) => ipcRenderer.invoke(IPC_CHANNELS.catalogDegree, id),
   },
+  academicProgress: {
+    getAudit: () => ipcRenderer.invoke(IPC_CHANNELS.academicProgressGet),
+  },
   workday: {
     start: () => ipcRenderer.invoke(IPC_CHANNELS.workdayImport),
     confirm: (review) => ipcRenderer.invoke(IPC_CHANNELS.workdayConfirm, review),

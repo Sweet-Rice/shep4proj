@@ -31,3 +31,15 @@ This checklist documents the manual testing procedures and verification results 
 - **Installer / Build**: `JevSchedule.dmg` / `.app`
 - **Result**: **PASS** (6/6 items verified)
 - **Details**: Hardened runtime, Gatekeeper assessment, transcript review screen, and local store persistence verified on macOS environment.
+
+## Academic progress audit
+
+After confirming a Workday import that includes an academic progress audit:
+
+1. Open **Degree progress** and verify the imported Workday audit is selected.
+2. Expand a requirement and inspect its status and any courses used to satisfy it.
+3. Select the catalog-plan view and verify the local degree requirements remain available.
+4. With no stored audit, verify the catalog plan still appears with the prompt to import from Workday.
+5. If audit retrieval or parsing fails during import, verify the course review can still be confirmed and the Degree progress screen reports that the audit is unavailable.
+
+The parser, local audit store, confirmation IPC, and Degree progress view have automated fixture/mock coverage. No Electron smoke was performed for this change.

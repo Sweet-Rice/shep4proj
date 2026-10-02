@@ -45,5 +45,10 @@ export function restrictReviewToCatalog(
     if (!seen.has(key)) skipped.push({ code, reason: NOT_IN_CATALOG_REASON });
     seen.add(key);
   }
-  return { completed, inProgress, skipped };
+  return {
+    completed,
+    inProgress,
+    skipped,
+    ...(review.academicProgress === undefined ? {} : { academicProgress: review.academicProgress }),
+  };
 }

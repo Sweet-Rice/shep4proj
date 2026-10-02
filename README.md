@@ -23,8 +23,8 @@ its first request after that may take about a minute.
 
 - **Courses:** search the LSU catalog, mark courses complete, and import course history
   from a transcript PDF or Workday. Completed courses must exist in the catalog.
-- **Degree progress:** view requirements grouped into nine areas, with progress bars and
-  expandable course details.
+- **Degree progress:** review the official Workday audit after confirming an import, or view
+  JevSchedule's catalog-based requirements when no audit is stored. Switch between both views.
 - **Eligible courses:** see catalog courses you are eligible to take and why others need
   review or are blocked.
 - **Plan:** add catalog courses to semesters and see credit totals and limit warnings.
@@ -37,8 +37,10 @@ actual number shown, for example, “Showing 50 of 2629 courses.”
 
 On the Courses tab, start a Workday import to open a visible browser sign-in window. Sign
 in through LSU SSO and Duo yourself. JevSchedule reads current-term courses without
-changing them, shows progress stages, and presents a review before anything is saved. If
-you prefer, or Workday's page format is not recognized, upload a transcript PDF instead.
+changing them, shows progress stages, and presents a review before anything is saved. After
+confirmation, the Degree progress tab can show the official audit from that import alongside
+the catalog-based plan. If the audit is unavailable, the catalog plan remains available.
+If you prefer, or Workday's page format is not recognized, upload a transcript PDF instead.
 
 ## What JevSchedule never does
 

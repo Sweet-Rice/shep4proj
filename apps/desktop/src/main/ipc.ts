@@ -7,18 +7,20 @@ import {
   type CourseCode,
 } from "@jevschedule/shared";
 import type { TranscriptParseResult } from "@jevschedule/workday";
+import type { AcademicProgressResult } from "@jevschedule/workday/academic-progress";
 import { z } from "zod";
 import { IPC_CHANNELS } from "../shared/ipc.js";
 import type { CatalogClient } from "./catalog.js";
+import type { AcademicProgressStore } from "./store/academic-progress.js";
 import type { CompletedStore } from "./store/completed.js";
 import type { PlanStore } from "./store/plan.js";
 import type { WorkdayImporter } from "./workday-import.js";
 import { CourseNotInCatalogError, restrictReviewToCatalog } from "../shared/catalog-membership.js";
-/** Stores and services the handlers read. */
 export interface IpcStores {
   completed: CompletedStore;
   plan: PlanStore;
   catalog: CatalogClient;
+  academicProgress: AcademicProgressStore;
 }
 
 export interface IpcServices {
@@ -34,10 +36,33 @@ export class UntrustedIpcSenderError extends Error {
 }
 
 const CompletedSetArgsSchema = z.tuple([CourseCodeSchema, z.boolean()]);
+const AcademicProgressResultSchema = z.object({
+  overall: z.object({
+    definedCredits: z.number().nullable(),
+    inProgressCredits: z.number().nullable(),
+    satisfyingCredits: z.number().nullable(),
+    remainingCredits: z.number().nullable(),
+    status: z.string().nullable(),
+  }),
+  requirements: z.array(z.object({
+    name: z.string(),
+    status: z.enum(["satisfied", "in-progress", "not-satisfied", "unknown"]),
+    statusText: z.string(),
+    remaining: z.string().nullable(),
+    satisfiedWith: z.array(z.object({
+      code: CourseCodeSchema.nullable(),
+      text: z.string(),
+      academicPeriod: z.string().nullable(),
+      creditHours: z.number().nullable(),
+    })),
+  })),
+  unrecognizedRows: z.array(z.object({ rowIndex: z.number(), reason: z.string() })),
+});
 const WorkdayReviewSchema = z.object({
   completed: z.array(CourseCodeSchema),
   inProgress: z.array(PlanTermSchema),
   skipped: z.array(z.object({ code: z.string(), reason: z.string() })),
+  academicProgress: AcademicProgressResultSchema.nullable().optional(),
 });
 const PlanSaveArgsSchema = z.tuple([PlanSchema]);
 const CatalogCourseDetailsArgsSchema = z.tuple([z.array(CourseCodeSchema).max(500)]);
@@ -106,6 +131,10 @@ export function registerIpcHandlers(
     await assertInCatalog(added);
     stores.plan.savePlan(plan);
   });
+  handle(IPC_CHANNELS.academicProgressGet, (args) => {
+    z.tuple([]).parse(args);
+    return stores.academicProgress.getAudit();
+  });
   handle(IPC_CHANNELS.transcriptSelect, (args) => {
     z.tuple([]).parse(args);
     return selectTranscript();
@@ -169,6 +198,9 @@ export function registerIpcHandlers(
       courses.forEach((code) => plannedCodes.add(code));
     }
     stores.plan.savePlan(plan);
+    if (review.academicProgress) {
+      stores.academicProgress.saveAudit(review.academicProgress as AcademicProgressResult);
+    }
     event.sender.send(IPC_CHANNELS.workdayProgress, { stage: "done" });
   });
 }

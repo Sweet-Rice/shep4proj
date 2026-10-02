@@ -1,125 +1,95 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
-import type { Course, DegreeProgram, DegreeSummary } from "@jevschedule/shared";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { StoredAcademicProgress } from "../../../shared/ipc.js";
 import { DegreeProgressScreen } from "./DegreeProgressScreen.js";
 
-const sampleDegree: DegreeProgram = {
-  id: "csc-software-engineering-2026-2027",
-  program: "Computer Science, B.S.",
-  concentration: "Software Engineering",
-  catalogYear: "2026-2027",
-  totalCredits: 120,
-  source: "https://example.com",
-  requirements: [
-    {
-      kind: "fixed",
-      id: "sem-1-courses",
-      area: "Computer Science",
-      label: "Semester 1 Core Courses",
-      semester: 1,
-      courses: [
-        { code: "CSC 1350", minGrade: "C" },
-        { code: "MATH 1550", minGrade: "C" },
-      ],
+vi.mock("../hooks/useDegree.js", () => ({
+  useDegree: () => ({
+    degree: {
+      id: "csc-se-2026",
+      program: "Computer Science, B.S.",
+      concentration: "Software Engineering",
+      catalogYear: "2026-2027",
+      totalCredits: 120,
+      source: "https://example.test",
+      requirements: [],
     },
-    {
-      kind: "creditBucket",
-      id: "gened-humanities",
-      area: "Humanities",
-      label: "General Education Humanities",
-      semester: 3,
-      credits: 6,
-      category: "Humanities",
-      eligibleCourses: [{ code: "HIST 1001", minGrade: null }],
-    },
-  ],
-};
-const summary: DegreeSummary = {
-  id: sampleDegree.id,
-  program: sampleDegree.program,
-  concentration: sampleDegree.concentration,
-  catalogYear: sampleDegree.catalogYear,
-  totalCredits: sampleDegree.totalCredits,
-};
-const catalog: Course[] = [
-  {
-    code: "CSC 1350",
-    title: "Computer Science I",
-    credits: { min: 3, max: 3, note: null },
-    catalogYear: "2026-2027",
-    description: "Introductory course",
-    prerequisiteText: null,
+    loading: false,
+    error: null,
+  }),
+}));
+vi.mock("../hooks/useCatalog.js", () => ({
+  useCatalogCourses: () => ({ courses: [], error: null, loading: false }),
+}));
+vi.mock("../hooks/useCompletedCourses.js", () => ({
+  useCompletedCourses: () => ({
+    completed: new Set(),
+    loaded: true,
+    loading: false,
+    error: null,
+    toggleCourse: vi.fn(),
+  }),
+}));
+
+const audit: StoredAcademicProgress = {
+  importedAt: "2026-10-02T13:40:00.000Z",
+  result: {
+    overall: { definedCredits: 120, inProgressCredits: 3, satisfyingCredits: 90, remainingCredits: 30, status: "In Progress" },
+    requirements: [{
+      name: "Core Writing",
+      status: "satisfied",
+      statusText: "Satisfied",
+      remaining: "0",
+      satisfiedWith: [{ code: "ENGL 1001", text: "ENGL 1001 - English Composition", academicPeriod: "Fall Semester 2025", creditHours: 3 }],
+    }],
+    unrecognizedRows: [],
   },
-];
+};
 
-const mockCompletedGet = vi.fn();
-const mockCompletedSet = vi.fn();
-const mockListDegrees = vi.fn();
-const mockGetDegree = vi.fn();
-const mockListCourses = vi.fn();
-
-describe("DegreeProgressScreen", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockCompletedGet.mockResolvedValue([]);
-    mockCompletedSet.mockResolvedValue(undefined);
-    mockListDegrees.mockResolvedValue([summary]);
-    mockGetDegree.mockResolvedValue(sampleDegree);
-    mockListCourses.mockResolvedValue(catalog);
-    Object.assign(window, {
-      jevschedule: {
-        completed: { get: mockCompletedGet, set: mockCompletedSet },
-        catalog: {
-          listDegrees: mockListDegrees,
-          getDegree: mockGetDegree,
-          listCourses: mockListCourses,
-        },
-      },
-    });
+function setStoredAudit(value: StoredAcademicProgress | null | Error) {
+  const getAudit = value instanceof Error
+    ? vi.fn().mockRejectedValue(value)
+    : vi.fn().mockResolvedValue(value);
+  Object.defineProperty(window, "jevschedule", {
+    configurable: true,
+    value: { academicProgress: { getAudit } },
   });
+}
 
-  afterEach(() => {
-    cleanup();
-    Reflect.deleteProperty(window, "jevschedule");
-  });
+afterEach(() => {
+  cleanup();
+  Object.defineProperty(window, "jevschedule", { configurable: true, value: undefined });
+});
 
-  it("loads the server degree and shows its requirements", async () => {
-    render(<DegreeProgressScreen />);
-    expect(screen.getByRole("status")).toHaveTextContent("Loading degree progress…");
-    await waitFor(() => expect(screen.getByText("Computer Science, B.S.")).toBeInTheDocument());
-    expect(mockListDegrees).toHaveBeenCalledOnce();
-    expect(mockGetDegree).toHaveBeenCalledWith(summary.id);
-    expect(screen.getByText("Software Engineering (2026-2027)")).toBeInTheDocument();
-    expect(screen.getByTestId("area-computer-science")).toHaveTextContent("0 of 2 courses");
-  });
-
-  it("allows toggling courses in an expanded area", async () => {
+describe("DegreeProgressScreen Workday audit selection", () => {
+  it("shows the stored Workday audit and can switch to the catalog plan", async () => {
     const user = userEvent.setup();
+    setStoredAudit(audit);
     render(<DegreeProgressScreen />);
-    const area = await screen.findByTestId("area-computer-science");
-    await user.click(within(area).getByText("Computer Science"));
-    const checkbox = within(area).getByRole("checkbox", { name: /CSC 1350/i });
-    await user.click(checkbox);
-    expect(checkbox).toBeChecked();
-    expect(mockCompletedSet).toHaveBeenCalledWith("CSC 1350", true);
+
+    expect(await screen.findByTestId("workday-academic-progress")).toBeInTheDocument();
+    expect(screen.getByText(/From Workday · imported/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Catalog plan (2026-2027 Software Engineering)" }));
+    expect(screen.queryByTestId("workday-academic-progress")).not.toBeInTheDocument();
+    expect(screen.getByTestId("overall-status")).toBeInTheDocument();
   });
 
-  it("shows an actionable error when no degree is available", async () => {
-    mockListDegrees.mockResolvedValue([]);
+  it("shows the catalog plan and Workday prompt when no audit is stored", async () => {
+    setStoredAudit(null);
     render(<DegreeProgressScreen />);
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Could not load the degree program from the server. Start it with pnpm dev and reopen this tab.",
-    );
-    expect(screen.queryByText("Computer Science, B.S.")).not.toBeInTheDocument();
+
+    expect(await screen.findByText("Import from Workday to see your official degree audit.")).toBeInTheDocument();
+    expect(screen.getByTestId("overall-status")).toBeInTheDocument();
   });
 
-  it("keeps the overall credit summary when catalog loading fails", async () => {
-    mockListCourses.mockRejectedValue(new Error("offline"));
+  it("keeps the catalog plan available when loading the audit fails", async () => {
+    setStoredAudit(new Error("local store unavailable"));
     render(<DegreeProgressScreen />);
-    expect(await screen.findByText("Credit-Hour Summary")).toBeInTheDocument();
-    expect(screen.getByTestId("overall-required")).toHaveTextContent("120 hrs");
+
+    expect(await screen.findByText("Import from Workday to see your official degree audit.")).toBeInTheDocument();
+    expect(screen.getByTestId("overall-status")).toBeInTheDocument();
   });
 });

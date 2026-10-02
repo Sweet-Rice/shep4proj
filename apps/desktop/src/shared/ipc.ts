@@ -10,6 +10,7 @@ import type {
   PlanTerm,
   Section,
 } from "@jevschedule/shared";
+import type { AcademicProgressResult } from "@jevschedule/workday/academic-progress";
 import type { TranscriptParseResult } from "@jevschedule/workday";
 import type { SkippedCourse } from "./workday-import.js";
 
@@ -32,6 +33,7 @@ export const IPC_CHANNELS = {
   workdayImport: "workday:import",
   workdayConfirm: "workday:confirm",
   workdayProgress: "workday:import-progress",
+  academicProgressGet: "academic-progress:get-audit",
 } as const;
 
 /** Stages the main process reports while a Workday import runs (T-321). */
@@ -47,6 +49,12 @@ export interface WorkdayImportReview {
   completed: CourseCode[];
   inProgress: PlanTerm[];
   skipped: SkippedCourse[];
+  academicProgress?: AcademicProgressResult | null;
+}
+
+export interface StoredAcademicProgress {
+  importedAt: string;
+  result: AcademicProgressResult;
 }
 
 /**
@@ -73,6 +81,9 @@ export interface JevscheduleApi {
     listSections(courseCode: CourseCode, term: AcademicPeriodId): Promise<Section[]>;
     listDegrees(): Promise<DegreeSummary[]>;
     getDegree(id: string): Promise<DegreeProgram>;
+  };
+  academicProgress: {
+    getAudit(): Promise<StoredAcademicProgress | null>;
   };
   workday: {
     start(): Promise<WorkdayImportReview>;
