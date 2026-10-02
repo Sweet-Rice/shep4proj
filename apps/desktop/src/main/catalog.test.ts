@@ -72,15 +72,81 @@ describe("resolveApiBaseUrl", () => {
 });
 
 describe("createCatalogClient", () => {
-  it("maps course ids to hyphenated paths and caches successful details", async () => {
-    const fetchImpl = vi.fn(async (_input: RequestInfo | URL) => response(detail));
+  it("posts uncached codes to the batch endpoint and caches the details", async () => {
+    const fetchImpl = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
+      response({ courses: [detail] }),
+    );
     const client = createCatalogClient(DEFAULT_API_BASE_URL, fetchImpl as typeof fetch);
     const first = await client.getCourseDetails(["CSC 1350"]);
     const second = await client.getCourseDetails(["CSC 1350", "CSC 1350"]);
     expect(fetchImpl).toHaveBeenCalledOnce();
-    expect(fetchImpl.mock.calls[0]?.[0]).toBe("http://127.0.0.1:3000/courses/CSC-1350");
+    expect(fetchImpl.mock.calls[0]?.[0]).toBe("http://127.0.0.1:3000/courses/details");
+    expect(fetchImpl.mock.calls[0]?.[1]).toMatchObject({
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ codes: ["CSC 1350"] }),
+    });
     expect(first["CSC 1350"]).toEqual(detail);
     expect(second).toEqual(first);
+  });
+
+  it("sends one batch request per 500 codes and only for uncached codes", async () => {
+    const codes = Array.from({ length: 1201 }, (_, index) => `CSC ${String(1000 + index)}`);
+    const fetchImpl = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as { codes: string[] };
+      return response({ courses: body.codes.map((code) => ({ ...detail, code })) });
+    });
+    const client = createCatalogClient(DEFAULT_API_BASE_URL, fetchImpl as typeof fetch);
+
+    const result = await client.getCourseDetails(codes);
+    expect(Object.keys(result)).toHaveLength(1201);
+    const sizes = fetchImpl.mock.calls.map(
+      ([, init]) => JSON.parse(String(init?.body)).codes.length,
+    );
+    expect(sizes).toEqual([500, 500, 201]);
+
+    await client.getCourseDetails([...codes, "CSC 9999"]);
+    expect(fetchImpl).toHaveBeenCalledTimes(4);
+    expect(JSON.parse(String(fetchImpl.mock.calls[3]?.[1]?.body))).toEqual({ codes: ["CSC 9999"] });
+  });
+
+  it("omits codes the batch endpoint does not return", async () => {
+    const fetchImpl = vi.fn(async () => response({ courses: [detail] }));
+    const client = createCatalogClient(DEFAULT_API_BASE_URL, fetchImpl as typeof fetch);
+    const result = await client.getCourseDetails(["CSC 1350", "CSC 1351"]);
+    expect(result["CSC 1350"]).toEqual(detail);
+    expect(result["CSC 1351"]).toBeUndefined();
+  });
+
+  it("fails clearly when the batch endpoint errors", async () => {
+    const fetchImpl = vi.fn(async () => response({ error: "boom" }, 500));
+    const client = createCatalogClient(DEFAULT_API_BASE_URL, fetchImpl as typeof fetch);
+    await expect(client.getCourseDetails(["CSC 1350"])).rejects.toThrow(
+      "Course catalog request failed: POST /courses/details returned 500",
+    );
+  });
+
+  it("falls back to per-course requests when the server has no batch endpoint", async () => {
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === "POST") return response({ error: "Route not found" }, 404);
+      return String(input).endsWith("CSC-1351")
+        ? response({ error: "Course not found" }, 404)
+        : response(detail);
+    });
+    const client = createCatalogClient(DEFAULT_API_BASE_URL, fetchImpl as typeof fetch);
+
+    const result = await client.getCourseDetails(["CSC 1350", "CSC 1351"]);
+    expect(result["CSC 1350"]).toEqual(detail);
+    expect(result["CSC 1351"]).toBeUndefined();
+    expect(fetchImpl.mock.calls.map(([input]) => String(input))).toEqual([
+      "http://127.0.0.1:3000/courses/details",
+      "http://127.0.0.1:3000/courses/CSC-1350",
+      "http://127.0.0.1:3000/courses/CSC-1351",
+    ]);
+
+    await client.getCourseDetails(["CSC 1352"]);
+    expect(fetchImpl).toHaveBeenCalledTimes(4);
+    expect(String(fetchImpl.mock.calls[3]?.[0])).toBe("http://127.0.0.1:3000/courses/CSC-1352");
   });
   it("maps and caches course offering history by code", async () => {
     const fetchImpl = vi.fn(async () =>
@@ -164,18 +230,6 @@ describe("createCatalogClient", () => {
     await expect(client.getCourseHistory("CSC 1350")).rejects.toThrow();
   });
 
-  it("omits a missing detail while returning the available course", async () => {
-    const fetchImpl = vi.fn(async (input: RequestInfo | URL) =>
-      String(input).endsWith("CSC-1351")
-        ? response({ error: "Course not found" }, 404)
-        : response(detail),
-    );
-    const client = createCatalogClient(DEFAULT_API_BASE_URL, fetchImpl as typeof fetch);
-    const result = await client.getCourseDetails(["CSC 1350", "CSC 1351"]);
-    expect(result["CSC 1350"]).toEqual(detail);
-    expect(result["CSC 1351"]).toBeUndefined();
-  });
-
   it("reports network failures and retries instead of caching them", async () => {
     const fetchImpl = vi
       .fn()
@@ -241,7 +295,7 @@ describe("createCatalogClient", () => {
     );
   });
 
-  it("limits concurrent detail requests to six and returns every fetched detail", async () => {
+  it("limits concurrent fallback detail requests to six and returns every fetched detail", async () => {
     const codes = Array.from({ length: 8 }, (_, index) => `CSC ${1001 + index}` as const);
     let active = 0;
     let peakActive = 0;
@@ -271,8 +325,12 @@ describe("createCatalogClient", () => {
       }
       return result;
     });
-    const client = createCatalogClient(DEFAULT_API_BASE_URL, fetchImpl as typeof fetch);
+    const noBatchEndpoint = (input: RequestInfo | URL, init?: RequestInit) =>
+      init?.method === "POST" ? Promise.resolve(response({}, 404)) : fetchImpl();
+    const client = createCatalogClient(DEFAULT_API_BASE_URL, noBatchEndpoint as typeof fetch);
     const resultPromise = client.getCourseDetails(codes);
+    await Promise.resolve();
+    await Promise.resolve();
 
     const releasePending = (count: number) => {
       for (const request of pending.splice(0, count)) {
