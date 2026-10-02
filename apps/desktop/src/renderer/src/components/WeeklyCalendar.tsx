@@ -24,6 +24,18 @@ export function formatMinuteToTime(minutesAfterMidnight: number): string {
   return `${displayHour}:${displayMin} ${ampm}`;
 }
 
+/** Compact range such as "10:30–11:50 AM", repeating the meridiem only when it changes. */
+export function formatTimeRange(startMinute: number, endMinute: number): string {
+  const [start, startMeridiem] = formatMinuteToTime(startMinute).split(" ");
+  const [end, endMeridiem] = formatMinuteToTime(endMinute).split(" ");
+  return startMeridiem === endMeridiem
+    ? `${start}–${end} ${endMeridiem}`
+    : `${start} ${startMeridiem}–${end} ${endMeridiem}`;
+}
+
+/** Meetings shorter than this have no room for a location line. */
+const MIN_LOCATION_MINUTES = 75;
+
 interface CalendarMeetingSlot {
   section: Section;
   day: Weekday;
@@ -180,6 +192,14 @@ export function WeeklyCalendar({
                     key={`${section.courseCode}-${section.sectionNumber}-${day}-${idx}`}
                     className={`meeting-block tone-${courseTones.get(section.courseCode)} ${slot.laneCount > 1 ? "multi-lane" : ""} ${isConflict ? "conflict" : ""}`}
                     data-testid={`meeting-block-${section.courseCode}-${day}`}
+                    title={[
+                      `${section.courseCode} ${section.sectionNumber}-${section.sectionType}`,
+                      formatTimeRange(slot.startMinute, slot.endMinute),
+                      section.location,
+                      section.instructor,
+                    ]
+                      .filter(Boolean)
+                      .join("\n")}
                     style={{
                       top: `${Math.max(0, topPercent)}%`,
                       height: `${Math.max(4, heightPercent)}%`,
@@ -188,7 +208,13 @@ export function WeeklyCalendar({
                     }}
                   >
                     <div className="block-header">
-                      <span className="block-title">{section.courseCode}</span>
+                      <span className="block-title">
+                        {section.courseCode}
+                        <span className="block-section">
+                          {" "}
+                          · {section.sectionNumber}-{section.sectionType}
+                        </span>
+                      </span>
                       {isConflict && (
                         <span
                           className="conflict-badge"
@@ -200,13 +226,13 @@ export function WeeklyCalendar({
                       )}
                     </div>
 
-                    <div className="block-sub">
-                      {section.sectionNumber}-{section.sectionType}
-                    </div>
-                    {section.location && <div className="block-location">{section.location}</div>}
                     <div className="block-time">
-                      {formatMinuteToTime(slot.startMinute)} – {formatMinuteToTime(slot.endMinute)}
+                      {formatTimeRange(slot.startMinute, slot.endMinute)}
                     </div>
+                    {section.location &&
+                      slot.endMinute - slot.startMinute >= MIN_LOCATION_MINUTES && (
+                        <div className="block-location">{section.location}</div>
+                      )}
 
                     {onRemoveSection && (
                       <button

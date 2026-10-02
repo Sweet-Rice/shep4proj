@@ -4,7 +4,7 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import type { Section } from "@jevschedule/shared";
-import { WeeklyCalendar, formatMinuteToTime } from "./WeeklyCalendar.js";
+import { WeeklyCalendar, formatMinuteToTime, formatTimeRange } from "./WeeklyCalendar.js";
 
 const overlappingSections: Section[] = [
   {
@@ -58,6 +58,21 @@ describe("WeeklyCalendar & formatMinuteToTime", () => {
     expect(formatMinuteToTime(720)).toBe("12:00 PM");
     expect(formatMinuteToTime(780)).toBe("1:00 PM");
     expect(formatMinuteToTime(1020)).toBe("5:00 PM");
+  });
+
+  it("formats compact time ranges, repeating the meridiem only across noon", () => {
+    expect(formatTimeRange(630, 710)).toBe("10:30–11:50 AM");
+    expect(formatTimeRange(990, 1160)).toBe("4:30–7:20 PM");
+    expect(formatTimeRange(690, 740)).toBe("11:30 AM–12:20 PM");
+  });
+
+  it("hides the location on short blocks but keeps it in the title", () => {
+    render(<WeeklyCalendar sections={[overlappingSections[0]!]} />);
+
+    const block = screen.getByTestId("meeting-block-CSC 1350-Mon");
+    expect(block).toHaveAttribute("title", expect.stringContaining("Coates 0214"));
+    expect(block).toHaveAttribute("title", expect.stringContaining("Dr. Duncan"));
+    expect(block).not.toHaveTextContent("Coates 0214");
   });
 
   it("summarizes section and credit totals and gives each course its own tone", () => {

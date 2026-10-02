@@ -112,7 +112,7 @@
   position: relative;
   display: grid;
   grid-template-columns: 64px repeat(5, minmax(0, 1fr));
-  grid-template-rows: 36px calc(var(--hours) * 56px);
+  grid-template-rows: 36px calc(var(--hours) * 64px);
   margin: 0 0 var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -183,8 +183,22 @@
   --tone-soft: var(--info-soft);
 }
 .meeting-block .block-title {
+  font-family: var(--font);
   font-weight: var(--weight-semibold);
   color: var(--text);
+}
+.meeting-block {
+  container-type: inline-size;
+}
+/* Drop the section number rather than show a half-cut "00…" in narrow blocks. */
+@container (max-width: 130px) {
+  .block-section {
+    display: none;
+  }
+}
+.block-section {
+  font-weight: var(--weight-regular);
+  color: var(--text-muted);
 }
 .meeting-block.conflict {
   background: var(--danger-soft);
@@ -215,15 +229,20 @@
 }
 .block-header {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
+  align-items: center;
   gap: 2px;
   min-width: 0;
 }
 .block-title,
-.block-sub,
 .block-time {
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.block-title {
+  flex: 1 1 auto;
 }
 .meeting-block .conflict-badge {
   flex: 0 0 auto;
