@@ -103,7 +103,7 @@ export function ScheduleScreen() {
             />
           ))}
           <WeeklyCalendar
-            sections={builder.sections}
+            sections={builder.sections.filter((section) => section.term === term)}
             conflictingSectionKeys={builder.conflicts}
             onRemoveSection={builder.removeSection}
           />

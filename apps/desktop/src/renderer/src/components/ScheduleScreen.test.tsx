@@ -53,6 +53,19 @@ const sections: Section[] = [
     capacity: 30,
     meetings: [{ days: ["Mon", "Wed"], startMinute: 625, endMinute: 675 }],
   },
+  {
+    term: "LSUAM_SPRING_2027",
+    courseCode: "CSC 4330",
+    sectionNumber: "003",
+    sectionType: "LEC",
+    credits: { min: 3, max: 3, note: null },
+    instructor: "C. Professor",
+    location: "Tureaud Hall",
+    deliveryMode: "On Campus",
+    enrollment: 10,
+    capacity: 30,
+    meetings: [{ days: ["Tue", "Thu"], startMinute: 600, endMinute: 650 }],
+  },
 ];
 
 const plan: Plan = { creditLimit: 19, terms: [{ season: "Fall", year: 2026, courses: [] }] };
@@ -64,10 +77,10 @@ function setup(
     pendingSections?: boolean;
   } = {},
 ) {
-  const listSections = vi.fn(async (code: string) => {
+  const listSections = vi.fn(async (code: string, term: string) => {
     if (options.rejectSections) throw new Error("offline");
     if (options.pendingSections) return new Promise<Section[]>(() => {});
-    return sections.filter((section) => section.courseCode === code);
+    return sections.filter((section) => section.courseCode === code && section.term === term);
   });
   Object.assign(window, {
     jevschedule: {
@@ -142,6 +155,43 @@ describe("ScheduleScreen", () => {
     await user.selectOptions(termSelect, "LSUAM_SPRING_2027");
 
     await waitFor(() => expect(listSections).toHaveBeenCalledWith("CSC 4330", "LSUAM_SPRING_2027"));
+  });
+
+  it("shows only the selected term's sections on the calendar and keeps the others", async () => {
+    const user = userEvent.setup();
+    const spring = { season: "Spring" as const, year: 2027, courses: [] };
+    setup({ planTerms: [...plan.terms, spring] });
+    render(<ScheduleScreen />);
+
+    const termSelect = await screen.findByRole("combobox", { name: "Term" });
+    await user.selectOptions(screen.getByRole("combobox", { name: "Add course" }), "CSC 4330");
+    await user.click(screen.getByRole("button", { name: "Add course" }));
+    await user.click(
+      await within(await screen.findByRole("region", { name: "Sections for CSC 4330" })).findByRole(
+        "button",
+        { name: "Add to schedule" },
+      ),
+    );
+    expect(screen.getAllByTestId("meeting-block-CSC 4330-Mon")).toHaveLength(1);
+
+    await user.selectOptions(termSelect, "LSUAM_SPRING_2027");
+    expect(await screen.findByText("003-LEC")).toBeInTheDocument();
+    expect(screen.queryByTestId("meeting-block-CSC 4330-Mon")).not.toBeInTheDocument();
+
+    await user.click(
+      within(screen.getByRole("region", { name: "Sections for CSC 4330" })).getByRole("button", {
+        name: "Add to schedule",
+      }),
+    );
+    expect(screen.getAllByTestId("meeting-block-CSC 4330-Tue")).toHaveLength(1);
+    expect(screen.queryByTestId("meeting-block-CSC 4330-Mon")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("schedule-conflict-banner")).not.toBeInTheDocument();
+
+    await user.selectOptions(termSelect, "LSUAM_FALL_2026");
+    await waitFor(() =>
+      expect(screen.getAllByTestId("meeting-block-CSC 4330-Mon")).toHaveLength(1),
+    );
+    expect(screen.queryByTestId("meeting-block-CSC 4330-Tue")).not.toBeInTheDocument();
   });
 
   it("shows the server error for section requests", async () => {
