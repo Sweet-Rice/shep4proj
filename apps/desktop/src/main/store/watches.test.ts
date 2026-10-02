@@ -59,3 +59,30 @@ it("rejects a second watch on the same section", () => {
   );
   db.close();
 });
+
+it("treats the same course number as distinct across section types and terms", () => {
+  const db = openLocalDb(":memory:");
+  const store = createWatchStore(db);
+  const recitation = {
+    ...watch,
+    id: "0f6b6a1c-3c2e-4b55-9d1f-2b8c5f0e7a11",
+    sectionType: "REC",
+  };
+  const nextTerm = {
+    ...watch,
+    id: "5d3c1e2a-7b44-4c8e-8f0a-1a2b3c4d5e6f",
+    term: "LSUAM_SPRING_2027",
+  };
+  store.add(watch);
+  store.add(recitation);
+  store.add(nextTerm);
+  expect(store.list().map((row) => row.id)).toEqual([watch.id, recitation.id, nextTerm.id]);
+
+  expect(() => store.add({ ...recitation, id: "a1b2c3d4-0000-4000-8000-000000000001" })).toThrow(
+    /UNIQUE/,
+  );
+  expect(() => store.add({ ...nextTerm, id: "a1b2c3d4-0000-4000-8000-000000000002" })).toThrow(
+    /UNIQUE/,
+  );
+  db.close();
+});
