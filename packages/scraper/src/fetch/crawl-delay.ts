@@ -1,20 +1,20 @@
 import { setTimeout as sleepFor } from "node:timers/promises";
 
-/** Spaces out requests: each `wait()` resolves at least `minIntervalMs` after the previous one did. */
+/** Queues tasks so each starts at least `minIntervalMs` after the previous task finished. */
 export interface CrawlDelay {
-  wait(): Promise<void>;
+  run<T>(task: () => Promise<T>): Promise<T>;
 }
 
 /**
- * Creates a crawl-delay gate. The first `wait()` resolves immediately; every
- * later one resolves no earlier than `minIntervalMs` after the previous
- * `wait()` resolved. Concurrent calls are queued, so each one gets its own
- * interval instead of resolving together.
+ * Creates a crawl-delay gate. The first task starts immediately; every later
+ * task starts no earlier than `minIntervalMs` after the previous task settled.
+ * Concurrent calls are queued in call order.
  *
- * `sleep` is called once per `wait()` with the milliseconds still to wait
- * (`0` when the interval has already passed). `now` and `sleep` are injectable
- * so tests need neither a real clock nor real waiting.
+ * `sleep` is called once per task with the milliseconds still to wait (`0`
+ * when the interval has already passed). `now` and `sleep` are injectable so
+ * tests need neither a real clock nor real waiting.
  */
+
 export function createCrawlDelay(opts: {
   minIntervalMs: number;
   now?: () => number;
@@ -22,21 +22,28 @@ export function createCrawlDelay(opts: {
 }): CrawlDelay {
   const now = opts.now ?? Date.now;
   const sleep = opts.sleep ?? sleepFor;
-  let lastResolvedAt: number | undefined;
+  let lastFinishedAt: number | undefined;
   let queue: Promise<void> = Promise.resolve();
 
   return {
-    wait(): Promise<void> {
+    run<T>(task: () => Promise<T>): Promise<T> {
       const turn = queue.then(async () => {
         const remainingMs =
-          lastResolvedAt === undefined
+          lastFinishedAt === undefined
             ? 0
-            : Math.max(0, lastResolvedAt + opts.minIntervalMs - now());
+            : Math.max(0, lastFinishedAt + opts.minIntervalMs - now());
         await sleep(remainingMs);
-        lastResolvedAt = now();
+        try {
+          return await task();
+        } finally {
+          lastFinishedAt = now();
+        }
       });
-      // A failing sleep must not wedge every later caller.
-      queue = turn.catch(() => undefined);
+      // A failing sleep or task must not wedge every later caller.
+      queue = turn.then(
+        () => undefined,
+        () => undefined,
+      );
       return turn;
     },
   };
