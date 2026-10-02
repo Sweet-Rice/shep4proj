@@ -174,11 +174,12 @@ export function createWorkdayImporter(deps: WorkdayImporterDependencies): Workda
           try {
             await deps.teardown(session);
           } catch (error) {
+            // The profile may be left on disk, so this must be visible even after an earlier failure.
+            deps.log.warn("workday import", "error", { previousStage: "teardown" });
             if (!failed) {
               failed = true;
               failure = error;
               emit({ stage: "error", message: "Could not import records from Workday." });
-              deps.log.warn("workday import", "error", { previousStage: "teardown" });
             }
           }
         }

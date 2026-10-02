@@ -41,6 +41,7 @@ const PAYLOADS: Record<string, unknown> = {
 interface HarnessOptions {
   harvest?: (target: HarvestTarget) => Promise<HarvestedRequest[]>;
   fetch?: (request: GuardedRequest) => Promise<GuardedResponse>;
+  teardown?: () => Promise<void>;
 }
 
 function harness(options: HarnessOptions = {}) {
@@ -66,6 +67,7 @@ function harness(options: HarnessOptions = {}) {
   });
   const teardown = vi.fn(async () => {
     events.push("teardown");
+    await options.teardown?.();
   });
   const log = Object.fromEntries(
     ["debug", "info", "warn", "error"].map((level) => [
@@ -208,5 +210,20 @@ describe("createWorkdayImporter", () => {
     });
     expect(h.teardown).toHaveBeenCalledOnce();
     expect(JSON.stringify(h.logCalls)).not.toContain("sensitive response body");
+  });
+
+  it("still reports a failed teardown when the import had already failed", async () => {
+    const h = harness({
+      fetch: async () => {
+        throw new Error("sensitive response body");
+      },
+      teardown: async () => {
+        throw new Error("EBUSY locked profile");
+      },
+    });
+
+    await expect(h.run()).rejects.toThrow("sensitive response body");
+    expect(h.logCalls).toContainEqual(["workday import", "error", { previousStage: "teardown" }]);
+    expect(h.leaked()).not.toContain("EBUSY");
   });
 });
